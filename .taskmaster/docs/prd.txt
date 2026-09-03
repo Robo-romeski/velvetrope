@@ -1,0 +1,100 @@
+Product: VelvetKey (codename)
+Owner: RomeCode Labs
+Stage: MVP Webapp (Next.js + FastAPI backend)
+North Star Metric: Verified event attendance + post-event vibe scores.
+
+🎯 MVP Goals
+
+Create a trust-first events platform (verification, consent prefs, invite-only).
+
+Empower hosts with tools to run smooth, safe, profitable events.
+
+Give attendees a seamless apply → approve → RSVP → attend → feedback loop.
+
+Build a baseline reputation system to encourage good behavior.
+
+📦 MVP Epics
+
+Identity & Onboarding: ID verification, invite codes, consent prefs.
+
+Event Management: Hosts create/manage events, attendees apply, QR check-in.
+
+Payments: Stripe Connect payouts to hosts, card payments for guests.
+
+Safety & Privacy: Code of conduct, reporting system, data purge rules.
+
+Comms: Event chat (48h prior), host broadcasts, opt-in DMs.
+
+Feedback: Post-event vibe scoring + reputation system.
+
+🚀 Stage 2 (Sexual Health Tutorials)
+
+Modules: “Him First” / “Her First” tutorials (text, audio, guided video).
+
+Interactive Plans: Generate a personalized sexual plan (by gender, goals).
+
+Tracking: Daily/weekly check-ins (“did you complete your exercise?”).
+
+Privacy: Tutorials are opt-in, health-focused, not explicit media.
+
+🌱 Stage 3 (Personalization & AI)
+
+AI Plans: Customizable sexual wellness plans (based on consent prefs, health goals).
+
+Coach Mode: In-app reminders + practice suggestions.
+
+Couples Sync: Two linked accounts with shared “progress” plans.
+
+🌍 Stage 4 (Ecosystem Expansion)
+
+Telehealth Integration: Access to certified sex therapists/couples counselors.
+
+Resource Hub: Articles, videos, product guides.
+
+Commerce Tie-ins: Curated marketplace (sexual wellness products, subscription kits).
+
+B2B Layer: Partner with venues, therapists, wellness brands.
+
+📊 MVP Metrics
+
+Onboarding conversion (apply → verified → approved).
+
+Event attendance rate (% QR scanned).
+
+Vibe score average.
+
+Reported incident rate per 100 guests.
+
+Host retention after 2 events.
+
+🔧 Tech Stack (for MVP Webapp)
+
+Frontend: Next.js (PWA mode).
+
+Backend: FastAPI + Postgres + Redis.
+
+Auth/IDV: Auth0 + Persona/Onfido.
+
+Payments: Stripe Connect.
+
+Infra: AWS EKS, S3, CloudFront.
+
+Observability: Grafana + Loki + OTel.
+
+📅 Timeline
+
+Weeks 0–2: Onboarding + IDV + consent prefs.
+
+Weeks 3–6: Event creation + QR check-in + Stripe test.
+
+Weeks 7–9: Consent flows + reporting + event chat.
+
+Weeks 10–12: Feedback system + analytics + pilot events.
+
+⚠️ Constraints
+
+Webapp-first → no native apps until later.
+
+No auto-blur default → make it opt-in.
+
+Tutorials must remain educational/health-focused to avoid policy issues.

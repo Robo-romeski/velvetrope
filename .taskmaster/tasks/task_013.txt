@@ -1,0 +1,50 @@
+# Task ID: 13
+# Title: Event Chat System
+# Status: pending
+# Dependencies: 6, 8
+# Priority: medium
+# Description: Implement a chat system for event participants that activates 48 hours before the event and includes host broadcast capabilities.
+# Details:
+1. Create real-time chat functionality using WebSockets
+2. Implement time-based chat activation (48h before event)
+3. Add host broadcast messaging capability
+4. Implement chat moderation tools for hosts
+5. Create opt-in direct messaging between attendees
+6. Add message reporting functionality
+7. Implement chat history with search capability
+8. Create notification system for new messages
+
+# Test Strategy:
+Test chat functionality with multiple users. Verify that chat activates at the correct time. Test host broadcasts and moderation tools.
+
+# Subtasks:
+## 1. WebSocket Chat Implementation [pending]
+### Dependencies: None
+### Description: Develop real-time chat functionality using WebSockets for instant message delivery between event participants
+### Details:
+Set up WebSocket server, implement connection handling, create message broadcasting mechanism, handle reconnection scenarios, and ensure proper authentication for chat participants
+
+## 2. Time-Based Chat Activation [pending]
+### Dependencies: 13.1
+### Description: Implement system to automatically activate chat functionality exactly 48 hours before event start time
+### Details:
+Create scheduler to track event timing, implement chat availability logic based on event start time, add database flags for chat activation status, ensure timezone handling, and create fallback mechanisms
+
+## 3. Host Broadcast and Moderation Tools [pending]
+### Dependencies: 13.1, 13.2
+### Description: Develop special messaging capabilities for event hosts including broadcast messages and content moderation tools
+### Details:
+Implement host-only UI controls, create broadcast message type with special styling, develop message removal functionality, add user muting/blocking capabilities, and implement automated content filtering
+
+## 4. Direct Messaging and Reporting [pending]
+### Dependencies: 13.1, 13.3
+### Description: Create opt-in direct messaging between attendees with reporting functionality for inappropriate content
+### Details:
+Implement private messaging channels, create opt-in settings UI, develop message reporting workflow, integrate with existing reporting system, and add blocking capabilities
+
+## 5. Chat History and Notifications [pending]
+### Dependencies: 13.1, 13.2, 13.3, 13.4
+### Description: Implement chat history storage with search capability and notification system for new messages
+### Details:
+Create database schema for message history, implement search functionality with indexing, develop unread message tracking, integrate with notification system, and implement message read receipts
+

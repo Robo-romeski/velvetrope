@@ -1,0 +1,50 @@
+# Node / Next.js
+node_modules/
+.next/
+.vercel/
+coverage/
+.docusaurus/
+storybook-static/
+yarn-error.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Python / FastAPI
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+.venv/
+venv/
+env/
+.poetry/
+.coverage
+htmlcov/
+
+# OS / Editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Env / Secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Local SQLite
+backend/data/
+*.sqlite
+
+# Editor tooling (keep .cursor/rules)
+.windsurf/
+.zed/
+
+# Build / Runtime
+build/
+dist/
+out/
+logs/
+*.log

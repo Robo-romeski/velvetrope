@@ -1,0 +1,205 @@
+{
+	"meta": {
+		"generatedAt": "2025-08-30T23:28:15.658Z",
+		"tasksAnalyzed": 24,
+		"totalTasks": 24,
+		"analysisCount": 24,
+		"thresholdScore": 7,
+		"projectName": "Taskmaster",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Setup Project Infrastructure",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the project infrastructure setup into detailed subtasks covering: 1) Repository and development environment setup, 2) Frontend Next.js configuration, 3) Backend FastAPI configuration, 4) AWS infrastructure provisioning with IaC, and 5) CI/CD and observability implementation.",
+			"reasoning": "This task involves setting up multiple complex systems (frontend, backend, cloud infrastructure, CI/CD, observability) that require specialized knowledge in each area. The infrastructure decisions made here will impact the entire project lifecycle. Modern best practices include infrastructure-as-code, containerization, and comprehensive observability."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Database Schema Design",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the database schema design into detailed subtasks covering: 1) Entity relationship modeling and normalization, 2) PostgreSQL schema implementation with proper constraints and indexes, 3) Migration system setup with Alembic, and 4) ORM layer implementation with SQLAlchemy.",
+			"reasoning": "Database schema design requires careful planning to ensure data integrity, performance, and scalability. The task involves multiple related tables with complex relationships. Implementing proper migrations and ORM patterns adds complexity but is essential for maintainability."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "Authentication System Integration",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the Auth0 integration into detailed subtasks covering: 1) Auth0 tenant configuration and API setup, 2) Frontend authentication flows and protected routes, 3) Backend JWT validation and session management, and 4) Role-based access control implementation.",
+			"reasoning": "Authentication is a critical security component requiring careful implementation. The task involves third-party integration with Auth0, secure token handling, and implementing proper authorization across both frontend and backend. Security best practices must be followed throughout."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "ID Verification Integration",
+			"complexityScore": 8,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the ID verification integration into detailed subtasks covering: 1) Persona/Onfido API integration and credential management, 2) Frontend verification flow and UI components, 3) Backend verification endpoints and webhook handlers, and 4) Verification status management and admin review system.",
+			"reasoning": "This task involves integrating with a complex third-party service that handles sensitive identity information. It requires secure API integration, handling asynchronous verification processes, and implementing proper error handling and fallback mechanisms. The verification status affects core application functionality."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "User Onboarding Flow",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the user onboarding flow into detailed subtasks covering: 1) Multi-step onboarding UI and state management, 2) Form validation and data collection, 3) Integration with authentication and verification services, and 4) Onboarding progress tracking and resumption functionality.",
+			"reasoning": "The onboarding flow combines multiple complex systems (authentication, verification, consent management) into a cohesive user experience. It requires sophisticated state management, integration with multiple services, and careful UX design to minimize drop-offs."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "Event Creation and Management",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the event management functionality into detailed subtasks covering: 1) Event CRUD operations and form validation, 2) Event dashboard and status management, and 3) Invite code generation and management system.",
+			"reasoning": "This task involves implementing core business logic with multiple related features. While conceptually straightforward, it requires careful implementation of validation rules, state management, and proper database operations. The invite code system adds complexity."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Event Application System",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the event application system into detailed subtasks covering: 1) Application form creation with dynamic questions, 2) Application review dashboard and approval workflow, and 3) Notification system for application status updates.",
+			"reasoning": "This feature requires implementing a workflow with multiple states and user roles. The dynamic question capability adds complexity, as does the review and approval process. Integration with the notification system is needed for status updates."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "QR Code Check-in System",
+			"complexityScore": 7,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the QR code check-in system into detailed subtasks covering: 1) QR code generation and display for attendees, 2) QR code scanning functionality with validation, and 3) Offline mode implementation and attendance tracking.",
+			"reasoning": "This task involves implementing both generation and scanning of QR codes, which requires working with device cameras and handling various edge cases. The offline mode adds significant complexity, requiring data synchronization when connectivity is restored."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Stripe Connect Integration",
+			"complexityScore": 8,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the Stripe Connect integration into detailed subtasks covering: 1) Stripe Connect account setup and host onboarding, 2) Payment processing for event tickets, 3) Payout management and financial reporting, and 4) Webhook handling and error management.",
+			"reasoning": "Payment processing is inherently complex and requires careful implementation to handle edge cases, security concerns, and compliance requirements. Stripe Connect adds additional complexity with its marketplace model. Proper error handling and reconciliation are critical."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Code of Conduct System",
+			"complexityScore": 5,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the code of conduct system into detailed subtasks covering: 1) Code of conduct creation and customization, 2) Acceptance flow and display throughout the application, and 3) Violation reporting and enforcement mechanisms.",
+			"reasoning": "This task is moderately complex, involving content management, user agreements, and integration with the reporting system. The enforcement mechanisms add some complexity but build on existing user management functionality."
+		},
+		{
+			"taskId": 11,
+			"taskTitle": "Reporting System",
+			"complexityScore": 7,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the reporting system into detailed subtasks covering: 1) Report submission with categorization and anonymity options, 2) Admin review dashboard and resolution workflow, and 3) Safety features including user blocking and automated responses.",
+			"reasoning": "This system handles sensitive user reports and requires careful implementation of privacy controls, admin review workflows, and appropriate safety measures. The anonymous reporting option adds complexity, as does the need to handle potentially urgent safety concerns."
+		},
+		{
+			"taskId": 12,
+			"taskTitle": "Data Privacy and Purge Rules",
+			"complexityScore": 9,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the data privacy implementation into detailed subtasks covering: 1) Data retention policy and automated purging system, 2) User data export and account deletion functionality, 3) Privacy controls and consent management, and 4) Audit logging and compliance reporting.",
+			"reasoning": "Data privacy is highly complex due to regulatory requirements (GDPR, CCPA) and the need to implement proper data lifecycle management. Automated purging must be carefully implemented to avoid data integrity issues. Comprehensive audit logging adds significant complexity."
+		},
+		{
+			"taskId": 13,
+			"taskTitle": "Event Chat System",
+			"complexityScore": 7,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the event chat system into detailed subtasks covering: 1) Real-time messaging with WebSockets, 2) Time-based activation and host broadcast features, and 3) Moderation tools and message reporting functionality.",
+			"reasoning": "Real-time chat systems are inherently complex, requiring WebSocket implementation, message delivery guarantees, and proper error handling. The time-based activation adds complexity, as does the need for moderation tools and content filtering."
+		},
+		{
+			"taskId": 14,
+			"taskTitle": "Consent Preferences System",
+			"complexityScore": 8,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the consent preferences system into detailed subtasks covering: 1) Consent preference UI and data model, 2) Consent verification throughout the application, 3) Preference matching for user interactions, and 4) Consent history tracking and analytics.",
+			"reasoning": "This system is complex due to its pervasive nature throughout the application and the need to handle various types of consent with proper versioning and history. The preference matching between users adds significant complexity, as does the need for comprehensive tracking."
+		},
+		{
+			"taskId": 15,
+			"taskTitle": "Post-Event Feedback System",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the post-event feedback system into detailed subtasks covering: 1) Feedback collection forms and timing mechanisms, 2) Feedback analytics and reporting for hosts, and 3) Anonymous feedback and moderation functionality.",
+			"reasoning": "This task involves implementing feedback collection, storage, and analysis with moderate complexity. The timing mechanisms and anonymous feedback options add some complexity, as does the need for proper analytics and reporting."
+		},
+		{
+			"taskId": 16,
+			"taskTitle": "Reputation System",
+			"complexityScore": 8,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the reputation system into detailed subtasks covering: 1) Reputation score algorithm and calculation, 2) Reputation history and level management, 3) Profile display and badge implementation, and 4) Reputation-based access control for exclusive features.",
+			"reasoning": "Reputation systems are algorithmically complex, requiring careful design to prevent gaming and ensure fairness. The system affects multiple parts of the application and requires sophisticated tracking of user actions. The reputation-based access control adds significant complexity."
+		},
+		{
+			"taskId": 17,
+			"taskTitle": "Notification System",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the notification system into detailed subtasks covering: 1) In-app notification center and real-time delivery, 2) Email and SMS notification channels, 3) Notification preferences and template management, and 4) Notification history and analytics.",
+			"reasoning": "A comprehensive notification system requires integration with multiple delivery channels, real-time capabilities, and proper preference management. The system must be reliable and handle delivery failures gracefully. Analytics add complexity but provide valuable insights."
+		},
+		{
+			"taskId": 18,
+			"taskTitle": "Analytics Dashboard",
+			"complexityScore": 7,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the analytics dashboard into detailed subtasks covering: 1) Data collection and metric calculation, 2) Visualization components and dashboard UI, and 3) Export functionality and custom reporting.",
+			"reasoning": "Analytics dashboards require processing large amounts of data efficiently and presenting it in a meaningful way. The real-time updates add complexity, as does the need for custom report generation. The system must be designed to scale with growing data volumes."
+		},
+		{
+			"taskId": 19,
+			"taskTitle": "Progressive Web App Implementation",
+			"complexityScore": 7,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the PWA implementation into detailed subtasks covering: 1) Service worker and offline functionality, 2) App manifest and installation experience, and 3) Push notifications and device capability access.",
+			"reasoning": "PWA implementation involves working with service workers, which have complex lifecycle management. Offline functionality requires careful data synchronization. Push notifications and device capability access add complexity due to varying browser support and permissions."
+		},
+		{
+			"taskId": 20,
+			"taskTitle": "Admin Management Console",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the admin console implementation into detailed subtasks covering: 1) User and event management interfaces, 2) System configuration and settings management, 3) Moderation tools and report handling, and 4) Admin activity logging and role management.",
+			"reasoning": "Admin consoles require implementing powerful tools with proper access controls to prevent misuse. The system must handle various administrative functions across multiple domains of the application. Proper logging and role-based access control add significant complexity."
+		},
+		{
+			"taskId": 21,
+			"taskTitle": "Invite-Only System",
+			"complexityScore": 6,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the invite-only system into detailed subtasks covering: 1) Invite code generation and validation, 2) Platform and event-specific invite management, and 3) Invite analytics and referral tracking.",
+			"reasoning": "This system requires implementing secure code generation, validation logic, and proper tracking of invites. The different types of invites (platform vs. event) add some complexity, as does the need for analytics and referral tracking."
+		},
+		{
+			"taskId": 22,
+			"taskTitle": "Performance Optimization",
+			"complexityScore": 8,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the performance optimization into detailed subtasks covering: 1) Frontend optimization (SSR, code splitting, asset optimization), 2) API and database query optimization, 3) Caching implementation (Redis, CDN), and 4) Performance monitoring and alerting.",
+			"reasoning": "Performance optimization requires deep technical knowledge across the entire stack. Identifying and resolving bottlenecks requires sophisticated profiling and testing. The implementation of caching strategies and monitoring adds significant complexity."
+		},
+		{
+			"taskId": 23,
+			"taskTitle": "Security Implementation",
+			"complexityScore": 9,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the security implementation into detailed subtasks covering: 1) HTTPS and security headers configuration, 2) CSRF protection and input validation, 3) Rate limiting and database encryption, and 4) Security scanning and incident response.",
+			"reasoning": "Security is critically complex due to the constantly evolving threat landscape and the need for defense in depth. Proper implementation requires specialized knowledge of various security domains. The sensitive nature of the application data increases the importance of robust security measures."
+		},
+		{
+			"taskId": 24,
+			"taskTitle": "Documentation and Deployment",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the documentation and deployment into detailed subtasks covering: 1) API and developer documentation, 2) User guides and help center content, 3) Deployment scripts and procedures, and 4) Monitoring, logging, and disaster recovery setup.",
+			"reasoning": "Comprehensive documentation requires covering multiple audiences (developers, users, operations) with appropriate detail. The deployment procedures must be robust and include proper monitoring, logging, and disaster recovery. Blue-green deployment adds complexity but improves reliability."
+		}
+	]
+}

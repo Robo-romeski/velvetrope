@@ -1,4 +1,11 @@
-import { Body, Controller, Headers, HttpCode, Post, Req } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Headers,
+  HttpCode,
+  Post,
+  Req,
+} from '@nestjs/common';
 import type { Request } from 'express';
 import Stripe from 'stripe';
 import { ConfigService } from '@nestjs/config';
@@ -23,28 +30,36 @@ export class StripeWebhookController {
 
   @Post('webhook')
   @HttpCode(200)
-  async handleWebhook(@Req() req: Request, @Headers('stripe-signature') signature?: string) {
+  async handleWebhook(
+    @Req() req: Request,
+    @Headers('stripe-signature') signature?: string,
+  ) {
     const webhookSecret = this.config.get<string>('STRIPE_WEBHOOK_SECRET');
-    const rawBody = (req as any).body as Buffer; // express.raw set in main.ts
+    const rawBody = req.body as Buffer | undefined;
 
-    let event: Stripe.Event | null = null;
-    if (this.stripe && webhookSecret && rawBody && signature) {
-      try {
-        event = this.stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
-      } catch (err) {
-        return { ok: false };
-      }
+    if (!this.stripe || !webhookSecret) {
+      throw new BadRequestException('Webhook not configured');
+    }
+    if (!rawBody || !signature) {
+      throw new BadRequestException('Missing Stripe signature');
     }
 
-    // Handle minimal set of events
-    const type = event?.type;
-    if (type === 'account.updated') {
-      const account = event?.data?.object as Stripe.Account;
-      // If we track accounts, we could update metadata; for now nothing required
+    let event: Stripe.Event;
+    try {
+      event = this.stripe.webhooks.constructEvent(
+        rawBody,
+        signature,
+        webhookSecret,
+      );
+    } catch {
+      throw new BadRequestException('Invalid Stripe signature');
+    }
+
+    if (event.type === 'account.updated') {
+      const account = event.data.object;
+      await this.accounts.findOne({ where: { accountId: account.id } });
     }
 
     return { ok: true };
   }
 }
-
-

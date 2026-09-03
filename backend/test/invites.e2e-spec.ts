@@ -3,6 +3,8 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { hostAuth, userAuth } from './auth-headers';
+import { createEvent } from './create-event';
 
 describe('Invites (e2e)', () => {
   let app: INestApplication<App>;
@@ -21,10 +23,11 @@ describe('Invites (e2e)', () => {
   });
 
   it('host can generate, public can validate, user can redeem', async () => {
+    const event = await createEvent(app.getHttpServer());
+
     const gen = await request(app.getHttpServer())
-      .post('/invites/generate/eventA')
-      .set('Authorization', 'Bearer invalid.token')
-      .set('x-test-roles', '["host"]')
+      .post(`/invites/generate/${event.id}`)
+      .set(hostAuth())
       .expect(201);
     const code = gen.body.code as string;
 
@@ -35,19 +38,21 @@ describe('Invites (e2e)', () => {
 
     const red = await request(app.getHttpServer())
       .post(`/invites/redeem/${code}`)
-      .set('Authorization', 'Bearer invalid.token')
-      .set('x-test-roles', '[]')
-      .send({ userSub: 'user|xyz' })
+      .set(userAuth('user|xyz'))
       .expect(201);
     expect(red.body.usedBy).toBe('user|xyz');
 
     await request(app.getHttpServer())
       .post(`/invites/redeem/${code}`)
-      .set('Authorization', 'Bearer invalid.token')
-      .set('x-test-roles', '[]')
-      .send({ userSub: 'user|abc' })
+      .set(userAuth('user|abc'))
       .expect(400);
   });
+
+  it('cannot generate invites for another host event', async () => {
+    const event = await createEvent(app.getHttpServer(), 'host-a');
+    await request(app.getHttpServer())
+      .post(`/invites/generate/${event.id}`)
+      .set(hostAuth('host-b'))
+      .expect(403);
+  });
 });
-
-

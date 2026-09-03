@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity({ name: 'checkin_tickets' })
 export class CheckinTicketEntity {
@@ -21,5 +27,3 @@ export class CheckinTicketEntity {
   @Column({ type: 'datetime', nullable: true })
   usedAt?: Date | null;
 }
-
-

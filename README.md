@@ -53,12 +53,12 @@ A sophisticated event management platform for exclusive events with Auth0 authen
 
 1. **Copy environment template**:
    ```bash
-   cp .env.docker .env
+   cp .env.example .env
    ```
 
 2. **Update `.env` with your actual credentials**:
-   - Auth0 credentials (already populated from your setup)
-   - Stripe secret key
+   - Auth0: `AUTH0_ISSUER` (backend JWT) plus `AUTH0_DOMAIN` / `AUTH0_CLIENT_ID` / `AUTH0_CLIENT_SECRET` / `AUTH0_SECRET` (frontend)
+   - Stripe secret key and webhook secret
    - Generate a secure `AUTH0_SECRET` (32+ chars)
 
 3. **Run the stack**:
@@ -133,13 +133,14 @@ npm run dev
 - `POST /invites/redeem/:code` - Redeem code (auth required)
 
 ### Check-in
-- `POST /checkin/issue/:eventId` - Issue ticket (host only)
-- `POST /checkin/verify/:token` - Verify ticket (host only)
+- `POST /checkin/issue/:eventId` - Issue ticket for a user (event host only)
+- `POST /checkin/mine/:eventId` - Issue/return ticket for the authenticated attendee (approved applications only)
+- `POST /checkin/verify/:token` - Verify ticket (event host only)
 
 ### Stripe
-- `GET /stripe/onboarding/:hostId` - Get onboarding link (host only)
-- `GET /stripe/status/:hostId` - Get account status (host only)
-- `POST /stripe/webhook` - Stripe webhook handler
+- `GET /stripe/onboarding` - Get onboarding link for the authenticated host
+- `GET /stripe/status` - Get Connect account status for the authenticated host
+- `POST /stripe/webhook` - Stripe webhook handler (fails closed on bad/missing signature)
 
 ## Testing
 
@@ -160,17 +161,23 @@ Tests cover:
 
 ## Environment Variables
 
-See `.env.docker` for a complete list of required environment variables.
+See `.env.example` (root), `backend/.env.example`, and `frontend/.env.example`.
 
-### Required for Auth0:
+### Backend (JWT)
 - `AUTH0_ISSUER`
 - `AUTH0_AUDIENCE`
+- `PORT` (default `3010`)
+
+### Frontend (Auth0 SDK)
+- `AUTH0_DOMAIN`
 - `AUTH0_CLIENT_ID`
 - `AUTH0_CLIENT_SECRET`
-- `AUTH0_DOMAIN`
-- `AUTH0_SECRET`
+- `AUTH0_SECRET` (32+ characters)
+- `APP_BASE_URL`
+- `NEXT_PUBLIC_AUTH0_AUDIENCE`
+- `NEXT_PUBLIC_API_BASE_URL` (default `http://localhost:3010`)
 
-### Required for Stripe:
+### Stripe
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 

@@ -1,4 +1,9 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 export type ApplicationStatus = 'pending' | 'approved' | 'rejected';
 
@@ -22,5 +27,3 @@ export class ApplicationEntity {
   @CreateDateColumn({ type: 'datetime' })
   createdAt!: Date;
 }
-
-

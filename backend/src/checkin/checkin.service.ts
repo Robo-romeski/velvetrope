@@ -1,7 +1,12 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CheckinTicketEntity } from './checkin-ticket.entity';
+import { randomToken } from '../common/random-token';
 
 @Injectable()
 export class CheckinService {
@@ -11,15 +16,23 @@ export class CheckinService {
   ) {}
 
   private generateToken(length = 24): string {
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let out = '';
-    for (let i = 0; i < length; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
-    return out;
+    return randomToken(
+      length,
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+    );
+  }
+
+  async getByToken(token: string): Promise<CheckinTicketEntity> {
+    const ticket = await this.repo.findOne({ where: { token } });
+    if (!ticket) throw new NotFoundException('Invalid token');
+    return ticket;
   }
 
   async issue(eventId: string, userSub: string): Promise<CheckinTicketEntity> {
     // One active token per user/event for simplicity
-    const existing = await this.repo.findOne({ where: { eventId, userSub, usedAt: null } as any });
+    const existing = await this.repo.findOne({
+      where: { eventId, userSub, usedAt: null } as any,
+    });
     if (existing) return existing;
     const token = this.generateToken();
     const created = this.repo.create({ token, eventId, userSub });
@@ -34,5 +47,3 @@ export class CheckinService {
     return await this.repo.save(ticket);
   }
 }
-
-

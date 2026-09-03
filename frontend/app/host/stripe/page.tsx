@@ -1,31 +1,32 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { apiGetAuth } from '@/lib/api';
 
 export default function HostStripeOnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<{ connected: boolean; accountId?: string } | null>(null);
-  const hostId = useMemo(() => 'host-dev-123', []);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const s = await apiGetAuth(`/stripe/status/${encodeURIComponent(hostId)}`);
+        const s = await apiGetAuth('/stripe/status');
         if (!mounted) return;
         setStatus(s);
       } catch {}
     })();
-    return () => { mounted = false; };
-  }, [hostId]);
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const startOnboarding = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiGetAuth(`/stripe/onboarding/${encodeURIComponent(hostId)}`);
+      const data = await apiGetAuth('/stripe/onboarding');
       if (data?.url) {
         window.location.href = data.url as string;
       } else {
@@ -43,7 +44,8 @@ export default function HostStripeOnboardingPage() {
       <h1 className="text-2xl font-semibold">Stripe Connect Onboarding</h1>
       <p className="text-sm text-gray-600">Connect your payout account via Stripe.</p>
       <div className="text-sm">
-        Status: {status?.connected ? 'Connected' : 'Not connected'}{status?.accountId ? ` (acct: ${status.accountId})` : ''}
+        Status: {status?.connected ? 'Connected' : 'Not connected'}
+        {status?.accountId ? ` (acct: ${status.accountId})` : ''}
       </div>
       <button
         onClick={startOnboarding}
@@ -56,5 +58,3 @@ export default function HostStripeOnboardingPage() {
     </div>
   );
 }
-
-

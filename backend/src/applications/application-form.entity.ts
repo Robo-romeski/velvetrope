@@ -1,4 +1,10 @@
-import { Column, Entity, PrimaryGeneratedColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 
 @Entity({ name: 'application_forms' })
 export class ApplicationFormEntity {
@@ -15,5 +21,3 @@ export class ApplicationFormEntity {
   @UpdateDateColumn({ type: 'datetime' })
   updatedAt!: Date;
 }
-
-

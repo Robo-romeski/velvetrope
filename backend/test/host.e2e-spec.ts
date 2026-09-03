@@ -33,5 +33,3 @@ describe('Host RBAC (e2e)', () => {
       .expect(200);
   });
 });
-
-

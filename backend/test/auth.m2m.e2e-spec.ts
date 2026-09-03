@@ -17,25 +17,29 @@ async function fetchM2MToken(): Promise<string | null> {
   body.set('client_id', clientId);
   body.set('client_secret', clientSecret);
   body.set('audience', audience);
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body,
-  });
-  if (!res.ok) {
-    try {
-      const err = await res.json();
-      // eslint-disable-next-line no-console
-      console.warn('Auth0 token error', res.status, err);
-    } catch (e) {
-      const txt = await res.text();
-      // eslint-disable-next-line no-console
-      console.warn('Auth0 token error (text)', res.status, txt);
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body,
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) {
+      try {
+        const err = await res.json();
+        console.warn('Auth0 token error', res.status, err);
+      } catch {
+        const txt = await res.text();
+        console.warn('Auth0 token error (text)', res.status, txt);
+      }
+      return null;
     }
+    const data = (await res.json()) as { access_token?: string };
+    return data.access_token ?? null;
+  } catch {
+    console.warn('Skipping M2M test: Auth0 token request failed');
     return null;
   }
-  const data = (await res.json()) as { access_token?: string };
-  return data.access_token ?? null;
 }
 
 describe('Auth (e2e) M2M', () => {

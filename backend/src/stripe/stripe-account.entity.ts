@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  Unique,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('stripe_accounts')
 @Unique(['hostId'])
@@ -18,5 +25,3 @@ export class StripeAccountEntity {
   @UpdateDateColumn()
   updatedAt!: Date;
 }
-
-

@@ -25,10 +25,15 @@ export class StripeService {
     if (!this.stripe) {
       const existing = await this.accounts.findOne({ where: { hostId } });
       if (!existing) {
-        const created = this.accounts.create({ hostId, accountId: `acct_${hostId}` });
+        const created = this.accounts.create({
+          hostId,
+          accountId: `acct_${hostId}`,
+        });
         await this.accounts.save(created);
       }
-      return { url: `https://connect.stripe.com/setup/s/${encodeURIComponent(hostId)}` };
+      return {
+        url: `https://connect.stripe.com/setup/s/${encodeURIComponent(hostId)}`,
+      };
     }
 
     const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
@@ -48,7 +53,9 @@ export class StripeService {
     return { url: link.url };
   }
 
-  async getStatus(hostId: string): Promise<{ connected: boolean; accountId?: string }> {
+  async getStatus(
+    hostId: string,
+  ): Promise<{ connected: boolean; accountId?: string }> {
     const record = await this.accounts.findOne({ where: { hostId } });
     if (!record) return { connected: false };
     if (!this.stripe) return { connected: true, accountId: record.accountId };
@@ -56,5 +63,3 @@ export class StripeService {
     return { connected: !!acct.details_submitted, accountId: record.accountId };
   }
 }
-
-

@@ -6,6 +6,9 @@ export class EventEntity {
   id!: string;
 
   @Column({ type: 'text' })
+  hostId!: string;
+
+  @Column({ type: 'text' })
   title!: string;
 
   @Column({ type: 'text', nullable: true })
@@ -20,5 +23,3 @@ export class EventEntity {
   @Column({ type: 'text', default: 'draft' })
   status!: 'draft' | 'published' | 'cancelled';
 }
-
-

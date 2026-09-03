@@ -8,10 +8,15 @@ async function bootstrap() {
     origin: [/^http:\/\/localhost:3000$/],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-test-roles'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-test-roles',
+      'x-test-sub',
+    ],
   });
   // Stripe webhook needs raw body for signature verification
   app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3010);
 }
 bootstrap();

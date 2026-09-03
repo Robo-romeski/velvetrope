@@ -21,9 +21,7 @@ describe('Auth (e2e)', () => {
   });
 
   it('GET /protected should return 401 without token', async () => {
-    await request(app.getHttpServer())
-      .get('/protected')
-      .expect(401);
+    await request(app.getHttpServer()).get('/protected').expect(401);
   });
 
   it('GET /protected should return 401 with invalid token', async () => {

@@ -11,5 +11,3 @@ import { StripeAccountEntity } from './stripe-account.entity';
   providers: [StripeService],
 })
 export class StripeModule {}
-
-

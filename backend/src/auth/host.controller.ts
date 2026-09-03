@@ -12,5 +12,3 @@ export class HostController {
     return { ok: true };
   }
 }
-
-

@@ -27,16 +27,28 @@ import { ApplicationsModule } from './applications/applications.module';
       isGlobal: true,
       load: [configuration],
       validationSchema: Joi.object({
-        NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
-        PORT: Joi.number().default(3000),
+        NODE_ENV: Joi.string()
+          .valid('development', 'test', 'production')
+          .default('development'),
+        PORT: Joi.number().default(3010),
       }),
     }),
     AuthModule,
     TypeOrmModule.forRoot({
       type: 'sqlite',
-      database: process.env.DATABASE_PATH || (process.env.NODE_ENV === 'test' ? ':memory:' : 'data/dev.sqlite'),
-      entities: [EventEntity, ApplicationEntity, ApplicationFormEntity, InviteEntity, CheckinTicketEntity, StripeAccountEntity],
+      database:
+        process.env.DATABASE_PATH ||
+        (process.env.NODE_ENV === 'test' ? ':memory:' : 'data/dev.sqlite'),
+      entities: [
+        EventEntity,
+        ApplicationEntity,
+        ApplicationFormEntity,
+        InviteEntity,
+        CheckinTicketEntity,
+        StripeAccountEntity,
+      ],
       synchronize: true,
+      retryAttempts: process.env.NODE_ENV === 'test' ? 1 : 10,
     }),
     EventsModule,
     ApplicationsModule,

@@ -1,6 +1,10 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { JWTVerifyOptions } from 'jose';
 import { buildRemoteJwks } from './jwks';
 
 @Injectable()
@@ -32,7 +36,7 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException();
     }
 
-    // Test-only convenience path: allow overriding roles to simplify e2e
+    // Test-only convenience path: allow overriding roles/sub to simplify e2e
     if (process.env.NODE_ENV === 'test') {
       const testHeader = req.headers['x-test-roles'] as string | undefined;
       if (testHeader) {
@@ -41,9 +45,14 @@ export class JwtAuthGuard implements CanActivate {
           const parsed = JSON.parse(testHeader);
           if (Array.isArray(parsed)) roles = parsed as string[];
         } catch {
-          roles = testHeader.split(',').map((s) => s.trim()).filter(Boolean);
+          roles = testHeader
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
         }
-        req.user = { roles };
+        const testSub =
+          (req.headers['x-test-sub'] as string | undefined) || 'test-user';
+        req.user = { sub: testSub, roles };
         return true;
       }
     }
@@ -63,7 +72,8 @@ export class JwtAuthGuard implements CanActivate {
       const claims: any = result.payload as any;
       let roles =
         (claims['https://epicsexual.com/roles'] as string[] | undefined) ||
-        (claims['roles'] as string[] | undefined) || [];
+        (claims['roles'] as string[] | undefined) ||
+        [];
       // Test convenience: allow overriding roles via header in test env
       if (process.env.NODE_ENV === 'test') {
         const testHeader = req.headers['x-test-roles'] as string | undefined;
@@ -72,13 +82,16 @@ export class JwtAuthGuard implements CanActivate {
             const parsed = JSON.parse(testHeader);
             if (Array.isArray(parsed)) roles = parsed as string[];
           } catch {
-            roles = testHeader.split(',').map((s) => s.trim()).filter(Boolean);
+            roles = testHeader
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean);
           }
         }
       }
       req.user = { ...(claims || {}), roles };
       return true;
-    } catch (e) {
+    } catch {
       throw new UnauthorizedException();
     }
   }

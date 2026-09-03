@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity({ name: 'invites' })
 export class InviteEntity {
@@ -21,5 +27,3 @@ export class InviteEntity {
   @CreateDateColumn({ type: 'datetime' })
   createdAt!: Date;
 }
-
-

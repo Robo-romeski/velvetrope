@@ -1,10 +1,17 @@
 # Task ID: 18
-# Title: Analytics Dashboard
-# Status: pending
-# Dependencies: 8, 15, 16
-# Priority: medium
-# Description: Implement analytics dashboards for hosts and platform admins to track key metrics and performance indicators.
-# Details:
+
+**Title:** Analytics Dashboard
+
+**Status:** pending
+
+**Dependencies:** 8 ⧖, 15, 16
+
+**Priority:** medium
+
+**Description:** Implement analytics dashboards for hosts and platform admins to track key metrics and performance indicators.
+
+**Details:**
+
 1. Create host analytics dashboard with event performance metrics
 2. Implement platform-wide analytics for admins
 3. Add key metric tracking (onboarding conversion, attendance rate, etc.)
@@ -14,37 +21,63 @@
 7. Create real-time analytics updates
 8. Implement analytics API for integration with external tools
 
-# Test Strategy:
+**Test Strategy:**
+
 Test analytics dashboard with mock data. Verify that metrics are calculated correctly. Test data export and report generation functionality.
 
-# Subtasks:
-## 1. Create Host Analytics Dashboard [pending]
-### Dependencies: None
-### Description: Develop a comprehensive analytics dashboard for hosts to track event performance metrics
-### Details:
+## Subtasks
+
+### 18.1. Create Host Analytics Dashboard
+
+**Status:** pending  
+**Dependencies:** None  
+
+Develop a comprehensive analytics dashboard for hosts to track event performance metrics
+
+**Details:**
+
 Design and implement UI components for host analytics dashboard. Include metrics such as attendance rates, feedback scores, and event popularity. Create data visualization components for these metrics using charts and graphs. Ensure the dashboard is responsive and user-friendly.
 
-## 2. Implement Platform-wide Admin Analytics [pending]
-### Dependencies: 18.1
-### Description: Develop an analytics dashboard for platform administrators to monitor overall platform performance
-### Details:
+### 18.2. Implement Platform-wide Admin Analytics
+
+**Status:** pending  
+**Dependencies:** 18.1  
+
+Develop an analytics dashboard for platform administrators to monitor overall platform performance
+
+**Details:**
+
 Create admin-specific analytics views with platform-wide metrics such as total users, events created, verification rates, and platform growth. Implement filtering capabilities by date ranges, regions, and user types. Include trend analysis for key performance indicators.
 
-## 3. Implement Key Metric Tracking System [pending]
-### Dependencies: 18.1, 18.2
-### Description: Develop backend services to track, calculate and store key metrics for both hosts and platform admins
-### Details:
+### 18.3. Implement Key Metric Tracking System
+
+**Status:** pending  
+**Dependencies:** 18.1, 18.2  
+
+Develop backend services to track, calculate and store key metrics for both hosts and platform admins
+
+**Details:**
+
 Create data collection services to track metrics including onboarding conversion rates, attendance rates, user retention, and event popularity. Implement scheduled jobs to calculate and update metrics. Design and implement database schema for storing analytics data efficiently.
 
-## 4. Develop Data Export and Report Generation [pending]
-### Dependencies: 18.3
-### Description: Implement functionality for exporting analytics data and generating custom reports
-### Details:
+### 18.4. Develop Data Export and Report Generation
+
+**Status:** pending  
+**Dependencies:** 18.3  
+
+Implement functionality for exporting analytics data and generating custom reports
+
+**Details:**
+
 Create export functionality for analytics data in multiple formats (CSV, Excel, PDF). Implement custom report generation with user-selectable metrics and date ranges. Design report templates with branding and visualization components. Add scheduling capabilities for automated report generation.
 
-## 5. Create Analytics API and Real-time Updates [pending]
-### Dependencies: 18.3, 18.4
-### Description: Implement an analytics API for external integrations and real-time analytics updates
-### Details:
-Design and implement RESTful API endpoints for accessing analytics data. Add authentication and rate limiting for API access. Implement WebSocket connections for real-time analytics updates. Create documentation for API usage. Develop integration examples for common external tools.
+### 18.5. Create Analytics API and Real-time Updates
 
+**Status:** pending  
+**Dependencies:** 18.3, 18.4  
+
+Implement an analytics API for external integrations and real-time analytics updates
+
+**Details:**
+
+Design and implement RESTful API endpoints for accessing analytics data. Add authentication and rate limiting for API access. Implement WebSocket connections for real-time analytics updates. Create documentation for API usage. Develop integration examples for common external tools.

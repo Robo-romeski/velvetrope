@@ -1,0 +1,83 @@
+# Task ID: 11
+
+**Title:** Reporting System
+
+**Status:** pending
+
+**Dependencies:** 5, 10
+
+**Priority:** high
+
+**Description:** Implement a system for users to report inappropriate behavior or safety concerns, with admin review capabilities.
+
+**Details:**
+
+1. Create report submission form with categorization
+2. Implement anonymous reporting option
+3. Create admin dashboard for reviewing reports
+4. Implement report status tracking and resolution
+5. Add notification system for report updates
+6. Create automated initial response based on report category
+7. Implement safety resources display based on report type
+8. Add ability to block users and prevent further interaction
+
+**Test Strategy:**
+
+Test report submission with various categories. Verify that admins can review and resolve reports. Test notification delivery for report updates.
+
+## Subtasks
+
+### 11.1. Report Submission Interface
+
+**Status:** pending  
+**Dependencies:** None  
+
+Create a user-friendly form for submitting reports with appropriate categorization and anonymous reporting option
+
+**Details:**
+
+Implement a form with fields for report type (harassment, safety concern, technical issue, etc.), description, evidence upload, and toggle for anonymous reporting. Include validation and confirmation messages.
+
+### 11.2. Admin Review Dashboard
+
+**Status:** pending  
+**Dependencies:** 11.1  
+
+Develop an administrative interface for reviewing, managing, and resolving reported issues
+
+**Details:**
+
+Create a dashboard showing all reports with filtering options, status indicators, and action buttons. Include detailed view of each report with resolution options and history tracking.
+
+### 11.3. Notification System for Reports
+
+**Status:** pending  
+**Dependencies:** 11.1, 11.2  
+
+Implement notifications for both reporters and admins about report status changes and updates
+
+**Details:**
+
+Create notification templates for report submission, status changes, and resolution. Integrate with the platform's notification system (Task 17) to deliver updates via in-app, email, and other channels.
+
+### 11.4. User Safety Features
+
+**Status:** pending  
+**Dependencies:** 11.1, 11.2  
+
+Implement user protection features including blocking capabilities and safety resource display
+
+**Details:**
+
+Add functionality to block reported users, prevent further interaction between reporter and reported user, and display relevant safety resources based on report type. Include emergency contact information where appropriate.
+
+### 11.5. Automated Response System
+
+**Status:** pending  
+**Dependencies:** 11.1, 11.3  
+
+Create an automated initial response system based on report categories with appropriate follow-up workflows
+
+**Details:**
+
+Implement logic to generate appropriate initial responses based on report category. Create workflows for different report types with escalation paths for serious issues and automated resolution for minor concerns.

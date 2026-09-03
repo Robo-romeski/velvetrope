@@ -24,7 +24,7 @@ export default function EventTicketPage() {
           if (ev?.status !== 'published') return;
         } catch {}
 
-        const res = await apiPostAuth(`/checkin/issue/${encodeURIComponent(eventId)}`, { userSub: 'user|demo' });
+        const res = await apiPostAuth(`/checkin/mine/${encodeURIComponent(eventId)}`, {});
         if (!mounted) return;
         setToken(res?.token ?? null);
       } catch (e) {

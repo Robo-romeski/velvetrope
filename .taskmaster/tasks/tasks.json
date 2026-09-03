@@ -2,14 +2,14 @@
   "master": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "Setup Project Infrastructure",
-        "description": "Initialize the project repository with Next.js frontend and FastAPI backend structure, configure AWS infrastructure, and set up CI/CD pipelines.",
-        "details": "1. Create a monorepo structure with separate directories for frontend and backend\n2. Set up Next.js project with TypeScript and PWA capabilities\n3. Initialize FastAPI project with proper directory structure\n4. Configure AWS EKS cluster, S3 buckets, and CloudFront distribution\n5. Set up CI/CD pipelines for automated testing and deployment\n6. Configure Grafana, Loki, and OpenTelemetry for observability\n7. Implement development, staging, and production environments\n8. Set up Docker containers for local development",
-        "testStrategy": "Verify that the development environment can be set up with a single command. Ensure CI/CD pipelines successfully build and deploy the application. Validate that observability tools are correctly configured and receiving telemetry data.",
+        "description": "Local NestJS + Next.js + Docker Compose are on main. Remaining: small GitHub Actions that use AUTH0_ISSUER, app-focused .env.example, port/CORS alignment. AWS EKS is deferred. Do not merge velvetrope PR #1.",
+        "details": "Shipped on main (https://github.com/Robo-romeski/velvetrope): Next.js 15 frontend, NestJS 11 backend, Docker Compose, Dockerfiles, GET /healthz.\n\nThis is not FastAPI. AWS EKS/S3/CloudFront and Grafana/Loki/OTel are deferred.\n\nRemaining:\n- Close Automaton PR https://github.com/Robo-romeski/velvetrope/pull/1 without merging (duplicates scaffold, red CI, wrong env names, fake prod compose).\n- Add a small GitHub Actions workflow: backend unit + e2e with AUTH0_ISSUER set, frontend lint/build. Do not copy PR #1 GHCR deploy or docker-compose.prod.yml.\n- Replace root .env.example (Taskmaster AI keys) with Auth0/Stripe vars using AUTH0_ISSUER and NEXT_PUBLIC_API_BASE_URL.\n- Unify PORT defaults (3000 vs 3001 vs 3010) and CORS.\n",
+        "testStrategy": "CI on GitHub runs backend e2e with AUTH0_ISSUER and frontend build. docker-compose up still works. PR #1 is closed unmerged.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -18,7 +18,8 @@
             "dependencies": [],
             "details": "Initialize git repository, create directory structure with frontend/ and backend/ folders, set up package.json for workspace management, configure linting and formatting tools, add README with setup instructions, and create .gitignore file with appropriate rules\n<info added on 2025-08-31T00:32:22.580Z>\n## Implementation Plan for Subtask 1.1 (Create Monorepo Structure)\n\n### Goal\nEstablish a clean repository scaffold with separate `frontend/` (Next.js) and `backend/` (FastAPI), plus repo-level docs and ignores.\n\n### Implementation Steps\n1. Create directory structure:\n   - `frontend/` - Will contain Next.js application\n   - `backend/` - Will contain FastAPI application\n   - Reserve space for future `infra/` directory for Terraform\n\n2. Create repository files:\n   - Root `README.md` with project overview, structure, and development prerequisites\n   - Root `.gitignore` configured for Node, Python, macOS, environment files, build artifacts, and IDE-specific files\n\n3. Git considerations:\n   - Repository is already initialized on `main` branch\n   - No re-initialization required\n\n### Deferred Decisions\n- Root `package.json` workspaces setup deferred until team decides on Yarn/npm vs pnpm\n- Keeping monorepo tool choice flexible for now\n\n### Risks and Notes\n- Avoid premature tool lock-in (workspaces/poetry) before team preference is established\n- Infrastructure (EKS/Terraform) will be addressed in subtask 1.4\n\n### Acceptance Criteria\n- `frontend/` and `backend/` directories exist at repo root\n- Root `README.md` describes structure and quickstart at a high level\n- Root `.gitignore` excludes Node/Python/macOS and common artifacts\n- No breaking changes to Taskmaster files or existing git state\n</info added on 2025-08-31T00:32:22.580Z>",
             "status": "done",
-            "testStrategy": "Verify that the repository structure follows best practices, ensure all configuration files are properly set up, and confirm that the README contains clear setup instructions"
+            "testStrategy": "Verify that the repository structure follows best practices, ensure all configuration files are properly set up, and confirm that the README contains clear setup instructions",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -27,7 +28,8 @@
             "dependencies": [],
             "details": "Initialize Next.js with TypeScript support, configure PWA features with next-pwa, set up component library and styling solution, implement folder structure following best practices, configure environment variables, add testing framework (Jest/React Testing Library), and set up Storybook for component documentation\n<info added on 2025-08-31T00:39:04.785Z>\n- Scaffold Next.js app in `frontend/` using create-next-app with TypeScript, Tailwind CSS, ESLint\n- Install `next-pwa` and wire up basic PWA config (service worker, runtime caching defaults)\n- Add web app manifest and icons; reference via `metadata` in Next.js app\n- Set up base folders: `app/`, `components/`, `lib/`, `styles/`, `public/`\n- Add basic smoke test page and scripts: dev/build/lint/test\n- Add Jest + React Testing Library (light) and Storybook (optional stub)\n- Acceptance: `pnpm dev` or `npm run dev` starts, PWA manifest loads, offline works for static routes\n</info added on 2025-08-31T00:39:04.785Z>",
             "status": "done",
-            "testStrategy": "Run the development server to verify proper initialization, ensure TypeScript compilation works without errors, and validate that PWA features are correctly configured"
+            "testStrategy": "Run the development server to verify proper initialization, ensure TypeScript compilation works without errors, and validate that PWA features are correctly configured",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -36,39 +38,58 @@
             "dependencies": [],
             "details": "Set up FastAPI application with proper project structure, configure Python virtual environment, set up dependency management with poetry or pip, implement folder structure for routes/models/services, configure environment variables, add testing framework (pytest), and set up database connection utilities\n<info added on 2025-08-31T01:08:32.666Z>\n# Backend Environment Configuration Plan\n\n- Scaffold FastAPI app in `backend/` with:\n  - `app/main.py`, `app/api/__init__.py`, `app/api/v1/routes.py`\n  - `app/core/config.py` for settings via pydantic\n  - `app/__init__.py`\n- Add `pyproject.toml` using uv/poetry or fall back to `requirements.txt` with pinned versions\n- Include basic health endpoint `/healthz` and CORS\n- Add `uvicorn` dev script via `Makefile` or `justfile` and README snippet\n- Acceptance: `uvicorn app.main:app --reload` serves health endpoint at 200\n</info added on 2025-08-31T01:08:32.666Z>\n<info added on 2025-08-31T06:58:36.942Z>\n# Backend Environment Configuration Plan (Updated)\n\n- Scaffold NestJS app in `backend/` using `npx @nestjs/cli new backend -p npm --skip-git`\n- Maintain strict TypeScript configuration defaults\n- Implement testing with Jest (included by default):\n  - Unit tests for all components\n  - E2E tests for API endpoints\n  - Follow Test-Driven Development approach\n- Create health module with:\n  - `GET /healthz` endpoint\n  - Controller and service implementation\n  - Corresponding unit and e2e tests\n- Add configuration module for environment variables management\n- Acceptance criteria:\n  - All tests pass with `npm test`\n  - Development server (`npm run start:dev`) successfully serves health endpoint returning 200 OK\n- Note: This replaces the previous FastAPI implementation to align with repository-wide TypeScript preference\n</info added on 2025-08-31T06:58:36.942Z>",
             "status": "done",
-            "testStrategy": "Verify that the API server starts correctly, ensure all dependencies are properly installed, and confirm that the project structure follows FastAPI best practices"
+            "testStrategy": "Verify that the API server starts correctly, ensure all dependencies are properly installed, and confirm that the project structure follows FastAPI best practices",
+            "parentId": "undefined"
           },
           {
             "id": 4,
             "title": "Set Up AWS Infrastructure",
             "description": "Configure AWS EKS cluster, S3 buckets, and CloudFront distribution",
             "dependencies": [],
-            "details": "Create AWS EKS cluster with appropriate node groups, set up S3 buckets for static assets and user uploads, configure CloudFront distribution for content delivery, implement IAM roles and policies, set up VPC and networking components, and create Terraform or CloudFormation templates for infrastructure as code",
-            "status": "pending",
-            "testStrategy": "Verify that all AWS resources are properly provisioned, ensure that the infrastructure can be deployed with automation scripts, and validate that security best practices are followed"
+            "details": "Create AWS EKS cluster with appropriate node groups, set up S3 buckets for static assets and user uploads, configure CloudFront distribution for content delivery, implement IAM roles and policies, set up VPC and networking components, and create Terraform or CloudFormation templates for infrastructure as code\n<info added on 2026-09-03T11:08:48Z>\nDeferred 3 Sep 2026 after velvetrope PR #1 review: do not provision AWS EKS/S3/CloudFront until the local MVP is honest (task 26: event ownership, Stripe bound to Auth0 sub, attendee tickets). PR #1 did not implement AWS and must not be merged as a substitute.\n</info>",
+            "status": "deferred",
+            "testStrategy": "Verify that all AWS resources are properly provisioned, ensure that the infrastructure can be deployed with automation scripts, and validate that security best practices are followed",
+            "parentId": "undefined"
           },
           {
             "id": 5,
-            "title": "Implement CI/CD and Observability",
-            "description": "Set up CI/CD pipelines and configure observability tools",
+            "title": "GitHub Actions CI (match NestJS env)",
+            "description": "Add a small CI workflow using AUTH0_ISSUER (not AUTH0_DOMAIN) and existing backend e2e + frontend lint/build. Close PR #1 instead of merging it.",
             "dependencies": [],
-            "details": "Configure GitHub Actions or similar CI/CD tool, implement automated testing in the pipeline, set up deployment workflows for different environments, configure Grafana for metrics visualization, implement Loki for log aggregation, set up OpenTelemetry for distributed tracing, and create Docker containers for local development and deployment",
-            "status": "pending",
-            "testStrategy": "Verify that CI/CD pipelines successfully build and deploy the application, ensure that observability tools are correctly configured and receiving telemetry data, and validate that Docker containers work properly in local development"
+            "details": "Configure GitHub Actions or similar CI/CD tool, implement automated testing in the pipeline, set up deployment workflows for different environments, configure Grafana for metrics visualization, implement Loki for log aggregation, set up OpenTelemetry for distributed tracing, and create Docker containers for local development and deployment\n<info added on 2026-09-03T11:08:48Z>\n## Revised plan (3 Sep 2026, velvetrope PR #1)\n\nDo NOT merge https://github.com/Robo-romeski/velvetrope/pull/1. It re-scaffolds work already on main, sets AUTH0_DOMAIN instead of AUTH0_ISSUER (e2e 47/47 failed), docker-compose.prod.yml uses a nonexistent Docker `production` target, scripts/*.sh are Node files, docs/INFRASTRUCTURE.md is a JS stub.\n\nImplement instead:\n1. Close PR #1.\n2. One workflow: backend `npm test` + `npm run test:e2e` with NODE_ENV=test, AUTH0_ISSUER, AUTH0_AUDIENCE; frontend lint + build with dummy Auth0 secrets matching the Next Auth0 SDK.\n3. No GHCR deploy-on-push until tests are green and we have a real host.\n4. Either fix or temporarily scope existing ESLint unsafe-any so lint is not red on day one.\n\nObservability (Grafana/Loki/OTel) stays out of this subtask.\n</info>",
+            "status": "done",
+            "testStrategy": "Verify that CI/CD pipelines successfully build and deploy the application, ensure that observability tools are correctly configured and receiving telemetry data, and validate that Docker containers work properly in local development",
+            "updatedAt": "2026-09-03T22:57:03.735Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 6,
+            "title": "App env template and port alignment",
+            "description": "Replace root .env.example with Auth0/Stripe vars and unify PORT / NEXT_PUBLIC_API_BASE_URL / CORS.",
+            "dependencies": [],
+            "details": "Root .env.example is Taskmaster AI keys. Backend AUTH0_ISSUER, PORT default 3000; frontend/lib/api.ts falls back to localhost:3001; Docker uses 3010. CORS allows only localhost:3000. README mentions missing .env.docker. Prefer one local default (3010 to match Compose). Commit an app .env.example using AUTH0_ISSUER and NEXT_PUBLIC_API_BASE_URL.",
+            "status": "done",
+            "testStrategy": "Fresh clone: copy .env.example; frontend reaches backend without port mismatch.",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-03T22:57:03.755Z"
           }
-        ]
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 5,
+        "expansionPrompt": "Break down the project infrastructure setup into detailed subtasks covering: 1) Repository and development environment setup, 2) Frontend Next.js configuration, 3) Backend FastAPI configuration, 4) AWS infrastructure provisioning with IaC, and 5) CI/CD and observability implementation.",
+        "updatedAt": "2026-09-03T22:57:03.755Z"
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Database Schema Design",
-        "description": "Design and implement the database schema for users, events, invitations, verification status, and reputation system.",
-        "details": "1. Create PostgreSQL database schema with the following tables:\n   - Users (id, email, name, verification_status, consent_preferences, reputation_score)\n   - Events (id, host_id, title, description, location, date_time, capacity, status)\n   - Invitations (id, event_id, user_id, status, invite_code)\n   - Attendance (id, event_id, user_id, check_in_time)\n   - Feedback (id, event_id, user_id, vibe_score, comments)\n   - Reports (id, event_id, reporter_id, reported_id, description, status)\n2. Implement database migrations using Alembic\n3. Set up Redis for caching and session management\n4. Create database access layer with SQLAlchemy ORM",
+        "description": "TypeORM + SQLite already has Event, Application, ApplicationForm, Invite, CheckinTicket, StripeAccount. Remaining: hostId (task 26), Postgres migrations (task 25). Not Alembic/SQLAlchemy.",
+        "details": "Current: SQLite + TypeORM synchronize:true. Tables: events, applications, application_forms, invites, checkin_tickets, stripe_accounts. No User table; Auth0 sub stored as text. Events have no hostId.\n\nDo not implement Alembic or SQLAlchemy.\n\nSplit:\n- Task 26: hostId and ownership FKs for an honest MVP\n- Task 25: Postgres + turn synchronize off\n- Later PRD tables (Users, Feedback, Reports) stay with those feature tasks\nRedis is not required for the local MVP.",
         "testStrategy": "Write unit tests for database models and migrations. Verify that all relationships between tables work correctly. Test database performance with sample data sets.",
         "priority": "high",
         "dependencies": [
-          1
+          "1"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -76,8 +97,9 @@
             "description": "Create detailed schema definitions for all required tables with proper relationships and constraints",
             "dependencies": [],
             "details": "Define complete table structures including primary keys, foreign keys, indexes, and constraints for Users, Events, Invitations, Attendance, Feedback, and Reports tables. Document all relationships between tables (one-to-many, many-to-many). Include data types, nullability, and default values for each column.",
-            "status": "pending",
-            "testStrategy": "Create entity-relationship diagrams and validate them against requirements. Review schema with team members to ensure all necessary fields and relationships are captured."
+            "status": "in-progress",
+            "testStrategy": "Create entity-relationship diagrams and validate them against requirements. Review schema with team members to ensure all necessary fields and relationships are captured.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -86,9 +108,10 @@
             "dependencies": [
               "2.1"
             ],
-            "details": "Initialize Alembic for the project. Create migration scripts for all tables defined in subtask 1. Include upgrade and downgrade paths for each migration. Set up version control for migrations. Configure Alembic environment for development, testing, and production environments.",
-            "status": "pending",
-            "testStrategy": "Test migration scripts by applying them to a test database and verifying the resulting schema. Test downgrade functionality to ensure migrations can be rolled back if needed."
+            "details": "Initialize Alembic for the project. Create migration scripts for all tables defined in subtask 1. Include upgrade and downgrade paths for each migration. Set up version control for migrations. Configure Alembic environment for development, testing, and production environments.\n<info added on 2026-09-03T11:08:48Z>\nCancelled: stack is TypeORM, not Alembic. Postgres migrations are task 25.\n</info>",
+            "status": "cancelled",
+            "testStrategy": "Test migration scripts by applying them to a test database and verifying the resulting schema. Test downgrade functionality to ensure migrations can be rolled back if needed.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -97,9 +120,10 @@
             "dependencies": [
               "2.1"
             ],
-            "details": "Develop SQLAlchemy ORM models for all tables. Implement relationships between models (e.g., User to Events, Events to Invitations). Add validation rules and constraints at the model level. Implement helper methods for common queries. Create base model class with common functionality.",
-            "status": "pending",
-            "testStrategy": "Write unit tests for each model to verify relationships, constraints, and validation rules. Test model methods with sample data to ensure they behave as expected."
+            "details": "Develop SQLAlchemy ORM models for all tables. Implement relationships between models (e.g., User to Events, Events to Invitations). Add validation rules and constraints at the model level. Implement helper methods for common queries. Create base model class with common functionality.\n<info added on 2026-09-03T11:08:48Z>\nCancelled: TypeORM entities already exist in backend/src. Remaining ownership fields are task 26.\n</info>",
+            "status": "cancelled",
+            "testStrategy": "Write unit tests for each model to verify relationships, constraints, and validation rules. Test model methods with sample data to ensure they behave as expected.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -108,9 +132,10 @@
             "dependencies": [
               "2.3"
             ],
-            "details": "Install and configure Redis for development and production environments. Implement session management using Redis. Create caching layer for frequently accessed data. Set up appropriate TTL (Time To Live) values for cached items. Implement cache invalidation strategies. Create utility functions for interacting with Redis.",
-            "status": "pending",
-            "testStrategy": "Test Redis connection and configuration. Verify session management functionality works correctly. Measure performance improvements with caching enabled vs. disabled."
+            "details": "Install and configure Redis for development and production environments. Implement session management using Redis. Create caching layer for frequently accessed data. Set up appropriate TTL (Time To Live) values for cached items. Implement cache invalidation strategies. Create utility functions for interacting with Redis.\n<info added on 2026-09-03T11:08:48Z>\nDeferred: Redis is not needed for the local SQLite MVP.\n</info>",
+            "status": "deferred",
+            "testStrategy": "Test Redis connection and configuration. Verify session management functionality works correctly. Measure performance improvements with caching enabled vs. disabled.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -120,24 +145,28 @@
               "2.3",
               "2.4"
             ],
-            "details": "Design and implement repository interfaces for each model. Create concrete repository implementations using SQLAlchemy. Implement CRUD operations for all models. Add transaction management. Implement query optimization techniques. Create unit of work pattern for managing related operations. Integrate Redis caching with repositories for improved performance.",
-            "status": "pending",
-            "testStrategy": "Write unit tests for all repository methods. Test transaction management and rollback functionality. Verify that caching works correctly with the repositories. Test performance with large datasets."
+            "details": "Design and implement repository interfaces for each model. Create concrete repository implementations using SQLAlchemy. Implement CRUD operations for all models. Add transaction management. Implement query optimization techniques. Create unit of work pattern for managing related operations. Integrate Redis caching with repositories for improved performance.\n<info added on 2026-09-03T11:08:48Z>\nCancelled: Nest services talk to TypeORM repositories directly; no SQLAlchemy access layer.\n</info>",
+            "status": "cancelled",
+            "testStrategy": "Write unit tests for all repository methods. Test transaction management and rollback functionality. Verify that caching works correctly with the repositories. Test performance with large datasets.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the database schema design into detailed subtasks covering: 1) Entity relationship modeling and normalization, 2) PostgreSQL schema implementation with proper constraints and indexes, 3) Migration system setup with Alembic, and 4) ORM layer implementation with SQLAlchemy."
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "Authentication System Integration",
-        "description": "Integrate Auth0 for user authentication and implement the authentication flow in both frontend and backend.",
+        "description": "Auth0 login (Next.js SDK v4), JWT verification on Nest via jose JWKS, host/attendee roles. API RBAC shipped. Frontend /host pages are not route-guarded.",
         "details": "1. Set up Auth0 tenant and configure application settings\n2. Implement login, signup, and logout flows in Next.js frontend\n3. Create protected routes and authentication middleware in FastAPI\n4. Implement JWT validation and user session management\n5. Set up role-based access control (host vs. attendee)\n6. Configure secure cookie handling and CSRF protection\n7. Implement password reset and email verification flows",
         "testStrategy": "Test authentication flows with mock users. Verify that protected routes require authentication. Test role-based access control to ensure hosts and attendees have appropriate permissions.",
         "priority": "high",
         "dependencies": [
-          1,
-          2
+          "1",
+          "2"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -145,8 +174,9 @@
             "description": "Set up Auth0 tenant and configure application settings for both frontend and backend integration",
             "dependencies": [],
             "details": "Create Auth0 tenant, register the application, configure callback URLs, logout URLs, and allowed web origins. Set up the necessary Auth0 rules, actions, and APIs. Generate and securely store client credentials for both development and production environments.",
-            "status": "pending",
-            "testStrategy": "Verify Auth0 dashboard configuration is complete. Test connection to Auth0 from both frontend and backend environments using test credentials."
+            "status": "done",
+            "testStrategy": "Verify Auth0 dashboard configuration is complete. Test connection to Auth0 from both frontend and backend environments using test credentials.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -156,8 +186,9 @@
               "3.1"
             ],
             "details": "Integrate Auth0 SDK with Next.js. Create authentication context provider for global state management. Implement login, signup, and logout UI components. Add social login options. Create protected route wrappers that redirect unauthenticated users.",
-            "status": "pending",
-            "testStrategy": "Test all authentication flows (login, signup, logout) with mock users. Verify protected routes redirect unauthenticated users. Test social login integrations."
+            "status": "done",
+            "testStrategy": "Test all authentication flows (login, signup, logout) with mock users. Verify protected routes redirect unauthenticated users. Test social login integrations.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -167,8 +198,9 @@
               "3.1"
             ],
             "details": "Implement JWT validation middleware in FastAPI. Create authentication dependency for protected routes. Set up user session management. Configure secure cookie handling and CSRF protection. Implement token refresh mechanism.",
-            "status": "pending",
-            "testStrategy": "Test middleware with valid and invalid tokens. Verify protected endpoints reject unauthenticated requests. Test token refresh flow and session timeout behavior."
+            "status": "done",
+            "testStrategy": "Test middleware with valid and invalid tokens. Verify protected endpoints reject unauthenticated requests. Test token refresh flow and session timeout behavior.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -179,8 +211,9 @@
               "3.3"
             ],
             "details": "Configure Auth0 roles and permissions. Implement role assignment during user registration. Create role-based middleware for frontend and backend. Implement UI conditional rendering based on user roles. Add role management in user settings.",
-            "status": "pending",
-            "testStrategy": "Test access control with different user roles. Verify hosts can access host-only features and attendees are restricted appropriately. Test role assignment and changes."
+            "status": "done",
+            "testStrategy": "Test access control with different user roles. Verify hosts can access host-only features and attendees are restricted appropriately. Test role assignment and changes.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -191,24 +224,28 @@
               "3.2",
               "3.3"
             ],
-            "details": "Configure Auth0 email templates for verification and password reset. Implement password reset request UI and flow. Create email verification UI components. Add email verification status check. Implement re-send verification email functionality.",
-            "status": "pending",
-            "testStrategy": "Test password reset flow end-to-end. Verify email verification process works correctly. Test re-sending verification emails. Verify appropriate access restrictions for unverified accounts."
+            "details": "Configure Auth0 email templates for verification and password reset. Implement password reset request UI and flow. Create email verification UI components. Add email verification status check. Implement re-send verification email functionality.\n<info added on 2026-09-03T11:08:48Z>\nCancelled: Auth0 hosted password reset and email verification; not a custom Nest feature.\n</info>",
+            "status": "cancelled",
+            "testStrategy": "Test password reset flow end-to-end. Verify email verification process works correctly. Test re-sending verification emails. Verify appropriate access restrictions for unverified accounts.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the Auth0 integration into detailed subtasks covering: 1) Auth0 tenant configuration and API setup, 2) Frontend authentication flows and protected routes, 3) Backend JWT validation and session management, and 4) Role-based access control implementation."
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "ID Verification Integration",
         "description": "Integrate Persona/Onfido for identity verification and implement the verification flow in the application.",
-        "details": "1. Set up Persona or Onfido account and API credentials\n2. Implement frontend components for ID verification process\n3. Create backend API endpoints to handle verification requests and callbacks\n4. Store verification status and results in the database\n5. Implement verification status checks throughout the application\n6. Create admin dashboard for manual verification review if needed\n7. Handle verification failure scenarios and user feedback",
+        "details": "1. Set up Persona or Onfido account and API credentials\n2. Implement frontend components for ID verification process\n3. Create backend API endpoints to handle verification requests and callbacks\n4. Store verification status and results in the database\n5. Implement verification status checks throughout the application\n6. Create admin dashboard for manual verification review if needed\n7. Handle verification failure scenarios and user feedback\n<info added on 2026-09-03T11:08:48Z>\nDeferred 3 Sep 2026: PRD IDV is not started and is not blocking a honest local event loop. Do task 26 (ownership, Stripe bind, attendee tickets) and task 1.5 (real CI) first.\n</info>",
         "testStrategy": "Test verification flow with test credentials provided by Persona/Onfido. Verify that verification status is correctly stored and retrieved. Test edge cases like verification failures and retries.",
         "priority": "high",
         "dependencies": [
-          2,
-          3
+          "2",
+          "3"
         ],
-        "status": "pending",
+        "status": "deferred",
         "subtasks": [
           {
             "id": 1,
@@ -217,7 +254,8 @@
             "dependencies": [],
             "details": "Research both Persona and Onfido to determine the best fit for the application requirements. Create an account with the chosen provider. Generate API keys and configure webhook endpoints. Set up test environments for development. Document the integration process and API credentials securely.",
             "status": "pending",
-            "testStrategy": "Verify API credentials work correctly in test environment. Confirm webhook configurations are properly set up. Test basic API connectivity."
+            "testStrategy": "Verify API credentials work correctly in test environment. Confirm webhook configurations are properly set up. Test basic API connectivity.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -228,7 +266,8 @@
             ],
             "details": "Design and implement UI components for user identity verification including document upload, selfie capture, and verification status screens. Integrate the provider's SDK or API for frontend implementation. Create a seamless user experience with clear instructions and error handling. Implement responsive design for mobile and desktop verification.",
             "status": "pending",
-            "testStrategy": "Test the verification flow with various document types and scenarios. Verify responsive design works across devices. Test error handling and user feedback mechanisms."
+            "testStrategy": "Test the verification flow with various document types and scenarios. Verify responsive design works across devices. Test error handling and user feedback mechanisms.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -239,7 +278,8 @@
             ],
             "details": "Implement API endpoints to initiate verification sessions, handle webhook callbacks from the provider, and process verification results. Create database schema for storing verification status, history, and related user data. Implement secure storage of verification data with proper encryption. Create services to query verification status.",
             "status": "pending",
-            "testStrategy": "Test API endpoints with mock verification data. Verify webhook handling correctly processes provider callbacks. Test database operations for storing and retrieving verification data."
+            "testStrategy": "Test API endpoints with mock verification data. Verify webhook handling correctly processes provider callbacks. Test database operations for storing and retrieving verification data.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -251,7 +291,8 @@
             ],
             "details": "Implement middleware or services to check verification status at critical points in the application. Create user feedback mechanisms for verification failures with clear instructions for resolution. Implement retry logic for failed verifications. Add verification status indicators in the user interface. Create notification system for verification status updates.",
             "status": "pending",
-            "testStrategy": "Test verification status checks in various application flows. Verify failure scenarios are handled gracefully with proper user feedback. Test retry mechanisms and status updates."
+            "testStrategy": "Test verification status checks in various application flows. Verify failure scenarios are handled gracefully with proper user feedback. Test retry mechanisms and status updates.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -263,20 +304,24 @@
             ],
             "details": "Design and implement an admin dashboard for reviewing verification submissions. Create interfaces for manual approval, rejection, or requesting additional information. Implement filtering and sorting of verification requests by status, date, and other criteria. Add audit logging for admin actions. Implement admin notification system for new verification requests requiring review.",
             "status": "pending",
-            "testStrategy": "Test admin dashboard functionality with various verification scenarios. Verify admin actions are properly recorded and affect user verification status. Test notification system for new verification requests."
+            "testStrategy": "Test admin dashboard functionality with various verification scenarios. Verify admin actions are properly recorded and affect user verification status. Test notification system for new verification requests.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the ID verification integration into detailed subtasks covering: 1) Persona/Onfido API integration and credential management, 2) Frontend verification flow and UI components, 3) Backend verification endpoints and webhook handlers, and 4) Verification status management and admin review system."
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "User Onboarding Flow",
         "description": "Implement the complete user onboarding flow including signup, ID verification, consent preferences, and invite code validation.",
         "details": "1. Design and implement multi-step onboarding UI in Next.js\n2. Create form components for collecting user information\n3. Implement consent preferences selection with clear explanations\n4. Create invite code validation logic\n5. Integrate with Auth0 and ID verification services\n6. Implement progress tracking and ability to resume onboarding\n7. Create backend API endpoints for storing onboarding data\n8. Implement email notifications for onboarding status updates",
         "testStrategy": "Test the complete onboarding flow with various user inputs. Verify that all steps are completed correctly and data is stored properly. Test invite code validation with valid and invalid codes.",
         "priority": "high",
         "dependencies": [
-          3,
-          4
+          "3",
+          "4"
         ],
         "status": "pending",
         "subtasks": [
@@ -287,7 +332,8 @@
             "dependencies": [],
             "details": "Create a responsive multi-step form interface with progress indicators, form validation, and the ability to save progress and resume later. Implement UI components for each step of the onboarding flow including signup, ID verification, consent preferences, and invite code validation screens.",
             "status": "pending",
-            "testStrategy": "Test UI responsiveness across devices, verify form validation works correctly, and ensure progress is accurately tracked and can be resumed from the correct step."
+            "testStrategy": "Test UI responsiveness across devices, verify form validation works correctly, and ensure progress is accurately tracked and can be resumed from the correct step.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -298,7 +344,8 @@
             ],
             "details": "Configure Auth0 for user signup and authentication. Implement the ID verification flow using Persona/Onfido API, including capturing user documents, performing verification checks, and handling verification results. Create the necessary frontend components and backend endpoints to support the verification process.",
             "status": "pending",
-            "testStrategy": "Test authentication flows with test credentials, verify ID verification process works with test documents, and ensure verification status is correctly stored and retrieved."
+            "testStrategy": "Test authentication flows with test credentials, verify ID verification process works with test documents, and ensure verification status is correctly stored and retrieved.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -309,7 +356,8 @@
             ],
             "details": "Create UI components for displaying consent options with clear explanations. Implement functionality to capture and store user consent preferences for data usage, communications, and privacy settings. Ensure compliance with relevant regulations like GDPR and CCPA.",
             "status": "pending",
-            "testStrategy": "Verify all consent options are clearly explained, test that user preferences are correctly saved, and ensure consent can be modified later in user settings."
+            "testStrategy": "Verify all consent options are clearly explained, test that user preferences are correctly saved, and ensure consent can be modified later in user settings.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -320,7 +368,8 @@
             ],
             "details": "Develop the backend logic for generating, validating, and managing invite codes. Create frontend components for users to enter and validate invite codes during onboarding. Implement error handling for invalid codes and rate limiting to prevent brute force attempts.",
             "status": "pending",
-            "testStrategy": "Test invite code validation with valid and invalid codes, verify error messages are displayed appropriately, and ensure rate limiting works correctly."
+            "testStrategy": "Test invite code validation with valid and invalid codes, verify error messages are displayed appropriately, and ensure rate limiting works correctly.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -333,22 +382,26 @@
             ],
             "details": "Develop FastAPI endpoints to store and retrieve user onboarding data. Implement database models and migrations for storing user information, verification status, consent preferences, and invite code usage. Create an email notification system to update users on their onboarding progress and verification status.",
             "status": "pending",
-            "testStrategy": "Test API endpoints with various input scenarios, verify data is correctly stored in the database, and ensure email notifications are sent at appropriate stages of the onboarding process."
+            "testStrategy": "Test API endpoints with various input scenarios, verify data is correctly stored in the database, and ensure email notifications are sent at appropriate stages of the onboarding process.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the user onboarding flow into detailed subtasks covering: 1) Multi-step onboarding UI and state management, 2) Form validation and data collection, 3) Integration with authentication and verification services, and 4) Onboarding progress tracking and resumption functionality."
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "Event Creation and Management",
-        "description": "Implement functionality for hosts to create, edit, and manage events, including setting capacity, location, and other details.",
+        "description": "Event CRUD + draft/publish/cancel exist. Missing hostId: any host can mutate any event. Ownership is task 26.1.",
         "details": "1. Create event creation form with validation\n2. Implement event editing and deletion functionality\n3. Add support for setting event capacity, location, date/time\n4. Create event dashboard for hosts to manage their events\n5. Implement event status management (draft, published, cancelled)\n6. Add functionality to generate and manage invite codes\n7. Create backend API endpoints for event CRUD operations\n8. Implement event search and filtering functionality",
         "testStrategy": "Test event creation, editing, and deletion with various inputs. Verify that validation works correctly. Test event management dashboard functionality.",
         "priority": "high",
         "dependencies": [
-          2,
-          3
+          "2",
+          "3"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -356,8 +409,9 @@
             "description": "Develop a comprehensive event creation form with client-side and server-side validation for all event details",
             "dependencies": [],
             "details": "Build a form with fields for event title, description, date/time, location, capacity, and other relevant details. Implement validation for required fields, date formats, capacity limits, and other constraints. Include error messaging and visual feedback for validation failures.",
-            "status": "pending",
-            "testStrategy": "Test form submission with valid and invalid inputs. Verify validation error messages appear correctly. Test edge cases like past dates and maximum capacity values."
+            "status": "done",
+            "testStrategy": "Test form submission with valid and invalid inputs. Verify validation error messages appear correctly. Test edge cases like past dates and maximum capacity values.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -367,8 +421,9 @@
               "6.1"
             ],
             "details": "Develop RESTful API endpoints for event management including POST /events, GET /events/:id, PUT /events/:id, DELETE /events/:id. Implement proper authentication and authorization checks. Include data validation, error handling, and appropriate HTTP status codes.",
-            "status": "pending",
-            "testStrategy": "Test API endpoints with various request payloads. Verify authentication requirements. Test error handling for invalid inputs and unauthorized access attempts."
+            "status": "done",
+            "testStrategy": "Test API endpoints with various request payloads. Verify authentication requirements. Test error handling for invalid inputs and unauthorized access attempts.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -378,8 +433,9 @@
               "6.2"
             ],
             "details": "Develop a dashboard showing all events created by the host with filtering and sorting options. Include event metrics (registrations, capacity), status indicators, and quick action buttons for editing, publishing, or cancelling events. Implement pagination for hosts with many events.",
-            "status": "pending",
-            "testStrategy": "Test dashboard loading with various numbers of events. Verify filtering and sorting functionality. Test event status changes and confirm they update in real-time."
+            "status": "in-progress",
+            "testStrategy": "Test dashboard loading with various numbers of events. Verify filtering and sorting functionality. Test event status changes and confirm they update in real-time.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -390,8 +446,9 @@
               "6.3"
             ],
             "details": "Implement status transitions with appropriate validation (e.g., preventing cancellation of past events). Create visual indicators for each status. Add confirmation dialogs for status changes with potential impact. Implement notifications for attendees when event status changes.",
-            "status": "pending",
-            "testStrategy": "Test all status transitions and validation rules. Verify that appropriate notifications are sent when status changes. Test edge cases like attempting to publish incomplete events."
+            "status": "done",
+            "testStrategy": "Test all status transitions and validation rules. Verify that appropriate notifications are sent when status changes. Test edge cases like attempting to publish incomplete events.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -402,23 +459,27 @@
               "6.4"
             ],
             "details": "Implement secure code generation with configurable parameters (length, expiration). Create interface for hosts to view, copy, and revoke codes. Add functionality to track code usage and limit redemptions. Implement API endpoints for code validation and redemption.",
-            "status": "pending",
-            "testStrategy": "Test code generation with various parameters. Verify uniqueness across large numbers of codes. Test code redemption, expiration, and revocation functionality."
+            "status": "done",
+            "testStrategy": "Test code generation with various parameters. Verify uniqueness across large numbers of codes. Test code redemption, expiration, and revocation functionality.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the event management functionality into detailed subtasks covering: 1) Event CRUD operations and form validation, 2) Event dashboard and status management, and 3) Invite code generation and management system."
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "Event Application System",
-        "description": "Implement the system for attendees to apply to events and for hosts to approve or reject applications.",
+        "description": "Dynamic form schema, submit with invite, host list + approve/reject shipped. No email notifications (7.5). ApplicantSub body fallback remains a risk (task 26).",
         "details": "1. Create event application form with custom questions option for hosts\n2. Implement application submission and status tracking\n3. Create application review dashboard for hosts\n4. Implement approval/rejection functionality with optional feedback\n5. Add notification system for application status updates\n6. Create backend API endpoints for application management\n7. Implement application analytics for hosts (acceptance rate, etc.)",
         "testStrategy": "Test application submission with various inputs. Verify that hosts can review and respond to applications. Test notification delivery for status updates.",
         "priority": "medium",
         "dependencies": [
-          5,
-          6
+          "5",
+          "6"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -426,8 +487,9 @@
             "description": "Create a flexible form builder that allows event hosts to create custom application forms with various question types.",
             "dependencies": [],
             "details": "Implement a drag-and-drop interface for hosts to add, remove, and reorder questions. Support multiple question types including text, multiple choice, checkboxes, and file uploads. Allow hosts to mark questions as required or optional. Include validation rules for different question types.",
-            "status": "pending",
-            "testStrategy": "Test form creation with various question types. Verify validation rules work correctly. Test saving and loading form templates."
+            "status": "done",
+            "testStrategy": "Test form creation with various question types. Verify validation rules work correctly. Test saving and loading form templates.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -437,8 +499,9 @@
               "7.1"
             ],
             "details": "Create a user-friendly interface for filling out application forms. Implement form validation based on host requirements. Add progress saving functionality for long applications. Create a status tracking dashboard for applicants to view their pending, approved, or rejected applications.",
-            "status": "pending",
-            "testStrategy": "Test application submission with various input types. Verify form validation works correctly. Test partial saving and resuming applications. Verify status updates display correctly."
+            "status": "done",
+            "testStrategy": "Test application submission with various input types. Verify form validation works correctly. Test partial saving and resuming applications. Verify status updates display correctly.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -448,8 +511,9 @@
               "7.2"
             ],
             "details": "Implement a dashboard showing all applications with filtering options (pending, approved, rejected). Create detailed application view with all submitted information. Add bulk action capabilities for processing multiple applications. Implement search functionality to find specific applications.",
-            "status": "pending",
-            "testStrategy": "Test filtering and sorting applications. Verify all application data displays correctly. Test bulk actions on multiple applications. Verify search functionality returns correct results."
+            "status": "done",
+            "testStrategy": "Test filtering and sorting applications. Verify all application data displays correctly. Test bulk actions on multiple applications. Verify search functionality returns correct results.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -459,8 +523,9 @@
               "7.3"
             ],
             "details": "Create approve/reject buttons with confirmation dialogs. Implement feedback form for hosts to provide reasons for decisions. Add waitlist functionality for borderline applications. Create automated response templates that hosts can customize.",
-            "status": "pending",
-            "testStrategy": "Test approval and rejection workflows. Verify feedback is correctly associated with decisions. Test waitlist functionality. Verify response templates work correctly."
+            "status": "done",
+            "testStrategy": "Test approval and rejection workflows. Verify feedback is correctly associated with decisions. Test waitlist functionality. Verify response templates work correctly.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -471,22 +536,26 @@
             ],
             "details": "Create in-app notifications for application status changes. Implement email notifications with application decision details. Add customizable notification templates for different application statuses. Create notification preferences for users to control how they receive updates.",
             "status": "pending",
-            "testStrategy": "Test notification delivery across different channels. Verify notification content is correct for different status changes. Test notification preferences are respected."
+            "testStrategy": "Test notification delivery across different channels. Verify notification content is correct for different status changes. Test notification preferences are respected.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the event application system into detailed subtasks covering: 1) Application form creation with dynamic questions, 2) Application review dashboard and approval workflow, and 3) Notification system for application status updates."
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "QR Code Check-in System",
-        "description": "Implement QR code generation for approved attendees and a check-in system for hosts to scan and verify attendance.",
+        "description": "Host can issue/verify tokens. Attendee ticket page calls host-only POST /checkin/issue with userSub user|demo. Scan UI is paste, not camera. Fix is task 26.3.",
         "details": "1. Generate unique QR codes for approved attendees\n2. Implement QR code display in attendee dashboard\n3. Create QR code scanner functionality for hosts\n4. Implement check-in validation and attendance tracking\n5. Add real-time attendance updates for hosts\n6. Create check-in history and analytics\n7. Implement offline mode for QR scanning in case of connectivity issues\n8. Add manual check-in option as fallback",
         "testStrategy": "Test QR code generation and scanning with various devices. Verify that attendance is correctly recorded. Test offline mode functionality.",
         "priority": "medium",
         "dependencies": [
-          6,
-          7
+          "6",
+          "7"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -494,8 +563,9 @@
             "description": "Develop a system to generate unique QR codes for approved attendees with encrypted event and attendee information",
             "dependencies": [],
             "details": "Create a secure algorithm to generate unique QR codes containing encrypted attendee ID, event ID, and timestamp. Implement a database structure to store QR code data and validation status. Ensure QR codes are regenerated periodically for security.",
-            "status": "pending",
-            "testStrategy": "Test QR code uniqueness across multiple attendees. Verify encryption security. Test QR code validation with expired codes and invalid data."
+            "status": "in-progress",
+            "testStrategy": "Test QR code uniqueness across multiple attendees. Verify encryption security. Test QR code validation with expired codes and invalid data.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -506,7 +576,8 @@
             ],
             "details": "Add a dedicated section in the attendee dashboard to display the QR code. Implement download functionality for offline access. Add options to share QR code via email or messaging. Include clear instructions for attendees on how to use the QR code.",
             "status": "pending",
-            "testStrategy": "Test QR code rendering across different devices and screen sizes. Verify download functionality preserves QR code quality. Test sharing options with various platforms."
+            "testStrategy": "Test QR code rendering across different devices and screen sizes. Verify download functionality preserves QR code quality. Test sharing options with various platforms.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -516,8 +587,9 @@
               "8.1"
             ],
             "details": "Create a mobile-optimized QR scanner using device camera. Implement QR code validation against the database. Add visual and audio feedback for successful/failed scans. Include manual entry option for damaged QR codes. Develop offline scanning capability with local validation and synchronization.",
-            "status": "pending",
-            "testStrategy": "Test scanner in various lighting conditions. Verify scanning works across different device types. Test offline functionality with subsequent synchronization."
+            "status": "in-progress",
+            "testStrategy": "Test scanner in various lighting conditions. Verify scanning works across different device types. Test offline functionality with subsequent synchronization.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -528,7 +600,8 @@
             ],
             "details": "Create database structure for attendance records. Implement check-in validation logic with timestamp and location data. Develop duplicate check-in prevention. Add attendance status indicators (checked-in, no-show, etc.). Create API endpoints for attendance data retrieval.",
             "status": "pending",
-            "testStrategy": "Test concurrent check-ins for the same event. Verify duplicate check-in prevention. Test attendance data accuracy and completeness."
+            "testStrategy": "Test concurrent check-ins for the same event. Verify duplicate check-in prevention. Test attendance data accuracy and completeness.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -539,22 +612,26 @@
             ],
             "details": "Develop a real-time attendance dashboard showing check-in counts and percentages. Implement attendee list with search and filter functionality. Add attendance analytics with visual charts. Create check-in history view with export options. Implement notification system for attendance milestones.",
             "status": "pending",
-            "testStrategy": "Test real-time updates with multiple simultaneous check-ins. Verify dashboard accuracy against actual attendance data. Test export functionality with large datasets."
+            "testStrategy": "Test real-time updates with multiple simultaneous check-ins. Verify dashboard accuracy against actual attendance data. Test export functionality with large datasets.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the QR code check-in system into detailed subtasks covering: 1) QR code generation and display for attendees, 2) QR code scanning functionality with validation, and 3) Offline mode implementation and attendance tracking."
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "Stripe Connect Integration",
-        "description": "Integrate Stripe Connect for host payouts and implement payment processing for event tickets.",
+        "description": "Connect Express onboarding exists but hostId is a path param; UI hardcodes host-dev-123. No Checkout/PaymentIntent. Webhook returns 200 on verify failure. Bind + webhook: task 26.",
         "details": "1. Set up Stripe Connect account and API credentials\n2. Implement host onboarding to Stripe Connect\n3. Create payment processing for event tickets\n4. Implement automatic payouts to hosts\n5. Add payment dashboard for hosts to track earnings\n6. Implement refund processing for cancelled events\n7. Create payment receipt generation and delivery\n8. Implement webhook handling for Stripe events",
         "testStrategy": "Test payment processing with Stripe test credentials. Verify that hosts receive payouts correctly. Test refund processing and receipt generation.",
         "priority": "high",
         "dependencies": [
-          2,
-          6
+          "2",
+          "6"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -562,8 +639,9 @@
             "description": "Set up Stripe Connect account and API credentials for the platform",
             "dependencies": [],
             "details": "Create a Stripe Connect account for the platform, generate API keys, configure webhook endpoints, and set up the necessary platform settings for handling connected accounts and payments",
-            "status": "pending",
-            "testStrategy": "Verify API credentials work correctly in test mode and webhook endpoints receive test events"
+            "status": "in-progress",
+            "testStrategy": "Verify API credentials work correctly in test mode and webhook endpoints receive test events",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -573,8 +651,9 @@
               "9.1"
             ],
             "details": "Create frontend components and backend APIs for hosts to connect their Stripe accounts, handle OAuth flow, store connected account IDs, and implement verification status tracking",
-            "status": "pending",
-            "testStrategy": "Test the complete onboarding flow with test accounts, verify connected account data is stored correctly"
+            "status": "in-progress",
+            "testStrategy": "Test the complete onboarding flow with test accounts, verify connected account data is stored correctly",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -585,7 +664,8 @@
             ],
             "details": "Create payment intent creation, payment form components, handle successful payments, store transaction records, and implement payment status tracking for tickets",
             "status": "pending",
-            "testStrategy": "Test payment processing with various test cards, verify transaction records are created correctly"
+            "testStrategy": "Test payment processing with various test cards, verify transaction records are created correctly",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -597,7 +677,8 @@
             ],
             "details": "Create payout scheduling system, implement transfer creation to connected accounts, handle payout failures, implement payout status tracking, and create notification system for hosts",
             "status": "pending",
-            "testStrategy": "Test automatic payouts with test accounts, verify correct amounts are transferred, test failure scenarios"
+            "testStrategy": "Test automatic payouts with test accounts, verify correct amounts are transferred, test failure scenarios",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -608,21 +689,25 @@
               "9.4"
             ],
             "details": "Build dashboard UI for hosts to track earnings, implement webhook handlers for payment events, handle refund processing for cancelled events, and implement receipt generation and delivery",
-            "status": "pending",
-            "testStrategy": "Test dashboard with sample data, verify webhook handlers process events correctly, test refund processing and receipt generation"
+            "status": "in-progress",
+            "testStrategy": "Test dashboard with sample data, verify webhook handlers process events correctly, test refund processing and receipt generation",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the Stripe Connect integration into detailed subtasks covering: 1) Stripe Connect account setup and host onboarding, 2) Payment processing for event tickets, 3) Payout management and financial reporting, and 4) Webhook handling and error management."
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "Code of Conduct System",
         "description": "Implement a system for defining, displaying, and enforcing a code of conduct for events and the platform.",
         "details": "1. Create a default platform-wide code of conduct\n2. Allow hosts to customize code of conduct for specific events\n3. Implement code of conduct acceptance during event application\n4. Create a system to display and remind users of the code of conduct\n5. Implement violation reporting functionality\n6. Create admin dashboard for reviewing reported violations\n7. Implement consequences for violations (warnings, bans, etc.)",
         "testStrategy": "Test code of conduct customization and display. Verify that users must accept the code of conduct during application. Test violation reporting and review process.",
         "priority": "medium",
         "dependencies": [
-          5,
-          7
+          "5",
+          "7"
         ],
         "status": "pending",
         "subtasks": [
@@ -633,7 +718,8 @@
             "dependencies": [],
             "details": "Develop a comprehensive default code of conduct that covers common behavioral expectations, harassment policies, and consequences. Create a customization interface for event hosts to modify or extend the default code while maintaining core principles. Include version control to track changes to codes of conduct.",
             "status": "pending",
-            "testStrategy": "Verify default code of conduct displays correctly. Test host customization interface with various modifications. Ensure version history is properly maintained."
+            "testStrategy": "Verify default code of conduct displays correctly. Test host customization interface with various modifications. Ensure version history is properly maintained.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -644,7 +730,8 @@
             ],
             "details": "Create UI components to display the code of conduct during registration and event application flows. Implement checkbox confirmation and timestamp tracking of acceptance. Ensure the system stores acceptance records with version information of the accepted code.",
             "status": "pending",
-            "testStrategy": "Test acceptance flow in various scenarios. Verify acceptance records are properly stored with timestamps and version information. Test edge cases like updates to code of conduct after previous acceptance."
+            "testStrategy": "Test acceptance flow in various scenarios. Verify acceptance records are properly stored with timestamps and version information. Test edge cases like updates to code of conduct after previous acceptance.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -656,7 +743,8 @@
             ],
             "details": "Create a reporting form with violation categories mapped to code of conduct sections. Implement evidence upload capabilities (text, screenshots, etc.). Add optional anonymity features while ensuring sufficient information for investigation. Include severity classification options.",
             "status": "pending",
-            "testStrategy": "Test report submission with various violation types and evidence formats. Verify anonymity features work as expected. Test form validation and submission process."
+            "testStrategy": "Test report submission with various violation types and evidence formats. Verify anonymity features work as expected. Test form validation and submission process.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -667,7 +755,8 @@
             ],
             "details": "Develop a dashboard showing all reported violations with filtering and sorting capabilities. Implement status tracking (new, under review, resolved, etc.). Create tools for admins to communicate with reporters and alleged violators. Include documentation features for resolution actions taken.",
             "status": "pending",
-            "testStrategy": "Test dashboard functionality with various report scenarios. Verify status updates are tracked correctly. Test admin communication tools and documentation features."
+            "testStrategy": "Test dashboard functionality with various report scenarios. Verify status updates are tracked correctly. Test admin communication tools and documentation features.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -678,20 +767,24 @@
             ],
             "details": "Develop a graduated consequence system (warnings, temporary restrictions, permanent bans). Create templates for notification messages for different violation types and consequence levels. Implement account restriction functionality that can be applied temporarily or permanently. Add appeals process for users who wish to contest decisions.",
             "status": "pending",
-            "testStrategy": "Test application of different consequence levels. Verify restriction functionality works as expected. Test notification delivery to violators. Verify appeals process functions correctly."
+            "testStrategy": "Test application of different consequence levels. Verify restriction functionality works as expected. Test notification delivery to violators. Verify appeals process functions correctly.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 5,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the code of conduct system into detailed subtasks covering: 1) Code of conduct creation and customization, 2) Acceptance flow and display throughout the application, and 3) Violation reporting and enforcement mechanisms."
       },
       {
-        "id": 11,
+        "id": "11",
         "title": "Reporting System",
         "description": "Implement a system for users to report inappropriate behavior or safety concerns, with admin review capabilities.",
         "details": "1. Create report submission form with categorization\n2. Implement anonymous reporting option\n3. Create admin dashboard for reviewing reports\n4. Implement report status tracking and resolution\n5. Add notification system for report updates\n6. Create automated initial response based on report category\n7. Implement safety resources display based on report type\n8. Add ability to block users and prevent further interaction",
         "testStrategy": "Test report submission with various categories. Verify that admins can review and resolve reports. Test notification delivery for report updates.",
         "priority": "high",
         "dependencies": [
-          5,
-          10
+          "5",
+          "10"
         ],
         "status": "pending",
         "subtasks": [
@@ -702,7 +795,8 @@
             "dependencies": [],
             "details": "Implement a form with fields for report type (harassment, safety concern, technical issue, etc.), description, evidence upload, and toggle for anonymous reporting. Include validation and confirmation messages.",
             "status": "pending",
-            "testStrategy": "Test form submission with various categories and with/without anonymity. Verify validation works correctly and submissions are stored properly."
+            "testStrategy": "Test form submission with various categories and with/without anonymity. Verify validation works correctly and submissions are stored properly.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -713,7 +807,8 @@
             ],
             "details": "Create a dashboard showing all reports with filtering options, status indicators, and action buttons. Include detailed view of each report with resolution options and history tracking.",
             "status": "pending",
-            "testStrategy": "Test dashboard functionality with various report types. Verify filtering, sorting, and status updates work correctly. Test resolution workflows."
+            "testStrategy": "Test dashboard functionality with various report types. Verify filtering, sorting, and status updates work correctly. Test resolution workflows.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -725,7 +820,8 @@
             ],
             "details": "Create notification templates for report submission, status changes, and resolution. Integrate with the platform's notification system (Task 17) to deliver updates via in-app, email, and other channels.",
             "status": "pending",
-            "testStrategy": "Test notification delivery for various report status changes. Verify that appropriate parties receive relevant notifications and content is correct."
+            "testStrategy": "Test notification delivery for various report status changes. Verify that appropriate parties receive relevant notifications and content is correct.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -737,7 +833,8 @@
             ],
             "details": "Add functionality to block reported users, prevent further interaction between reporter and reported user, and display relevant safety resources based on report type. Include emergency contact information where appropriate.",
             "status": "pending",
-            "testStrategy": "Test blocking functionality to ensure users cannot interact after blocking. Verify safety resources display correctly based on report categories."
+            "testStrategy": "Test blocking functionality to ensure users cannot interact after blocking. Verify safety resources display correctly based on report categories.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -749,20 +846,24 @@
             ],
             "details": "Implement logic to generate appropriate initial responses based on report category. Create workflows for different report types with escalation paths for serious issues and automated resolution for minor concerns.",
             "status": "pending",
-            "testStrategy": "Test automated responses for all report categories. Verify escalation paths work correctly for serious issues and that appropriate follow-up actions are triggered."
+            "testStrategy": "Test automated responses for all report categories. Verify escalation paths work correctly for serious issues and that appropriate follow-up actions are triggered.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the reporting system into detailed subtasks covering: 1) Report submission with categorization and anonymity options, 2) Admin review dashboard and resolution workflow, and 3) Safety features including user blocking and automated responses."
       },
       {
-        "id": 12,
+        "id": "12",
         "title": "Data Privacy and Purge Rules",
         "description": "Implement data privacy controls and automatic data purging rules to comply with privacy best practices.",
         "details": "1. Create data retention policy implementation\n2. Implement automatic data purging for inactive accounts\n3. Create data export functionality for users\n4. Implement account deletion with data cleanup\n5. Add privacy controls for user profiles and activity\n6. Create audit logging for data access and modifications\n7. Implement data minimization practices throughout the application\n8. Add consent management for data processing",
         "testStrategy": "Test data purging with mock data. Verify that data export includes all required information. Test account deletion and confirm that data is properly removed.",
         "priority": "high",
         "dependencies": [
-          2,
-          5
+          "2",
+          "5"
         ],
         "status": "pending",
         "subtasks": [
@@ -773,7 +874,8 @@
             "dependencies": [],
             "details": "Define retention periods for different data categories (personal data, activity logs, messages, etc.). Create database schemas to track data creation and expiration dates. Implement automated database queries to identify data eligible for purging. Document the policy for compliance purposes.",
             "status": "pending",
-            "testStrategy": "Create test data with various timestamps and verify that the retention policy correctly identifies data for purging. Test edge cases like partially completed accounts and deleted user data."
+            "testStrategy": "Create test data with various timestamps and verify that the retention policy correctly identifies data for purging. Test edge cases like partially completed accounts and deleted user data.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -784,7 +886,8 @@
             ],
             "details": "Create a scheduled job that runs at regular intervals to identify inactive accounts. Implement soft deletion for user data before permanent removal. Add configurable thresholds for inactivity periods. Create notification system to alert users before data purging. Implement logging of all purge operations for audit purposes.",
             "status": "pending",
-            "testStrategy": "Test with mock inactive accounts of various durations. Verify that notification emails are sent correctly. Confirm that purged data is properly removed from all database tables while maintaining referential integrity."
+            "testStrategy": "Test with mock inactive accounts of various durations. Verify that notification emails are sent correctly. Confirm that purged data is properly removed from all database tables while maintaining referential integrity.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -793,7 +896,8 @@
             "dependencies": [],
             "details": "Create API endpoints for data export requests. Develop a background job to gather and package all user data from various tables. Generate downloadable files in standard formats (JSON, CSV). Implement access controls to ensure only authorized users can access exported data. Add rate limiting to prevent abuse of the export feature.",
             "status": "pending",
-            "testStrategy": "Test the export functionality with accounts containing various types of data. Verify that all required data is included in exports. Test with large data volumes to ensure performance."
+            "testStrategy": "Test the export functionality with accounts containing various types of data. Verify that all required data is included in exports. Test with large data volumes to ensure performance.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -805,7 +909,8 @@
             ],
             "details": "Create account deletion workflow with confirmation steps. Implement cascading deletion across related database tables. Develop anonymization process for data that must be retained (e.g., for analytics). Create admin interface for managing deletion requests. Implement compliance with legal requirements for data deletion.",
             "status": "pending",
-            "testStrategy": "Test account deletion with accounts having various relationships to other data. Verify that all personal data is properly removed or anonymized. Test the restoration process for accounts deleted by mistake."
+            "testStrategy": "Test account deletion with accounts having various relationships to other data. Verify that all personal data is properly removed or anonymized. Test the restoration process for accounts deleted by mistake.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -814,20 +919,24 @@
             "dependencies": [],
             "details": "Create user interface for managing privacy preferences. Implement granular consent options for different data processing activities. Develop a consent storage system that tracks consent history. Create API endpoints to check consent status before processing data. Implement privacy by default settings for new accounts. Add consent withdrawal functionality with appropriate data handling.",
             "status": "pending",
-            "testStrategy": "Test consent management with various user scenarios. Verify that data processing respects user consent preferences. Test consent withdrawal and confirm that it properly updates processing permissions."
+            "testStrategy": "Test consent management with various user scenarios. Verify that data processing respects user consent preferences. Test consent withdrawal and confirm that it properly updates processing permissions.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 9,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the data privacy implementation into detailed subtasks covering: 1) Data retention policy and automated purging system, 2) User data export and account deletion functionality, 3) Privacy controls and consent management, and 4) Audit logging and compliance reporting."
       },
       {
-        "id": 13,
+        "id": "13",
         "title": "Event Chat System",
         "description": "Implement a chat system for event participants that activates 48 hours before the event and includes host broadcast capabilities.",
         "details": "1. Create real-time chat functionality using WebSockets\n2. Implement time-based chat activation (48h before event)\n3. Add host broadcast messaging capability\n4. Implement chat moderation tools for hosts\n5. Create opt-in direct messaging between attendees\n6. Add message reporting functionality\n7. Implement chat history with search capability\n8. Create notification system for new messages",
         "testStrategy": "Test chat functionality with multiple users. Verify that chat activates at the correct time. Test host broadcasts and moderation tools.",
         "priority": "medium",
         "dependencies": [
-          6,
-          8
+          "6",
+          "8"
         ],
         "status": "pending",
         "subtasks": [
@@ -838,7 +947,8 @@
             "dependencies": [],
             "details": "Set up WebSocket server, implement connection handling, create message broadcasting mechanism, handle reconnection scenarios, and ensure proper authentication for chat participants",
             "status": "pending",
-            "testStrategy": "Test with multiple concurrent users, verify message delivery, test reconnection scenarios, and measure performance under load"
+            "testStrategy": "Test with multiple concurrent users, verify message delivery, test reconnection scenarios, and measure performance under load",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -849,7 +959,8 @@
             ],
             "details": "Create scheduler to track event timing, implement chat availability logic based on event start time, add database flags for chat activation status, ensure timezone handling, and create fallback mechanisms",
             "status": "pending",
-            "testStrategy": "Test activation timing with events in different timezones, verify chat availability state changes, and test edge cases around the 48-hour threshold"
+            "testStrategy": "Test activation timing with events in different timezones, verify chat availability state changes, and test edge cases around the 48-hour threshold",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -861,7 +972,8 @@
             ],
             "details": "Implement host-only UI controls, create broadcast message type with special styling, develop message removal functionality, add user muting/blocking capabilities, and implement automated content filtering",
             "status": "pending",
-            "testStrategy": "Test broadcast delivery to all participants, verify moderation actions take effect immediately, and test content filtering against inappropriate content"
+            "testStrategy": "Test broadcast delivery to all participants, verify moderation actions take effect immediately, and test content filtering against inappropriate content",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -873,7 +985,8 @@
             ],
             "details": "Implement private messaging channels, create opt-in settings UI, develop message reporting workflow, integrate with existing reporting system, and add blocking capabilities",
             "status": "pending",
-            "testStrategy": "Test private message delivery, verify opt-in functionality works as expected, test report submission process, and verify blocked users cannot send messages"
+            "testStrategy": "Test private message delivery, verify opt-in functionality works as expected, test report submission process, and verify blocked users cannot send messages",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -887,20 +1000,24 @@
             ],
             "details": "Create database schema for message history, implement search functionality with indexing, develop unread message tracking, integrate with notification system, and implement message read receipts",
             "status": "pending",
-            "testStrategy": "Test search functionality with various queries, verify notifications are sent for new messages, test history retrieval performance, and verify read receipts function correctly"
+            "testStrategy": "Test search functionality with various queries, verify notifications are sent for new messages, test history retrieval performance, and verify read receipts function correctly",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the event chat system into detailed subtasks covering: 1) Real-time messaging with WebSockets, 2) Time-based activation and host broadcast features, and 3) Moderation tools and message reporting functionality."
       },
       {
-        "id": 14,
+        "id": "14",
         "title": "Consent Preferences System",
         "description": "Implement a comprehensive system for users to set and update their consent preferences for various interactions.",
         "details": "1. Create consent preferences form with clear explanations\n2. Implement storage and retrieval of consent preferences\n3. Add consent verification throughout the application\n4. Create visual indicators for consent status\n5. Implement consent update functionality with history tracking\n6. Add consent preference matching for interactions\n7. Create admin dashboard for consent preference analytics\n8. Implement consent preference export functionality",
         "testStrategy": "Test consent preference setting and updating. Verify that consent checks are performed correctly throughout the application. Test consent preference matching between users.",
         "priority": "high",
         "dependencies": [
-          5,
-          12
+          "5",
+          "12"
         ],
         "status": "pending",
         "subtasks": [
@@ -911,7 +1028,8 @@
             "dependencies": [],
             "details": "Create a comprehensive form with toggles/checkboxes for different consent types (marketing, data sharing, etc.). Include clear explanations for each consent type using plain language. Design should be accessible and responsive across devices. Implement form validation to ensure proper consent capture.",
             "status": "pending",
-            "testStrategy": "Test UI across different devices and screen sizes. Verify accessibility compliance. Conduct user testing to ensure consent explanations are clear and understandable."
+            "testStrategy": "Test UI across different devices and screen sizes. Verify accessibility compliance. Conduct user testing to ensure consent explanations are clear and understandable.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -922,7 +1040,8 @@
             ],
             "details": "Design database schema for consent preferences with timestamp tracking. Implement API endpoints for storing and retrieving consent data. Create versioning system for consent history. Ensure GDPR compliance with proper data retention policies. Implement encryption for sensitive consent data.",
             "status": "pending",
-            "testStrategy": "Test data persistence and retrieval accuracy. Verify history tracking works correctly. Test performance with large volumes of consent records."
+            "testStrategy": "Test data persistence and retrieval accuracy. Verify history tracking works correctly. Test performance with large volumes of consent records.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -933,7 +1052,8 @@
             ],
             "details": "Create middleware for checking consent before relevant actions. Implement consent verification in all user interaction flows. Add consent checks before sending notifications or communications. Create API for third-party integrations to verify consent. Implement caching for frequently accessed consent data to improve performance.",
             "status": "pending",
-            "testStrategy": "Test that interactions respect user consent settings. Verify that consent checks are performed correctly throughout the application. Test edge cases like expired or partially given consent."
+            "testStrategy": "Test that interactions respect user consent settings. Verify that consent checks are performed correctly throughout the application. Test edge cases like expired or partially given consent.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -945,7 +1065,8 @@
             ],
             "details": "Implement user dashboard for viewing and updating consent preferences. Create admin dashboard with consent analytics and reporting. Add consent export functionality in compliance with data portability requirements. Implement filtering and search capabilities for consent records. Create visualization of consent trends and patterns.",
             "status": "pending",
-            "testStrategy": "Test dashboard functionality for both users and admins. Verify export functionality produces correct data formats. Test analytics accuracy with various data scenarios."
+            "testStrategy": "Test dashboard functionality for both users and admins. Verify export functionality produces correct data formats. Test analytics accuracy with various data scenarios.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -957,19 +1078,23 @@
             ],
             "details": "Create algorithms to match users based on compatible consent preferences. Implement visual indicators for consent status in user interactions. Add consent preference matching for event invitations and communications. Create notification system for consent preference conflicts. Implement automated suggestions for resolving consent mismatches.",
             "status": "pending",
-            "testStrategy": "Test matching algorithms with various consent preference combinations. Verify that visual indicators correctly represent consent status. Test notification delivery for consent conflicts and updates."
+            "testStrategy": "Test matching algorithms with various consent preference combinations. Verify that visual indicators correctly represent consent status. Test notification delivery for consent conflicts and updates.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the consent preferences system into detailed subtasks covering: 1) Consent preference UI and data model, 2) Consent verification throughout the application, 3) Preference matching for user interactions, and 4) Consent history tracking and analytics."
       },
       {
-        "id": 15,
+        "id": "15",
         "title": "Post-Event Feedback System",
         "description": "Implement a system for collecting and analyzing post-event feedback, including vibe scores and comments.",
         "details": "1. Create post-event feedback form with vibe scoring\n2. Implement feedback collection timing (after event ends)\n3. Add feedback analytics for hosts\n4. Create feedback history for attendees\n5. Implement anonymous feedback option\n6. Add feedback moderation for inappropriate content\n7. Create feedback-based recommendations for future events\n8. Implement feedback export functionality for hosts",
         "testStrategy": "Test feedback submission with various inputs. Verify that feedback is correctly associated with events and users. Test feedback analytics and export functionality.",
         "priority": "medium",
         "dependencies": [
-          8
+          "8"
         ],
         "status": "pending",
         "subtasks": [
@@ -980,7 +1105,8 @@
             "dependencies": [],
             "details": "Design and implement a user-friendly feedback form that includes a vibe scoring system (1-10 scale), comment fields for detailed feedback, and an option for anonymous submissions. Ensure the form is accessible and responsive across all devices.",
             "status": "pending",
-            "testStrategy": "Test form submission with various inputs, validate form data integrity, and verify proper storage of feedback data in the database."
+            "testStrategy": "Test form submission with various inputs, validate form data integrity, and verify proper storage of feedback data in the database.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -991,7 +1117,8 @@
             ],
             "details": "Develop a system that automatically sends feedback requests to attendees after an event concludes. Include configurable timing options (immediate, 1 hour after, 24 hours after) and follow-up reminders for non-respondents.",
             "status": "pending",
-            "testStrategy": "Test timing triggers with various event end scenarios, verify notification delivery, and ensure reminders are sent only to non-respondents."
+            "testStrategy": "Test timing triggers with various event end scenarios, verify notification delivery, and ensure reminders are sent only to non-respondents.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1003,7 +1130,8 @@
             ],
             "details": "Develop an analytics dashboard that displays aggregated feedback data including average vibe scores, sentiment analysis of comments, attendance-to-feedback ratio, and trend analysis across multiple events. Include filtering and sorting capabilities.",
             "status": "pending",
-            "testStrategy": "Test dashboard with various data sets, verify accurate calculations and visualizations, and ensure proper access controls for hosts."
+            "testStrategy": "Test dashboard with various data sets, verify accurate calculations and visualizations, and ensure proper access controls for hosts.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1014,7 +1142,8 @@
             ],
             "details": "Create an automated moderation system that flags potentially inappropriate content in feedback submissions using keyword filtering and sentiment analysis. Include a manual review queue for flagged content and options for hosts to approve, edit, or remove feedback.",
             "status": "pending",
-            "testStrategy": "Test with various types of inappropriate content, verify flagging accuracy, and ensure proper functioning of the review process."
+            "testStrategy": "Test with various types of inappropriate content, verify flagging accuracy, and ensure proper functioning of the review process.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1026,20 +1155,24 @@
             ],
             "details": "Develop export functionality in multiple formats (CSV, PDF, JSON) and create a recommendation engine that analyzes feedback patterns to suggest improvements for future events. Include integration with event planning features to apply learnings automatically.",
             "status": "pending",
-            "testStrategy": "Test export functionality with large datasets, verify file integrity and format correctness, and validate recommendation accuracy based on feedback patterns."
+            "testStrategy": "Test export functionality with large datasets, verify file integrity and format correctness, and validate recommendation accuracy based on feedback patterns.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the post-event feedback system into detailed subtasks covering: 1) Feedback collection forms and timing mechanisms, 2) Feedback analytics and reporting for hosts, and 3) Anonymous feedback and moderation functionality."
       },
       {
-        "id": 16,
+        "id": "16",
         "title": "Reputation System",
         "description": "Implement a reputation system based on attendance, feedback, and behavior to encourage positive interactions.",
         "details": "1. Design reputation score calculation algorithm\n2. Implement reputation score updates based on various factors\n3. Create reputation history tracking\n4. Add reputation level badges and benefits\n5. Implement reputation score display on profiles\n6. Create reputation analytics for platform admins\n7. Add reputation recovery mechanisms for users\n8. Implement reputation-based access to exclusive events",
         "testStrategy": "Test reputation score calculation with various scenarios. Verify that reputation updates correctly based on user actions. Test reputation level transitions and benefits.",
         "priority": "medium",
         "dependencies": [
-          8,
-          15
+          "8",
+          "15"
         ],
         "status": "pending",
         "subtasks": [
@@ -1050,7 +1183,8 @@
             "dependencies": [],
             "details": "Define reputation score components (attendance rate, feedback ratings, behavior reports), establish weighting for each factor, determine score ranges and thresholds for different reputation levels, create documentation for the algorithm logic, and design a database schema to store reputation data",
             "status": "pending",
-            "testStrategy": "Test algorithm with various user scenarios including perfect attendance, mixed feedback, and edge cases to ensure fair and accurate scoring"
+            "testStrategy": "Test algorithm with various user scenarios including perfect attendance, mixed feedback, and edge cases to ensure fair and accurate scoring",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1061,7 +1195,8 @@
             ],
             "details": "Create database models for reputation history, implement API endpoints for reputation updates, develop scheduled jobs for recalculating reputation scores, build reputation history tracking with timestamps, and implement data validation for reputation updates",
             "status": "pending",
-            "testStrategy": "Verify reputation updates occur correctly after various user actions, test history tracking accuracy, and ensure data integrity during concurrent updates"
+            "testStrategy": "Verify reputation updates occur correctly after various user actions, test history tracking accuracy, and ensure data integrity during concurrent updates",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1073,7 +1208,8 @@
             ],
             "details": "Design reputation score visualizations, create badge icons for different reputation levels, implement reputation history timeline view, develop tooltips explaining reputation factors, and ensure responsive design for all reputation UI components",
             "status": "pending",
-            "testStrategy": "Test UI rendering across different devices, verify badge display logic, and ensure accessibility compliance for all reputation components"
+            "testStrategy": "Test UI rendering across different devices, verify badge display logic, and ensure accessibility compliance for all reputation components",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1084,7 +1220,8 @@
             ],
             "details": "Implement exclusive event access for high-reputation users, create reputation-based invitation limits, develop early access features for trusted users, implement reputation recovery mechanisms for users with declining scores, and create documentation for reputation-based features",
             "status": "pending",
-            "testStrategy": "Test access control based on reputation thresholds, verify reputation recovery mechanisms work as expected, and ensure benefits are correctly applied at each reputation level"
+            "testStrategy": "Test access control based on reputation thresholds, verify reputation recovery mechanisms work as expected, and ensure benefits are correctly applied at each reputation level",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1095,20 +1232,24 @@
             ],
             "details": "Develop reputation distribution visualizations, implement user segment analysis by reputation, create reports for reputation changes over time, build tools for manually adjusting reputation in exceptional cases, and implement export functionality for reputation data",
             "status": "pending",
-            "testStrategy": "Test dashboard with large datasets, verify accuracy of analytics calculations, and ensure admin controls for reputation management function correctly"
+            "testStrategy": "Test dashboard with large datasets, verify accuracy of analytics calculations, and ensure admin controls for reputation management function correctly",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the reputation system into detailed subtasks covering: 1) Reputation score algorithm and calculation, 2) Reputation history and level management, 3) Profile display and badge implementation, and 4) Reputation-based access control for exclusive features."
       },
       {
-        "id": 17,
+        "id": "17",
         "title": "Notification System",
         "description": "Implement a comprehensive notification system for application updates, event reminders, and important alerts.",
         "details": "1. Create in-app notification center\n2. Implement email notification delivery\n3. Add SMS notifications for critical alerts\n4. Create notification preferences management\n5. Implement notification templates for various scenarios\n6. Add real-time notification delivery using WebSockets\n7. Create notification history and archiving\n8. Implement notification analytics for engagement tracking",
         "testStrategy": "Test notification delivery across different channels. Verify that notification preferences are respected. Test real-time notification delivery.",
         "priority": "medium",
         "dependencies": [
-          5,
-          13
+          "5",
+          "13"
         ],
         "status": "pending",
         "subtasks": [
@@ -1119,7 +1260,8 @@
             "dependencies": [],
             "details": "Create a notification center component that shows unread/read notifications, implement notification badges for unread items, design notification card components with appropriate styling, add ability to mark notifications as read/unread, and implement pagination for notification history.",
             "status": "pending",
-            "testStrategy": "Test notification display with various notification types, verify read/unread status changes, test pagination functionality, and ensure proper rendering on different screen sizes."
+            "testStrategy": "Test notification display with various notification types, verify read/unread status changes, test pagination functionality, and ensure proper rendering on different screen sizes.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1130,7 +1272,8 @@
             ],
             "details": "Set up email delivery service integration (SendGrid/Mailchimp), implement SMS notification capability for critical alerts using Twilio, create notification queue system for reliable delivery, implement retry logic for failed notifications, and ensure proper formatting for each channel.",
             "status": "pending",
-            "testStrategy": "Test notification delivery to each channel, verify proper formatting across channels, test retry mechanism with simulated failures, and validate notification content in each medium."
+            "testStrategy": "Test notification delivery to each channel, verify proper formatting across channels, test retry mechanism with simulated failures, and validate notification content in each medium.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1141,7 +1284,8 @@
             ],
             "details": "Design and implement preference settings UI, create database schema for storing user preferences, implement preference toggle controls by notification type and channel, add ability to set quiet hours/do not disturb periods, and ensure preferences are respected during notification dispatch.",
             "status": "pending",
-            "testStrategy": "Test preference changes are saved correctly, verify notifications respect user preferences, test quiet hours functionality, and ensure preference changes take immediate effect."
+            "testStrategy": "Test preference changes are saved correctly, verify notifications respect user preferences, test quiet hours functionality, and ensure preference changes take immediate effect.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1153,7 +1297,8 @@
             ],
             "details": "Set up WebSocket server infrastructure, implement client-side WebSocket connection handling, create notification subscription mechanism, implement real-time notification dispatch system, and add fallback mechanisms for when WebSockets are unavailable.",
             "status": "pending",
-            "testStrategy": "Test real-time notification delivery speed, verify notifications appear without page refresh, test reconnection logic when connection is lost, and validate notification receipt across multiple connected devices."
+            "testStrategy": "Test real-time notification delivery speed, verify notifications appear without page refresh, test reconnection logic when connection is lost, and validate notification receipt across multiple connected devices.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1167,21 +1312,25 @@
             ],
             "details": "Create notification history and archiving system, implement analytics tracking for notification engagement (open rates, click-through rates), design admin dashboard for notification management, add capability to create and manage notification templates, and implement bulk notification sending functionality.",
             "status": "pending",
-            "testStrategy": "Test analytics data collection accuracy, verify historical notification retrieval, test template creation and usage, and validate bulk notification sending capabilities."
+            "testStrategy": "Test analytics data collection accuracy, verify historical notification retrieval, test template creation and usage, and validate bulk notification sending capabilities.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the notification system into detailed subtasks covering: 1) In-app notification center and real-time delivery, 2) Email and SMS notification channels, 3) Notification preferences and template management, and 4) Notification history and analytics."
       },
       {
-        "id": 18,
+        "id": "18",
         "title": "Analytics Dashboard",
         "description": "Implement analytics dashboards for hosts and platform admins to track key metrics and performance indicators.",
         "details": "1. Create host analytics dashboard with event performance metrics\n2. Implement platform-wide analytics for admins\n3. Add key metric tracking (onboarding conversion, attendance rate, etc.)\n4. Create data visualization components\n5. Implement data export functionality\n6. Add custom report generation\n7. Create real-time analytics updates\n8. Implement analytics API for integration with external tools",
         "testStrategy": "Test analytics dashboard with mock data. Verify that metrics are calculated correctly. Test data export and report generation functionality.",
         "priority": "medium",
         "dependencies": [
-          8,
-          15,
-          16
+          "8",
+          "15",
+          "16"
         ],
         "status": "pending",
         "subtasks": [
@@ -1192,7 +1341,8 @@
             "dependencies": [],
             "details": "Design and implement UI components for host analytics dashboard. Include metrics such as attendance rates, feedback scores, and event popularity. Create data visualization components for these metrics using charts and graphs. Ensure the dashboard is responsive and user-friendly.",
             "status": "pending",
-            "testStrategy": "Test the host dashboard with mock event data. Verify all metrics are calculated and displayed correctly. Test responsiveness on different screen sizes."
+            "testStrategy": "Test the host dashboard with mock event data. Verify all metrics are calculated and displayed correctly. Test responsiveness on different screen sizes.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1203,7 +1353,8 @@
             ],
             "details": "Create admin-specific analytics views with platform-wide metrics such as total users, events created, verification rates, and platform growth. Implement filtering capabilities by date ranges, regions, and user types. Include trend analysis for key performance indicators.",
             "status": "pending",
-            "testStrategy": "Test admin dashboard with comprehensive mock data sets. Verify that aggregated metrics are accurate and that filtering functions work correctly."
+            "testStrategy": "Test admin dashboard with comprehensive mock data sets. Verify that aggregated metrics are accurate and that filtering functions work correctly.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1215,7 +1366,8 @@
             ],
             "details": "Create data collection services to track metrics including onboarding conversion rates, attendance rates, user retention, and event popularity. Implement scheduled jobs to calculate and update metrics. Design and implement database schema for storing analytics data efficiently.",
             "status": "pending",
-            "testStrategy": "Test metric calculations with various data scenarios. Verify accuracy of calculations and performance of queries. Test scheduled jobs with simulated time progression."
+            "testStrategy": "Test metric calculations with various data scenarios. Verify accuracy of calculations and performance of queries. Test scheduled jobs with simulated time progression.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1226,7 +1378,8 @@
             ],
             "details": "Create export functionality for analytics data in multiple formats (CSV, Excel, PDF). Implement custom report generation with user-selectable metrics and date ranges. Design report templates with branding and visualization components. Add scheduling capabilities for automated report generation.",
             "status": "pending",
-            "testStrategy": "Test export functionality with large datasets. Verify that exported data matches displayed data. Test custom report generation with various configurations and verify output format integrity."
+            "testStrategy": "Test export functionality with large datasets. Verify that exported data matches displayed data. Test custom report generation with various configurations and verify output format integrity.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1238,21 +1391,25 @@
             ],
             "details": "Design and implement RESTful API endpoints for accessing analytics data. Add authentication and rate limiting for API access. Implement WebSocket connections for real-time analytics updates. Create documentation for API usage. Develop integration examples for common external tools.",
             "status": "pending",
-            "testStrategy": "Test API endpoints with various authentication scenarios. Verify rate limiting functionality. Test real-time updates with simulated event triggers. Validate API documentation with sample requests."
+            "testStrategy": "Test API endpoints with various authentication scenarios. Verify rate limiting functionality. Test real-time updates with simulated event triggers. Validate API documentation with sample requests.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the analytics dashboard into detailed subtasks covering: 1) Data collection and metric calculation, 2) Visualization components and dashboard UI, and 3) Export functionality and custom reporting."
       },
       {
-        "id": 19,
+        "id": "19",
         "title": "Progressive Web App Implementation",
         "description": "Implement Progressive Web App (PWA) capabilities to provide a native-like experience on mobile devices.",
         "details": "1. Configure Next.js for PWA support\n2. Create service worker for offline functionality\n3. Implement app manifest for home screen installation\n4. Add push notification support\n5. Implement offline data synchronization\n6. Create responsive UI for various screen sizes\n7. Optimize performance for mobile devices\n8. Implement camera access for QR code scanning",
         "testStrategy": "Test PWA installation on various devices. Verify offline functionality works correctly. Test push notifications and camera access.",
         "priority": "medium",
         "dependencies": [
-          1,
-          8,
-          17
+          "1",
+          "8",
+          "17"
         ],
         "status": "pending",
         "subtasks": [
@@ -1262,8 +1419,9 @@
             "description": "Configure Next.js for PWA support and implement the app manifest for home screen installation",
             "dependencies": [],
             "details": "Install next-pwa package, configure next.config.js to enable PWA features, create manifest.json with app icons, name, description, and display properties, and ensure proper metadata in HTML head",
-            "status": "pending",
-            "testStrategy": "Verify PWA installation on various devices (iOS and Android), check Lighthouse PWA score, and validate manifest.json using web.dev tools"
+            "status": "in-progress",
+            "testStrategy": "Verify PWA installation on various devices (iOS and Android), check Lighthouse PWA score, and validate manifest.json using web.dev tools",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1274,7 +1432,8 @@
             ],
             "details": "Implement service worker registration, set up caching strategies for static assets, API responses, and pages, handle offline fallback pages, and implement versioning for cache updates",
             "status": "pending",
-            "testStrategy": "Test offline functionality by disabling network connection, verify cached resources are served correctly, and check service worker lifecycle events"
+            "testStrategy": "Test offline functionality by disabling network connection, verify cached resources are served correctly, and check service worker lifecycle events",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1285,7 +1444,8 @@
             ],
             "details": "Set up web push API integration, implement notification permission request flow, create backend endpoints for subscription management, develop notification templates, and implement client-side notification handling",
             "status": "pending",
-            "testStrategy": "Test notification permission flow, verify notifications display correctly on different devices, and validate subscription storage and retrieval"
+            "testStrategy": "Test notification permission flow, verify notifications display correctly on different devices, and validate subscription storage and retrieval",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1296,7 +1456,8 @@
             ],
             "details": "Set up IndexedDB for offline data storage, implement background sync API for deferred operations, create conflict resolution strategies, and develop UI indicators for offline/online status",
             "status": "pending",
-            "testStrategy": "Test data persistence during offline usage, verify synchronization when connection is restored, and validate conflict resolution in various scenarios"
+            "testStrategy": "Test data persistence during offline usage, verify synchronization when connection is restored, and validate conflict resolution in various scenarios",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1310,21 +1471,25 @@
             ],
             "details": "Implement responsive UI for various screen sizes, optimize performance through code splitting and lazy loading, implement camera access for QR code scanning, and ensure proper touch interactions and gestures",
             "status": "pending",
-            "testStrategy": "Test performance on various mobile devices, verify camera access functionality, and conduct usability testing for touch interactions"
+            "testStrategy": "Test performance on various mobile devices, verify camera access functionality, and conduct usability testing for touch interactions",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the PWA implementation into detailed subtasks covering: 1) Service worker and offline functionality, 2) App manifest and installation experience, and 3) Push notifications and device capability access."
       },
       {
-        "id": 20,
+        "id": "20",
         "title": "Admin Management Console",
         "description": "Implement an admin console for platform management, user moderation, and system configuration.",
         "details": "1. Create admin dashboard with user management\n2. Implement event moderation tools\n3. Add system configuration interface\n4. Create user verification management\n5. Implement report review and resolution\n6. Add analytics and metrics overview\n7. Create admin activity logging\n8. Implement role-based access control for admin functions",
         "testStrategy": "Test admin console with various admin roles. Verify that moderation tools work correctly. Test configuration changes and their effects on the system.",
         "priority": "medium",
         "dependencies": [
-          3,
-          11,
-          18
+          "3",
+          "11",
+          "18"
         ],
         "status": "pending",
         "subtasks": [
@@ -1335,7 +1500,8 @@
             "dependencies": [],
             "details": "Implement a dashboard interface with user search, filtering by status/role, bulk actions, profile viewing/editing, account suspension/deletion, and user history tracking. Include pagination for large user lists and detailed user information display.",
             "status": "pending",
-            "testStrategy": "Test user listing with various filters, verify edit functionality updates user data correctly, test pagination with large datasets, and ensure proper permission checks for admin actions."
+            "testStrategy": "Test user listing with various filters, verify edit functionality updates user data correctly, test pagination with large datasets, and ensure proper permission checks for admin actions.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1346,7 +1512,8 @@
             ],
             "details": "Create interfaces for event approval/rejection, content flagging review, comment moderation, and automated content filtering. Include batch moderation capabilities, moderation history logging, and notification system for moderators about new items requiring review.",
             "status": "pending",
-            "testStrategy": "Test moderation workflows with various content types, verify approval/rejection processes update content status correctly, and ensure moderation history is properly recorded."
+            "testStrategy": "Test moderation workflows with various content types, verify approval/rejection processes update content status correctly, and ensure moderation history is properly recorded.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1357,7 +1524,8 @@
             ],
             "details": "Create a configuration dashboard with sections for general settings, security parameters, notification settings, feature toggles, integration configurations, and appearance customization. Implement validation for configuration changes and configuration version history.",
             "status": "pending",
-            "testStrategy": "Test configuration changes are applied correctly throughout the system, verify validation prevents invalid configurations, and ensure configuration history is properly maintained."
+            "testStrategy": "Test configuration changes are applied correctly throughout the system, verify validation prevents invalid configurations, and ensure configuration history is properly maintained.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1369,7 +1537,8 @@
             ],
             "details": "Create admin role definitions, permission management interface, role assignment functionality, permission checking middleware, and audit logging for permission changes. Include the ability to create custom roles with specific permission sets.",
             "status": "pending",
-            "testStrategy": "Test access control with various roles, verify permission checks restrict unauthorized actions, test role assignment functionality, and ensure audit logging captures all permission changes."
+            "testStrategy": "Test access control with various roles, verify permission checks restrict unauthorized actions, test role assignment functionality, and ensure audit logging captures all permission changes.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1382,22 +1551,26 @@
             ],
             "details": "Implement dashboards for user growth metrics, engagement statistics, content creation analytics, moderation activity reports, and system performance indicators. Include data export functionality, report scheduling, and customizable report generation.",
             "status": "pending",
-            "testStrategy": "Test analytics data accuracy against raw database data, verify report generation with various parameters, test data export functionality, and ensure dashboards load efficiently with large datasets."
+            "testStrategy": "Test analytics data accuracy against raw database data, verify report generation with various parameters, test data export functionality, and ensure dashboards load efficiently with large datasets.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the admin console implementation into detailed subtasks covering: 1) User and event management interfaces, 2) System configuration and settings management, 3) Moderation tools and report handling, and 4) Admin activity logging and role management."
       },
       {
-        "id": 21,
+        "id": "21",
         "title": "Invite-Only System",
-        "description": "Implement an invite-only system for platform access and event attendance with invite code generation and validation.",
+        "description": "Event-specific one-time invite generate/validate/redeem shipped. Codes use Math.random (task 26.4). No expiry, platform-wide invites, or analytics.",
         "details": "1. Create invite code generation for platform access\n2. Implement invite code validation during registration\n3. Add event-specific invite code generation\n4. Create invite tracking and analytics\n5. Implement invite limits and expiration\n6. Add invite history for users\n7. Create invite management for hosts and admins\n8. Implement referral tracking for invites",
         "testStrategy": "Test invite code generation and validation. Verify that invite limits and expiration work correctly. Test invite tracking and analytics.",
         "priority": "high",
         "dependencies": [
-          5,
-          6
+          "5",
+          "6"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -1405,8 +1578,9 @@
             "description": "Develop a secure system for generating unique invite codes for both platform access and event-specific invitations",
             "dependencies": [],
             "details": "Create a cryptographically secure code generation algorithm that produces unique, hard-to-guess codes. Implement different code formats for platform access vs. event-specific invites. Include metadata in the code generation process to track source, purpose, and creation date.",
-            "status": "pending",
-            "testStrategy": "Test uniqueness of generated codes across large samples. Verify code format validity and ensure codes can be validated correctly. Test performance under high-volume generation scenarios."
+            "status": "done",
+            "testStrategy": "Test uniqueness of generated codes across large samples. Verify code format validity and ensure codes can be validated correctly. Test performance under high-volume generation scenarios.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1416,8 +1590,9 @@
               "21.1"
             ],
             "details": "Create API endpoints for code validation. Integrate validation into the registration flow. Implement error handling for invalid or expired codes. Add security measures to prevent brute force attacks on code validation.",
-            "status": "pending",
-            "testStrategy": "Test validation with valid, invalid, expired, and already-used codes. Verify proper error messages are displayed. Test integration with Auth0 registration flow."
+            "status": "done",
+            "testStrategy": "Test validation with valid, invalid, expired, and already-used codes. Verify proper error messages are displayed. Test integration with Auth0 registration flow.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1428,8 +1603,9 @@
               "21.2"
             ],
             "details": "Create a dashboard for hosts to generate and manage event invites. Implement bulk invite generation and distribution tools. Add features to revoke or extend invites. Develop admin tools to oversee all platform invites.",
-            "status": "pending",
-            "testStrategy": "Test invite generation, distribution, and management workflows. Verify that hosts can only manage their own event invites while admins can access all invites. Test bulk operations with large numbers of invites."
+            "status": "done",
+            "testStrategy": "Test invite generation, distribution, and management workflows. Verify that hosts can only manage their own event invites while admins can access all invites. Test bulk operations with large numbers of invites.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1441,7 +1617,8 @@
             ],
             "details": "Create a database schema to track invite usage, acceptance, and conversion. Develop analytics dashboards showing invite effectiveness. Implement referral attribution to track which users came from which invites. Add reporting features for invite performance metrics.",
             "status": "pending",
-            "testStrategy": "Test data collection accuracy for invite usage. Verify analytics calculations match expected results. Test performance with large datasets of invite tracking information."
+            "testStrategy": "Test data collection accuracy for invite usage. Verify analytics calculations match expected results. Test performance with large datasets of invite tracking information.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1454,20 +1631,24 @@
             ],
             "details": "Add configurable expiration dates for invite codes. Implement usage limits per code and per user. Create a user interface for viewing personal invite history. Develop notification system for expiring invites. Add invite recovery options for users.",
             "status": "pending",
-            "testStrategy": "Test expiration functionality with codes at different lifecycle stages. Verify usage limits are enforced correctly. Test invite history display for accuracy and completeness."
+            "testStrategy": "Test expiration functionality with codes at different lifecycle stages. Verify usage limits are enforced correctly. Test invite history display for accuracy and completeness.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the invite-only system into detailed subtasks covering: 1) Invite code generation and validation, 2) Platform and event-specific invite management, and 3) Invite analytics and referral tracking."
       },
       {
-        "id": 22,
+        "id": "22",
         "title": "Performance Optimization",
         "description": "Optimize application performance, including page load times, API response times, and database queries.",
         "details": "1. Implement server-side rendering for critical pages\n2. Add API response caching with Redis\n3. Optimize database queries and indexes\n4. Implement image optimization and lazy loading\n5. Add code splitting and bundle optimization\n6. Create performance monitoring and alerting\n7. Implement CDN caching for static assets\n8. Add database query optimization and monitoring",
         "testStrategy": "Measure performance metrics before and after optimization. Verify that page load times and API response times meet targets. Test performance under load.",
         "priority": "medium",
         "dependencies": [
-          1,
-          2
+          "1",
+          "2"
         ],
         "status": "pending",
         "subtasks": [
@@ -1478,7 +1659,8 @@
             "dependencies": [],
             "details": "Implement server-side rendering (SSR) for performance-critical pages to improve initial load time. Add code splitting to reduce bundle sizes and implement lazy loading for components and routes. Configure webpack for optimal bundle optimization and tree shaking. Measure and compare performance metrics before and after implementation.",
             "status": "pending",
-            "testStrategy": "Use Lighthouse and Web Vitals to measure improvements in First Contentful Paint, Largest Contentful Paint, and Time to Interactive. Verify bundle size reduction using webpack-bundle-analyzer."
+            "testStrategy": "Use Lighthouse and Web Vitals to measure improvements in First Contentful Paint, Largest Contentful Paint, and Time to Interactive. Verify bundle size reduction using webpack-bundle-analyzer.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1489,7 +1671,8 @@
             ],
             "details": "Set up Redis for API response caching with appropriate TTL values for different endpoints. Implement cache invalidation strategies for data mutations. Optimize API response payloads by implementing pagination, field selection, and compression. Add proper HTTP caching headers for browser caching.",
             "status": "pending",
-            "testStrategy": "Measure API response times before and after implementation. Test cache hit/miss scenarios and verify correct cache invalidation. Load test endpoints to ensure performance under high traffic."
+            "testStrategy": "Measure API response times before and after implementation. Test cache hit/miss scenarios and verify correct cache invalidation. Load test endpoints to ensure performance under high traffic.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1498,7 +1681,8 @@
             "dependencies": [],
             "details": "Analyze slow queries using database profiling tools. Create appropriate indexes based on query patterns. Optimize ORM queries by ensuring proper eager/lazy loading configuration. Implement query result caching for frequently accessed data. Set up database query monitoring to identify performance bottlenecks.",
             "status": "pending",
-            "testStrategy": "Compare query execution times before and after optimization. Use database monitoring tools to verify reduced load. Test with production-like data volumes to ensure scalability."
+            "testStrategy": "Compare query execution times before and after optimization. Use database monitoring tools to verify reduced load. Test with production-like data volumes to ensure scalability.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1509,7 +1693,8 @@
             ],
             "details": "Configure CDN caching for static assets with appropriate cache control policies. Implement image optimization pipeline including compression, responsive images, and WebP format conversion. Add lazy loading for images and videos. Set up proper cache headers for static assets. Implement font optimization strategies.",
             "status": "pending",
-            "testStrategy": "Measure asset load times and page weight before and after optimization. Verify CDN cache hit rates. Test image loading performance on various devices and network conditions."
+            "testStrategy": "Measure asset load times and page weight before and after optimization. Verify CDN cache hit rates. Test image loading performance on various devices and network conditions.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1523,21 +1708,25 @@
             ],
             "details": "Set up Real User Monitoring (RUM) to track actual user experience metrics. Implement server-side performance monitoring for API and database operations. Create performance dashboards in Grafana. Configure alerting for performance degradation. Implement synthetic monitoring for critical user journeys. Set up regular performance testing in the CI/CD pipeline.",
             "status": "pending",
-            "testStrategy": "Verify that monitoring captures all key performance metrics. Test alert triggering by simulating performance degradation. Ensure dashboards provide actionable insights for troubleshooting."
+            "testStrategy": "Verify that monitoring captures all key performance metrics. Test alert triggering by simulating performance degradation. Ensure dashboards provide actionable insights for troubleshooting.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the performance optimization into detailed subtasks covering: 1) Frontend optimization (SSR, code splitting, asset optimization), 2) API and database query optimization, 3) Caching implementation (Redis, CDN), and 4) Performance monitoring and alerting."
       },
       {
-        "id": 23,
+        "id": "23",
         "title": "Security Implementation",
         "description": "Implement comprehensive security measures to protect user data and prevent unauthorized access.",
         "details": "1. Implement HTTPS with proper certificate management\n2. Add CSRF protection for all forms\n3. Implement rate limiting for API endpoints\n4. Add input validation and sanitization\n5. Create security headers configuration\n6. Implement database encryption for sensitive data\n7. Add security scanning and vulnerability testing\n8. Create security incident response procedures",
         "testStrategy": "Perform security testing including penetration testing and vulnerability scanning. Verify that all security measures are correctly implemented. Test security incident response procedures.",
         "priority": "high",
         "dependencies": [
-          1,
-          3,
-          12
+          "1",
+          "3",
+          "12"
         ],
         "status": "pending",
         "subtasks": [
@@ -1548,7 +1737,8 @@
             "dependencies": [],
             "details": "1. Set up SSL/TLS certificates for all domains and subdomains\n2. Configure automatic certificate renewal\n3. Implement HSTS (HTTP Strict Transport Security)\n4. Configure Content Security Policy (CSP) headers\n5. Set up X-Content-Type-Options, X-Frame-Options, and other security headers",
             "status": "pending",
-            "testStrategy": "Verify SSL/TLS implementation using tools like SSL Labs. Test security headers configuration using security scanning tools. Ensure all HTTP traffic is properly redirected to HTTPS."
+            "testStrategy": "Verify SSL/TLS implementation using tools like SSL Labs. Test security headers configuration using security scanning tools. Ensure all HTTP traffic is properly redirected to HTTPS.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1559,7 +1749,8 @@
             ],
             "details": "1. Add CSRF tokens to all forms in the application\n2. Implement server-side validation of CSRF tokens\n3. Create input validation middleware for all user inputs\n4. Implement output encoding to prevent XSS attacks\n5. Add parameterized queries to prevent SQL injection",
             "status": "pending",
-            "testStrategy": "Test CSRF protection by attempting to submit forms without valid tokens. Verify input validation by testing with malicious inputs. Use automated tools to scan for XSS and SQL injection vulnerabilities."
+            "testStrategy": "Test CSRF protection by attempting to submit forms without valid tokens. Verify input validation by testing with malicious inputs. Use automated tools to scan for XSS and SQL injection vulnerabilities.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1571,7 +1762,8 @@
             ],
             "details": "1. Implement IP-based rate limiting for public API endpoints\n2. Add user-based rate limiting for authenticated endpoints\n3. Configure appropriate rate limit thresholds for different endpoints\n4. Implement response headers to indicate rate limit status\n5. Create monitoring for rate limit violations",
             "status": "pending",
-            "testStrategy": "Test rate limiting by making rapid API requests and verifying that limits are enforced. Verify that rate limit headers are correctly implemented. Test bypass attempts to ensure rate limiting cannot be circumvented."
+            "testStrategy": "Test rate limiting by making rapid API requests and verifying that limits are enforced. Verify that rate limit headers are correctly implemented. Test bypass attempts to ensure rate limiting cannot be circumvented.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1582,7 +1774,8 @@
             ],
             "details": "1. Identify all sensitive data fields requiring encryption\n2. Implement column-level encryption for PII and sensitive data\n3. Set up secure key management for encryption keys\n4. Configure encrypted backups\n5. Implement data masking for non-production environments",
             "status": "pending",
-            "testStrategy": "Verify that sensitive data is properly encrypted in the database. Test that encryption does not impact application functionality. Verify that encryption keys are properly secured and managed."
+            "testStrategy": "Verify that sensitive data is properly encrypted in the database. Test that encryption does not impact application functionality. Verify that encryption keys are properly secured and managed.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1596,23 +1789,27 @@
             ],
             "details": "1. Set up automated security scanning in the CI/CD pipeline\n2. Configure vulnerability scanning tools for regular scans\n3. Create a security incident response plan document\n4. Implement logging for security-relevant events\n5. Set up alerts for potential security incidents",
             "status": "pending",
-            "testStrategy": "Conduct penetration testing to identify vulnerabilities. Test the incident response procedures through simulated security incidents. Verify that security logging captures relevant events and that alerts are triggered appropriately."
+            "testStrategy": "Conduct penetration testing to identify vulnerabilities. Test the incident response procedures through simulated security incidents. Verify that security logging captures relevant events and that alerts are triggered appropriately.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 9,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the security implementation into detailed subtasks covering: 1) HTTPS and security headers configuration, 2) CSRF protection and input validation, 3) Rate limiting and database encryption, and 4) Security scanning and incident response."
       },
       {
-        "id": 24,
+        "id": "24",
         "title": "Documentation and Deployment",
         "description": "Create comprehensive documentation for the application and implement deployment procedures for production.",
         "details": "1. Create API documentation with OpenAPI/Swagger\n2. Implement user guides and help center\n3. Add developer documentation for codebase\n4. Create deployment scripts and procedures\n5. Implement blue-green deployment strategy\n6. Add monitoring and alerting configuration\n7. Create backup and disaster recovery procedures\n8. Implement logging and error tracking",
         "testStrategy": "Verify that documentation is complete and accurate. Test deployment procedures in staging environment. Verify that monitoring, logging, and alerting work correctly in production.",
         "priority": "medium",
         "dependencies": [
-          1,
-          22,
-          23
+          "1",
+          "22",
+          "23"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -1621,7 +1818,8 @@
             "dependencies": [],
             "details": "Generate OpenAPI specification for all API endpoints. Implement Swagger UI for interactive documentation. Include authentication methods, request parameters, response schemas, and example requests/responses. Ensure documentation is automatically updated when API changes.",
             "status": "pending",
-            "testStrategy": "Verify all endpoints are documented correctly. Test Swagger UI functionality. Ensure examples work when executed from the documentation interface."
+            "testStrategy": "Verify all endpoints are documented correctly. Test Swagger UI functionality. Ensure examples work when executed from the documentation interface.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1632,7 +1830,8 @@
             ],
             "details": "Develop user guides covering all application features with screenshots and step-by-step instructions. Create searchable help center with FAQs. Document codebase architecture, setup instructions, coding standards, and contribution guidelines for developers. Include component documentation and API integration examples.",
             "status": "pending",
-            "testStrategy": "Have non-technical users review guides for clarity. Test help center search functionality. Have new developers follow setup instructions to verify completeness."
+            "testStrategy": "Have non-technical users review guides for clarity. Test help center search functionality. Have new developers follow setup instructions to verify completeness.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1641,7 +1840,8 @@
             "dependencies": [],
             "details": "Implement CI/CD pipelines using GitHub Actions or similar tools. Create deployment scripts for infrastructure provisioning and application deployment. Implement blue-green deployment strategy to minimize downtime. Document manual deployment procedures for fallback scenarios.",
             "status": "pending",
-            "testStrategy": "Test deployment to staging environment. Verify zero-downtime deployments. Test rollback procedures in case of deployment failures."
+            "testStrategy": "Test deployment to staging environment. Verify zero-downtime deployments. Test rollback procedures in case of deployment failures.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1652,7 +1852,8 @@
             ],
             "details": "Set up application performance monitoring using tools like New Relic or Datadog. Configure error tracking with Sentry or similar. Implement custom health check endpoints. Set up alerting for critical metrics with appropriate thresholds. Configure dashboards for real-time monitoring.",
             "status": "pending",
-            "testStrategy": "Simulate errors and performance issues to verify alerting works. Test dashboard visibility. Verify that alerts are sent through configured channels."
+            "testStrategy": "Simulate errors and performance issues to verify alerting works. Test dashboard visibility. Verify that alerts are sent through configured channels.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1664,15 +1865,19 @@
             ],
             "details": "Configure automated database backups with appropriate retention policies. Implement log archiving. Create disaster recovery procedures for different failure scenarios. Document recovery time objectives (RTO) and recovery point objectives (RPO). Test restoration procedures regularly.",
             "status": "pending",
-            "testStrategy": "Perform test recoveries from backups to verify integrity. Simulate disaster scenarios and follow recovery procedures. Measure actual recovery times against objectives."
+            "testStrategy": "Perform test recoveries from backups to verify integrity. Simulate disaster scenarios and follow recovery procedures. Measure actual recovery times against objectives.",
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the documentation and deployment into detailed subtasks covering: 1) API and developer documentation, 2) User guides and help center content, 3) Deployment scripts and procedures, and 4) Monitoring, logging, and disaster recovery setup."
       },
       {
-        "id": 25,
+        "id": "25",
         "title": "Migrate database from SQLite to Postgres with TypeORM migrations",
         "description": "Switch persistence from SQLite to Postgres and adopt TypeORM migrations for schema control across environments.",
-        "details": "Implement a production-ready Postgres setup with TypeORM migrations. Keep fast tests (SQLite :memory: or a Postgres test container), ensure reproducible schema via migrations, and document the rollout/rollback process.",
+        "details": "Implement a production-ready Postgres setup with TypeORM migrations. Keep fast tests (SQLite :memory: or a Postgres test container), ensure reproducible schema via migrations, and document the rollout/rollback process.\n<info added on 2026-09-03T11:08:48Z>\nDo not take docker-compose.prod.yml from velvetrope PR #1 as the Postgres path: it mounts missing init-db.sql and uses DATABASE_URL while the app uses TypeORM DATABASE_PATH/SQLite. Implement migrations here (synchronize off) instead.\n</info>",
         "testStrategy": "- Local: run migration scripts, start app, create/read/update/delete Events\n- Tests: ensure e2e still pass with chosen test DB (SQLite :memory: or Postgres container)\n- Verify initial migration creates schema matching EventEntity\n- Optional: data migration from SQLite → Postgres validated by counts and sample rows",
         "status": "pending",
         "dependencies": [],
@@ -1685,7 +1890,8 @@
             "dependencies": [],
             "details": "Create a docker-compose.yml file with Postgres service configuration. Include environment variables for database name, user, password, and port. Update .env and .env.example files with new Postgres connection variables. Create a script to initialize the database. Document the local setup process in README.md.",
             "status": "pending",
-            "testStrategy": "Verify Docker Compose starts correctly and the application can connect to the Postgres instance. Test database connection with a simple query."
+            "testStrategy": "Verify Docker Compose starts correctly and the application can connect to the Postgres instance. Test database connection with a simple query.",
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -1696,7 +1902,8 @@
             ],
             "details": "Modify the existing TypeORM data source configuration to conditionally use Postgres or SQLite based on environment variables. Create separate configurations for development, test, and production environments. Implement a factory function that returns the appropriate data source based on the current environment. Update connection handling code to work with both database types.",
             "status": "pending",
-            "testStrategy": "Test data source configuration with both SQLite and Postgres environment variables to ensure correct connection is established."
+            "testStrategy": "Test data source configuration with both SQLite and Postgres environment variables to ensure correct connection is established.",
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -1707,7 +1914,8 @@
             ],
             "details": "Set up TypeORM CLI configuration in package.json. Create a migration script that generates the initial migration from existing entity definitions. Run the migration generation command and review the generated SQL. Adjust entity definitions if necessary to ensure compatibility with Postgres. Document the migration generation process.",
             "status": "pending",
-            "testStrategy": "Review generated migration SQL to ensure it correctly represents the current schema. Verify migration can be applied to a fresh Postgres database."
+            "testStrategy": "Review generated migration SQL to ensure it correctly represents the current schema. Verify migration can be applied to a fresh Postgres database.",
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -1718,7 +1926,8 @@
             ],
             "details": "Create npm scripts for migration operations: migrate:run, migrate:revert, migrate:generate. Implement a migration runner utility that handles connection setup and teardown. Add error handling and logging for migration operations. Create a script to check if migrations are pending. Document usage of migration scripts.",
             "status": "pending",
-            "testStrategy": "Test each migration script to ensure it correctly connects to the database and performs the expected operation."
+            "testStrategy": "Test each migration script to ensure it correctly connects to the database and performs the expected operation.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -1729,7 +1938,8 @@
             ],
             "details": "Create a test-specific data source configuration. Implement conditional logic to use SQLite in-memory for fast tests or a Postgres test container based on configuration. Update test setup and teardown procedures to handle both database types. Add environment variables for controlling test database behavior. Document test database configuration options.",
             "status": "pending",
-            "testStrategy": "Run the test suite with both SQLite in-memory and Postgres test container configurations to ensure tests pass in both environments."
+            "testStrategy": "Run the test suite with both SQLite in-memory and Postgres test container configurations to ensure tests pass in both environments.",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -1741,7 +1951,8 @@
             ],
             "details": "Create a data migration utility that reads from SQLite and writes to Postgres. Implement transaction handling to ensure data integrity. Add progress reporting for long-running migrations. Handle type conversions between SQLite and Postgres. Implement validation to verify data was migrated correctly. Create a rollback mechanism in case of migration failure.",
             "status": "pending",
-            "testStrategy": "Test with a sample SQLite database containing representative data. Verify record counts, relationships, and data integrity after migration."
+            "testStrategy": "Test with a sample SQLite database containing representative data. Verify record counts, relationships, and data integrity after migration.",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -1753,7 +1964,8 @@
             ],
             "details": "Update CI configuration to include a Postgres service for testing. Add a step to run migrations during the deployment process. Implement a migration verification step that checks if migrations are applied correctly. Add a step to create database backups before applying migrations in production. Document the updated CI/CD process.",
             "status": "pending",
-            "testStrategy": "Run the CI pipeline with the updated configuration to verify it correctly sets up Postgres, runs tests, and applies migrations."
+            "testStrategy": "Run the CI pipeline with the updated configuration to verify it correctly sets up Postgres, runs tests, and applies migrations.",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -1765,7 +1977,8 @@
             ],
             "details": "Create comprehensive documentation covering: environment setup, migration generation workflow, deployment process with migrations, rollback procedures, troubleshooting common issues, database backup and restore procedures, and best practices for schema changes. Include examples of common operations and their commands. Document the transition plan from SQLite to Postgres for existing deployments.",
             "status": "pending",
-            "testStrategy": "Have team members follow the documentation to perform a test deployment and rollback to verify completeness and accuracy."
+            "testStrategy": "Have team members follow the documentation to perform a test deployment and rollback to verify completeness and accuracy.",
+            "parentId": "undefined"
           },
           {
             "id": 9,
@@ -1774,7 +1987,8 @@
             "details": "- npm i pg\n- backend/.env: set DATABASE_URL or discrete DB_HOST/DB_PORT/DB_USER/DB_PASS/DB_NAME\n- backend/.env.example: mirror keys and comments\n- Do not remove test SQLite setup yet",
             "status": "pending",
             "dependencies": [],
-            "parentTaskId": 25
+            "parentTaskId": 25,
+            "parentId": "undefined"
           },
           {
             "id": 10,
@@ -1783,7 +1997,8 @@
             "details": "- npm i pg\n- backend/.env: set DATABASE_URL or DB_HOST/DB_PORT/DB_USER/DB_PASS/DB_NAME\n- backend/.env.example: mirror keys and comments\n- Keep test SQLite setup for speed",
             "status": "pending",
             "dependencies": [],
-            "parentTaskId": 25
+            "parentTaskId": 25,
+            "parentId": "undefined"
           },
           {
             "id": 11,
@@ -1792,7 +2007,8 @@
             "details": "- npm i pg\n- backend/.env: set DATABASE_URL or DB_HOST/DB_PORT/DB_USER/DB_PASS/DB_NAME\n- backend/.env.example: mirror keys and comments\n- Keep test SQLite setup for speed",
             "status": "pending",
             "dependencies": [],
-            "parentTaskId": 25
+            "parentTaskId": 25,
+            "parentId": "undefined"
           },
           {
             "id": 12,
@@ -1801,7 +2017,8 @@
             "details": "- entities: EventEntity (and future entities)\n- synchronize: false\n- migrations: src/migrations/*.ts (build to dist)\n- export default new DataSource({...})",
             "status": "pending",
             "dependencies": [],
-            "parentTaskId": 25
+            "parentTaskId": 25,
+            "parentId": "undefined"
           },
           {
             "id": 13,
@@ -1810,7 +2027,8 @@
             "details": "- add `typeorm` script (ts-node + tsconfig-paths)\n- migration:generate, migration:run, migration:revert with -d src/data-source.ts",
             "status": "pending",
             "dependencies": [],
-            "parentTaskId": 25
+            "parentTaskId": 25,
+            "parentId": "undefined"
           },
           {
             "id": 14,
@@ -1819,7 +2037,8 @@
             "details": "- AppModule: if NODE_ENV==='test' use SQLite :memory:, else Postgres DATABASE_URL\n- synchronize: false for Postgres\n- entities unchanged",
             "status": "pending",
             "dependencies": [],
-            "parentTaskId": 25
+            "parentTaskId": 25,
+            "parentId": "undefined"
           },
           {
             "id": 15,
@@ -1828,7 +2047,8 @@
             "details": "- run migration:generate\n- inspect file, ensure correct columns and types\n- run migration:run\n- verify tables exist",
             "status": "pending",
             "dependencies": [],
-            "parentTaskId": 25
+            "parentTaskId": 25,
+            "parentId": "undefined"
           },
           {
             "id": 16,
@@ -1837,7 +2057,8 @@
             "details": "- README/DEV.md: how to run/revert\n- run revert then run again, confirm app boots",
             "status": "pending",
             "dependencies": [],
-            "parentTaskId": 25
+            "parentTaskId": 25,
+            "parentId": "undefined"
           },
           {
             "id": 17,
@@ -1846,7 +2067,8 @@
             "details": "- docker-compose.yml with postgres:16, volume, ports\n- sample DATABASE_URL\n- update docs",
             "status": "pending",
             "dependencies": [],
-            "parentTaskId": 25
+            "parentTaskId": 25,
+            "parentId": "undefined"
           },
           {
             "id": 18,
@@ -1855,15 +2077,96 @@
             "details": "- add step to run `npm run migration:run`\n- ensure DATABASE_URL set in environment\n- add health check post-deploy",
             "status": "pending",
             "dependencies": [],
-            "parentTaskId": 25
+            "parentTaskId": 25,
+            "parentId": "undefined"
           }
         ]
+      },
+      {
+        "id": "26",
+        "title": "Honest local MVP hardening",
+        "description": "Security and correctness gaps that block treating the current event loop as a real MVP. Do this before AWS, guest payments, or Automaton infra PRs.",
+        "details": "From the Sep 2026 repo investigation and velvetrope PR #1 review.\n\nPriority order:\n1. Add hostId (Auth0 sub) to EventEntity; enforce ownership on every host mutation.\n2. Bind Stripe Connect accounts to the authenticated host; drop host-dev-123.\n3. Let approved attendees fetch their own check-in token; stop calling host-only issue from the ticket page.\n4. Generate invite codes and check-in tokens with crypto.randomBytes.\n5. Stripe webhook must not return HTTP 200 when signature verification fails.\n\nOut of scope: merge PR #1, AWS EKS, Grafana, guest Checkout (still 9.3).",
+        "testStrategy": "e2e: host A cannot PATCH host B's event. Stripe onboarding uses JWT sub. Approved attendee gets a token from a non-host endpoint. Tokens come from crypto. Webhook returns 4xx on a bad signature.",
+        "priority": "high",
+        "dependencies": [
+          "3"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Event ownership (hostId)",
+            "description": "Add hostId to events and enforce it on all host mutations.",
+            "dependencies": [],
+            "details": "EventEntity has no hostId. Any host can mutate any event. Store Auth0 sub on create; ownership check on PATCH/DELETE/publish/cancel, application review, invite generate, check-in issue.",
+            "status": "done",
+            "testStrategy": "e2e: second host receives 403 on first host's event.",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-03T22:57:03.770Z"
+          },
+          {
+            "id": 2,
+            "title": "Bind Stripe Connect to Auth0 sub",
+            "description": "Stop using URL hostId / host-dev-123.",
+            "dependencies": [
+              "26.1"
+            ],
+            "details": "stripe.controller.ts keys accounts by path param. frontend/app/host/stripe/page.tsx hardcodes host-dev-123. Use req.user.sub.",
+            "status": "done",
+            "testStrategy": "Authenticated host onboarding creates/reads StripeAccount for their sub only.",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-03T22:57:03.776Z"
+          },
+          {
+            "id": 3,
+            "title": "Attendee check-in token",
+            "description": "Approved attendees fetch their own token; ticket page must not call a host-only issue API.",
+            "dependencies": [
+              "26.1"
+            ],
+            "details": "POST /checkin/issue/:eventId is @Roles('host'). Ticket page posts as a normal user with userSub user|demo. Add an attendee endpoint that issues (or returns) a token only for an approved application of the JWT sub.",
+            "status": "done",
+            "testStrategy": "Approved attendee GET/POST ticket succeeds; other users 403; host issue still works for door staff if needed.",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-03T22:57:03.786Z"
+          },
+          {
+            "id": 4,
+            "title": "Crypto invite and check-in tokens",
+            "description": "Replace Math.random with crypto.randomBytes for invite codes and check-in tokens.",
+            "dependencies": [],
+            "details": "invites.service.ts and checkin.service.ts currently use Math.random.",
+            "status": "done",
+            "testStrategy": "Unit tests: tokens have expected entropy/length; existing e2e still pass.",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-03T22:57:03.793Z"
+          },
+          {
+            "id": 5,
+            "title": "Stripe webhook fail closed",
+            "description": "Return 4xx when signature verification is skipped or fails; do not ACK with HTTP 200.",
+            "dependencies": [
+              "26.2"
+            ],
+            "details": "webhook.controller.ts returns 200 with ok:false on verify failure, which makes Stripe stop retrying.",
+            "status": "done",
+            "testStrategy": "Bad signature -> 400/401; valid test signature still 200.",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-03T22:57:03.799Z"
+          }
+        ],
+        "updatedAt": "2026-09-03T22:57:03.799Z"
       }
     ],
     "metadata": {
-      "created": "2025-08-30T20:09:53.259Z",
-      "updated": "2025-09-03T16:21:40.600Z",
-      "description": "Tasks for master context"
+      "version": "1.0.0",
+      "lastModified": "2026-09-03T22:57:03.799Z",
+      "taskCount": 26,
+      "completedCount": 2,
+      "tags": [
+        "master"
+      ]
     }
   }
 }

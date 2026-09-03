@@ -1,0 +1,229 @@
+name: Deploy Backend to Production
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20.x'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/backend
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run linter
+        working-directory: ./backend
+        run: npm run lint
+
+      - name: Run type check
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Run unit tests
+        working-directory: ./backend
+        run: npm run test:cov
+
+      - name: Run E2E tests
+        working-directory: ./backend
+        run: npm run test:e2e
+        env:
+          NODE_ENV: test
+          DATABASE_URL: ':memory:'
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./backend/coverage/lcov.info
+          flags: backend
+          fail_ci_if_error: false
+
+  build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: production
+      url: ${{ vars.BACKEND_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure deployment credentials
+        run: |
+          echo "Deployment configuration would go here"
+          echo "This is a placeholder for actual deployment steps"
+          echo "Common options:"
+          echo "  - Deploy to AWS ECS/Fargate"
+          echo "  - Deploy to Kubernetes cluster"
+          echo "  - Deploy to VM via SSH"
+          echo "  - Deploy to managed platform (Railway, Render, etc.)"
+
+      # Example: Deploy to AWS ECS (uncomment and configure as needed)
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: ${{ vars.AWS_REGION }}
+
+      # - name: Deploy to ECS
+      #   run: |
+      #     aws ecs update-service \
+      #       --cluster ${{ vars.ECS_CLUSTER }} \
+      #       --service ${{ vars.ECS_SERVICE }} \
+      #       --force-new-deployment
+
+      # Example: Deploy via SSH (uncomment and configure as needed)
+      # - name: Deploy to server via SSH
+      #   uses: appleboy/ssh-action@v1.0.0
+      #   with:
+      #     host: ${{ secrets.DEPLOY_HOST }}
+      #     username: ${{ secrets.DEPLOY_USER }}
+      #     key: ${{ secrets.DEPLOY_SSH_KEY }}
+      #     script: |
+      #       cd /opt/velvetkey
+      #       docker pull ${{ needs.build.outputs.image-tag }}
+      #       docker-compose -f docker-compose.prod.yml up -d backend
+      #       docker system prune -f
+
+      # Example: Deploy to Kubernetes (uncomment and configure as needed)
+      # - name: Set up kubectl
+      #   uses: azure/setup-kubectl@v3
+      #   with:
+      #     version: 'latest'
+
+      # - name: Deploy to Kubernetes
+      #   run: |
+      #     kubectl config use-context ${{ vars.K8S_CONTEXT }}
+      #     kubectl set image deployment/backend \
+      #       backend=${{ needs.build.outputs.image-tag }} \
+      #       --namespace=${{ vars.K8S_NAMESPACE }}
+      #     kubectl rollout status deployment/backend \
+      #       --namespace=${{ vars.K8S_NAMESPACE }}
+
+      - name: Verify deployment
+        run: |
+          echo "Deployment verification would go here"
+          echo "Health check URL: ${{ vars.BACKEND_URL }}/healthz"
+          # curl -f ${{ vars.BACKEND_URL }}/healthz || exit 1
+
+      - name: Run database migrations
+        run: |
+          echo "Database migration step would go here"
+          echo "Example: npm run migration:run"
+          # This should be executed in the deployment environment
+          # with proper database credentials
+
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [test, build, deploy]
+    if: always()
+
+    steps:
+      - name: Deployment Success
+        if: needs.deploy.result == 'success'
+        run: |
+          echo "✅ Backend deployment successful!"
+          echo "Image: ${{ needs.build.outputs.image-tag }}"
+          echo "Digest: ${{ needs.build.outputs.image-digest }}"
+
+      - name: Deployment Failure
+        if: needs.deploy.result == 'failure'
+        run: |
+          echo "❌ Backend deployment failed!"
+          exit 1
+
+      # Optional: Send notifications to Slack, Discord, etc.
+      # - name: Notify Slack
+      #   if: always()
+      #   uses: slackapi/slack-github-action@v1.24.0
+      #   with:
+      #     webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #     payload: |
+      #       {
+      #         "text": "Backend Deployment ${{ needs.deploy.result }}",
+      #         "blocks": [
+      #           {
+      #             "type": "section",
+      #             "text": {
+      #               "type": "mrkdwn",
+      #               "text": "*Backend Deployment*\nStatus: ${{ needs.deploy.result }}\nCommit: ${{ github.sha }}\nActor: ${{ github.actor }}"
+      #             }
+      #           }
+      #         ]
+      #       }

@@ -5,12 +5,11 @@ export type AuthUser = {
   roles: string[];
 };
 
-export function getAuthUser(req: {
-  user?: Partial<AuthUser> | null;
-}): AuthUser {
-  const sub = req.user?.sub;
+export function getAuthUser(req: unknown): AuthUser {
+  const user = (req as { user?: Partial<AuthUser> | null }).user;
+  const sub = user?.sub;
   if (!sub) {
     throw new UnauthorizedException();
   }
-  return { sub, roles: req.user?.roles ?? [] };
+  return { sub, roles: user?.roles ?? [] };
 }

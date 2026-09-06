@@ -1,0 +1,258 @@
+name: Docker Build and Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE_NAME: ${{ github.repository }}/backend
+  FRONTEND_IMAGE_NAME: ${{ github.repository }}/frontend
+
+jobs:
+  build-backend:
+    name: Build Backend Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+
+      - name: Test backend image
+        run: |
+          docker run --rm \
+            -e NODE_ENV=test \
+            -e DATABASE_TYPE=sqlite \
+            -e DATABASE_DATABASE=:memory: \
+            -e AUTH0_ISSUER=https://test.auth0.com/ \
+            -e AUTH0_AUDIENCE=test-api \
+            -e STRIPE_SECRET_KEY=sk_test_dummy \
+            -e STRIPE_WEBHOOK_SECRET=whsec_dummy \
+            ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }} \
+            npm run test
+
+  build-frontend:
+    name: Build Frontend Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_ENV=production
+            NEXT_PUBLIC_API_URL=http://localhost:3010
+
+      - name: Test frontend image build
+        run: |
+          docker run --rm \
+            -e AUTH0_SECRET=test-secret-at-least-32-characters-long \
+            -e AUTH0_BASE_URL=http://localhost:3000 \
+            -e AUTH0_ISSUER_BASE_URL=https://test.auth0.com \
+            -e AUTH0_CLIENT_ID=test-client-id \
+            -e AUTH0_CLIENT_SECRET=test-client-secret \
+            -e NEXT_PUBLIC_API_URL=http://localhost:3010 \
+            ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} \
+            echo "Frontend image built successfully"
+
+  docker-compose-validation:
+    name: Validate Docker Compose Setup
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create test environment file
+        run: |
+          cat > .env << EOF
+          # Backend Configuration
+          NODE_ENV=production
+          PORT=3010
+          DATABASE_TYPE=sqlite
+          DATABASE_DATABASE=./data/velvetkey.db
+
+          # Auth0 Configuration (Backend JWT)
+          AUTH0_ISSUER=https://test.us.auth0.com/
+          AUTH0_AUDIENCE=test-api
+
+          # Stripe Configuration
+          STRIPE_SECRET_KEY=sk_test_dummy_key_for_testing
+          STRIPE_WEBHOOK_SECRET=whsec_dummy_secret_for_testing
+
+          # Frontend Auth0 Configuration
+          AUTH0_SECRET=test-secret-must-be-at-least-32-characters-long-for-security
+          AUTH0_BASE_URL=http://localhost:3000
+          AUTH0_ISSUER_BASE_URL=https://test.us.auth0.com
+          AUTH0_CLIENT_ID=test-client-id
+          AUTH0_CLIENT_SECRET=test-client-secret
+
+          # Frontend API Configuration
+          NEXT_PUBLIC_API_URL=http://localhost:3010
+          EOF
+
+      - name: Validate docker-compose.yml syntax
+        run: docker compose config
+
+      - name: Check service definitions
+        run: |
+          # Verify backend service exists and has correct port
+          docker compose config | grep -A 10 "backend:" | grep "3010:3010"
+          
+          # Verify frontend service exists and has correct port
+          docker compose config | grep -A 10 "frontend:" | grep "3000:3000"
+          
+          echo "✓ Service definitions validated"
+
+      - name: Verify environment variable passing
+        run: |
+          # Check that environment variables are properly configured
+          docker compose config | grep -q "AUTH0_ISSUER"
+          docker compose config | grep -q "STRIPE_SECRET_KEY"
+          docker compose config | grep -q "NEXT_PUBLIC_API_URL"
+          
+          echo "✓ Environment variables configured"
+
+      - name: Test Docker Compose startup (dry run)
+        run: |
+          # Pull images if they exist, but don't fail if they don't
+          docker compose pull --ignore-pull-failures || true
+          
+          # Validate that services can be created
+          docker compose create
+          
+          echo "✓ Docker Compose services can be created"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v || true
+          rm -f .env
+
+  security-scan:
+    name: Security Scan Docker Images
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend]
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner (Backend)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-backend-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Run Trivy vulnerability scanner (Frontend)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-frontend-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: '.'
+
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend, docker-compose-validation]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Build Status" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend: ${{ needs.build-backend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend: ${{ needs.build-frontend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker Compose: ${{ needs.docker-compose-validation.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Image Tags" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend: \`${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend: \`${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY

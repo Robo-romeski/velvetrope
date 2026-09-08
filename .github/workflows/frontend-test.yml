@@ -1,0 +1,185 @@
+name: Frontend Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-test.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-test.yml'
+
+jobs:
+  test:
+    name: Frontend Tests & Build
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run type check
+        run: npm run type-check
+        continue-on-error: true
+
+      - name: Run tests
+        run: npm run test:ci
+        env:
+          # Auth0 configuration for tests
+          AUTH0_SECRET: ${{ secrets.AUTH0_SECRET || 'test-secret-at-least-32-characters-long-for-ci' }}
+          AUTH0_BASE_URL: http://localhost:3000
+          AUTH0_ISSUER_BASE_URL: ${{ secrets.AUTH0_ISSUER || 'https://test.auth0.com' }}
+          AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID || 'test-client-id' }}
+          AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET || 'test-client-secret' }}
+          # Backend API configuration
+          NEXT_PUBLIC_API_URL: http://localhost:3010
+          # Node environment
+          NODE_ENV: test
+
+      - name: Build application
+        run: npm run build
+        env:
+          # Auth0 configuration for build
+          AUTH0_SECRET: ${{ secrets.AUTH0_SECRET || 'test-secret-at-least-32-characters-long-for-ci' }}
+          AUTH0_BASE_URL: http://localhost:3000
+          AUTH0_ISSUER_BASE_URL: ${{ secrets.AUTH0_ISSUER || 'https://test.auth0.com' }}
+          AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID || 'test-client-id' }}
+          AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET || 'test-client-secret' }}
+          NEXT_PUBLIC_API_URL: http://localhost:3010
+          NODE_ENV: production
+
+      - name: Check build output
+        run: |
+          if [ ! -d ".next" ]; then
+            echo "Build failed: .next directory not found"
+            exit 1
+          fi
+          echo "Build successful: .next directory exists"
+
+      - name: Upload build artifacts
+        if: matrix.node-version == '20.x'
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/.next
+          retention-days: 7
+
+  integration:
+    name: Frontend Integration Tests
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Start backend server
+        working-directory: ./backend
+        run: |
+          npm run build
+          npm run start:prod &
+          echo $! > backend.pid
+        env:
+          PORT: 3010
+          AUTH0_ISSUER: ${{ secrets.AUTH0_ISSUER || 'https://test.auth0.com' }}
+          AUTH0_AUDIENCE: ${{ secrets.AUTH0_AUDIENCE || 'test-audience' }}
+          DATABASE_TYPE: sqlite
+          DATABASE_DATABASE: ':memory:'
+          NODE_ENV: test
+
+      - name: Wait for backend
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:3010/healthz; do sleep 2; done'
+
+      - name: Run integration tests
+        working-directory: ./frontend
+        run: npm run test:integration
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3010
+          AUTH0_SECRET: test-secret-at-least-32-characters-long-for-ci
+          AUTH0_BASE_URL: http://localhost:3000
+          AUTH0_ISSUER_BASE_URL: ${{ secrets.AUTH0_ISSUER || 'https://test.auth0.com' }}
+          AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID || 'test-client-id' }}
+          AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET || 'test-client-secret' }}
+
+      - name: Stop backend server
+        if: always()
+        run: |
+          if [ -f backend.pid ]; then
+            kill $(cat backend.pid) || true
+            rm backend.pid
+          fi
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Check for known vulnerabilities
+        run: |
+          npm audit --json > audit-results.json || true
+          cat audit-results.json
+
+      - name: Upload audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-security-audit
+          path: frontend/audit-results.json
+          retention-days: 30

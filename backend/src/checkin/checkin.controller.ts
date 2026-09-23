@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   ForbiddenException,
+  Get,
   Param,
   Post,
   Req,
@@ -47,6 +48,15 @@ export class CheckinController {
     if (!approved)
       throw new ForbiddenException('No approved application for this event');
     return await this.svc.issue(eventId, sub);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('host')
+  @Get('event/:eventId')
+  async listForEvent(@Param('eventId') eventId: string, @Req() req: Request) {
+    const { sub } = getAuthUser(req);
+    await this.events.requireHost(eventId, sub);
+    return await this.svc.listForEvent(eventId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

@@ -1,4 +1,9 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3010';
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3010';
+
+export function isUnauthorized(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes('401') || message === 'Unauthorized';
+}
 
 async function getAccessTokenClient(): Promise<string> {
   const res = await fetch('/api/token', { cache: 'no-store' });
@@ -81,6 +86,19 @@ export async function apiPutAuth(path: string, body: unknown) {
 export async function apiPatchAuth(path: string, body: unknown) {
   const token = await getAccessTokenClient();
   return apiPatch(path, body, { headers: { Authorization: `Bearer ${token}` } });
+}
+
+export async function apiDeleteAuth(path: string) {
+  const token = await getAccessTokenClient();
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) throw new Error(`DELETE ${path} failed: ${res.status}`);
+  return res.json();
 }
 
 

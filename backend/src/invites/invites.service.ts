@@ -19,6 +19,13 @@ export class InvitesService {
     return randomToken(length, 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789');
   }
 
+  async listForEvent(eventId: string): Promise<InviteEntity[]> {
+    return await this.repo.find({
+      where: { eventId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async generate(eventId: string): Promise<InviteEntity> {
     for (let i = 0; i < 10; i++) {
       const code = this.generateCode();

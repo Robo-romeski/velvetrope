@@ -76,4 +76,27 @@ describe('Checkin (e2e)', () => {
     expect(ticket.body.userSub).toBe('user|guest');
     expect(typeof ticket.body.token).toBe('string');
   });
+
+  it('host can list issued tickets without the raw token', async () => {
+    const event = await createEvent(app.getHttpServer());
+
+    await request(app.getHttpServer())
+      .post(`/checkin/issue/${event.id}`)
+      .set(hostAuth())
+      .send({ userSub: 'user|door' })
+      .expect(201);
+
+    const listed = await request(app.getHttpServer())
+      .get(`/checkin/event/${event.id}`)
+      .set(hostAuth())
+      .expect(200);
+    expect(listed.body).toHaveLength(1);
+    expect(listed.body[0].userSub).toBe('user|door');
+    expect(listed.body[0].token).toBeUndefined();
+
+    await request(app.getHttpServer())
+      .get(`/checkin/event/${event.id}`)
+      .set(hostAuth('other-host'))
+      .expect(403);
+  });
 });

@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { ApplicationEntity, ApplicationStatus } from './application.entity';
 import { ApplicationFormEntity } from './application-form.entity';
 import { InvitesService } from '../invites/invites.service';
+import { EventsService } from '../events/events.service';
 
 export interface CreateApplicationDto {
   eventId: string;
@@ -28,6 +29,7 @@ export class ApplicationsService {
     @InjectRepository(ApplicationFormEntity)
     private readonly forms: Repository<ApplicationFormEntity>,
     private readonly invites: InvitesService,
+    private readonly events: EventsService,
   ) {}
 
   async listForEvent(
@@ -137,8 +139,16 @@ export class ApplicationsService {
 
   async decide(id: string, decision: DecisionDto): Promise<ApplicationEntity> {
     const app = await this.get(id);
+    if (decision.status === 'approved' && app.status !== 'approved') {
+      const event = await this.events.get(app.eventId);
+      const approved = await this.repo.count({
+        where: { eventId: app.eventId, status: 'approved' },
+      });
+      if (approved >= event.capacity) {
+        throw new BadRequestException('Event is at capacity');
+      }
+    }
     app.status = decision.status;
-    // reason could be stored later
     return await this.repo.save(app);
   }
 

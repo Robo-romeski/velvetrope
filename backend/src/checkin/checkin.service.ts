@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { CheckinTicketEntity } from './checkin-ticket.entity';
 import { randomToken } from '../common/random-token';
 
@@ -28,10 +28,19 @@ export class CheckinService {
     return ticket;
   }
 
+  async listForEvent(
+    eventId: string,
+  ): Promise<Array<Omit<CheckinTicketEntity, 'token'>>> {
+    return await this.repo.find({
+      where: { eventId },
+      order: { issuedAt: 'DESC' },
+      select: ['id', 'eventId', 'userSub', 'issuedAt', 'usedAt'],
+    });
+  }
+
   async issue(eventId: string, userSub: string): Promise<CheckinTicketEntity> {
-    // One active token per user/event for simplicity
     const existing = await this.repo.findOne({
-      where: { eventId, userSub, usedAt: null } as any,
+      where: { eventId, userSub, usedAt: IsNull() },
     });
     if (existing) return existing;
     const token = this.generateToken();

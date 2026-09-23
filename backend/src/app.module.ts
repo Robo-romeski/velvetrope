@@ -20,6 +20,7 @@ import { InviteEntity } from './invites/invite.entity';
 import { CheckinModule } from './checkin/checkin.module';
 import { CheckinTicketEntity } from './checkin/checkin-ticket.entity';
 import { ApplicationsModule } from './applications/applications.module';
+import { UserEntity } from './auth/user.entity';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ApplicationsModule } from './applications/applications.module';
         InviteEntity,
         CheckinTicketEntity,
         StripeAccountEntity,
+        UserEntity,
       ],
       synchronize: true,
       retryAttempts: process.env.NODE_ENV === 'test' ? 1 : 10,

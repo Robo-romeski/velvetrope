@@ -16,7 +16,7 @@ export class ApplicationEntity {
   eventId!: string;
 
   @Column({ type: 'text' })
-  applicantSub!: string; // auth0 sub or user identifier
+  applicantSub!: string;
 
   @Column({ type: 'text', nullable: true })
   answers?: string | null; // JSON string

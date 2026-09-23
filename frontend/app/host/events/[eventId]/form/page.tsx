@@ -3,8 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiGet, apiPutAuth, apiPostAuth } from '@/lib/api';
 import { useParams } from 'next/navigation';
+import HostLoginPrompt from '@/app/components/HostLoginPrompt';
+import { useAuth } from '@/lib/auth';
 
 export default function HostEventFormEditor() {
+  const { user, loading: authLoading } = useAuth();
   const params = useParams();
   const eventId = useMemo(() => String(params?.eventId ?? ''), [params]);
   const [schemaText, setSchemaText] = useState('{"fields": []}');
@@ -14,7 +17,7 @@ export default function HostEventFormEditor() {
 
   useEffect(() => {
     let mounted = true;
-    if (!eventId) return;
+    if (!eventId || authLoading || !user) return;
     (async () => {
       try {
         // load event status
@@ -32,7 +35,19 @@ export default function HostEventFormEditor() {
     return () => {
       mounted = false;
     };
-  }, [eventId]);
+  }, [eventId, authLoading, user]);
+
+  if (authLoading) {
+    return (
+      <div className="max-w-3xl mx-auto p-6">
+        <div className="text-sm">Loading…</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <HostLoginPrompt title="Application form" />;
+  }
 
   const onSave = async () => {
     setLoading(true);

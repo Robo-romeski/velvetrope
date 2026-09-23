@@ -1,17 +1,11 @@
-import { getAccessToken } from '@auth0/nextjs-auth0';
+import { cookies } from 'next/headers';
+import { ACCESS_TOKEN_COOKIE } from '@/lib/session';
 
 export async function GET() {
-  try {
-    const result = await getAccessToken();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const accessToken = (result as any)?.accessToken || result;
-    if (!accessToken) {
-      return new Response('Unauthorized', { status: 401 });
-    }
-    return Response.json({ accessToken });
-  } catch {
+  const jar = await cookies();
+  const accessToken = jar.get(ACCESS_TOKEN_COOKIE)?.value;
+  if (!accessToken) {
     return new Response('Unauthorized', { status: 401 });
   }
+  return Response.json({ accessToken });
 }
-
-

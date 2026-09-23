@@ -55,4 +55,25 @@ describe('Invites (e2e)', () => {
       .set(hostAuth('host-b'))
       .expect(403);
   });
+
+  it('host can list invite codes for their event', async () => {
+    const event = await createEvent(app.getHttpServer());
+    const gen = await request(app.getHttpServer())
+      .post(`/invites/generate/${event.id}`)
+      .set(hostAuth())
+      .expect(201);
+
+    const listed = await request(app.getHttpServer())
+      .get(`/invites/event/${event.id}`)
+      .set(hostAuth())
+      .expect(200);
+    expect(
+      listed.body.find((i: { code: string }) => i.code === gen.body.code),
+    ).toBeTruthy();
+
+    await request(app.getHttpServer())
+      .get(`/invites/event/${event.id}`)
+      .set(hostAuth('other-host'))
+      .expect(403);
+  });
 });

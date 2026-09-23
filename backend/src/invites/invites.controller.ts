@@ -23,6 +23,15 @@ export class InvitesController {
     return await this.invites.generate(eventId);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('host')
+  @Get('event/:eventId')
+  async listForEvent(@Param('eventId') eventId: string, @Req() req: Request) {
+    const { sub } = getAuthUser(req);
+    await this.events.requireHost(eventId, sub);
+    return await this.invites.listForEvent(eventId);
+  }
+
   @Get('validate/:code')
   async validate(@Param('code') code: string) {
     return await this.invites.validate(code);

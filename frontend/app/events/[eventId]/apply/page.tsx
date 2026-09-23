@@ -3,10 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiGet, apiPostAuth } from '@/lib/api';
 import { useParams } from 'next/navigation';
+import HostLoginPrompt from '@/app/components/HostLoginPrompt';
+import { useAuth } from '@/lib/auth';
 
 type Field = { name: string; type: string; required?: boolean };
 
 export default function ApplyToEventPage() {
+  const { user, loading: authLoading } = useAuth();
   const params = useParams();
   const eventId = useMemo(() => String(params?.eventId ?? ''), [params]);
   const [fields, setFields] = useState<Field[]>([]);
@@ -19,7 +22,7 @@ export default function ApplyToEventPage() {
 
   useEffect(() => {
     let mounted = true;
-    if (!eventId) return;
+    if (!eventId || authLoading || !user) return;
     (async () => {
       try {
         // fetch event details for status
@@ -43,7 +46,24 @@ export default function ApplyToEventPage() {
     return () => {
       mounted = false;
     };
-  }, [eventId]);
+  }, [eventId, authLoading, user]);
+
+  if (authLoading) {
+    return (
+      <div className="max-w-2xl mx-auto p-6">
+        <div className="text-sm">Loading…</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <HostLoginPrompt
+        title="Apply to event"
+        message="Log in to submit an application."
+      />
+    );
+  }
 
   const submit = async () => {
     setLoading(true);

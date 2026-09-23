@@ -132,4 +132,42 @@ describe('Applications (e2e)', () => {
       .send({ eventId: event.id, answers: {}, inviteCode: 'INVALID' })
       .expect(400);
   });
+
+  it('rejects a second approval when the event is at capacity', async () => {
+    const event = await createEvent(app.getHttpServer(), 'test-user', {
+      capacity: 1,
+    });
+
+    const inviteA = await request(app.getHttpServer())
+      .post(`/invites/generate/${event.id}`)
+      .set(hostAuth())
+      .expect(201);
+    const inviteB = await request(app.getHttpServer())
+      .post(`/invites/generate/${event.id}`)
+      .set(hostAuth())
+      .expect(201);
+
+    const first = await request(app.getHttpServer())
+      .post('/applications')
+      .set(userAuth('user|one'))
+      .send({ eventId: event.id, answers: {}, inviteCode: inviteA.body.code })
+      .expect(201);
+    const second = await request(app.getHttpServer())
+      .post('/applications')
+      .set(userAuth('user|two'))
+      .send({ eventId: event.id, answers: {}, inviteCode: inviteB.body.code })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/applications/${first.body.id}/decision`)
+      .set(hostAuth())
+      .send({ status: 'approved' })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .patch(`/applications/${second.body.id}/decision`)
+      .set(hostAuth())
+      .send({ status: 'approved' })
+      .expect(400);
+  });
 });

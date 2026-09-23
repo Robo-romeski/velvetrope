@@ -46,6 +46,20 @@ describe('Events (e2e)', () => {
       .expect(201);
     const id = create.body.id as string;
     expect(create.body.hostId).toBe('test-user');
+    expect(create.body.status).toBe('draft');
+
+    const publicBefore = await request(app.getHttpServer())
+      .get('/events')
+      .expect(200);
+    expect(
+      publicBefore.body.find((e: { id: string }) => e.id === id),
+    ).toBeFalsy();
+
+    const mine = await request(app.getHttpServer())
+      .get('/events/mine')
+      .set(hostAuth())
+      .expect(200);
+    expect(mine.body.find((e: { id: string }) => e.id === id)).toBeTruthy();
 
     await request(app.getHttpServer()).get(`/events/${id}`).expect(200);
 
@@ -60,6 +74,13 @@ describe('Events (e2e)', () => {
       .set(hostAuth())
       .expect(201);
     expect(pub.body.status).toBe('published');
+
+    const publicAfter = await request(app.getHttpServer())
+      .get('/events')
+      .expect(200);
+    expect(
+      publicAfter.body.find((e: { id: string }) => e.id === id),
+    ).toBeTruthy();
 
     const can = await request(app.getHttpServer())
       .post(`/events/${id}/cancel`)
@@ -91,5 +112,31 @@ describe('Events (e2e)', () => {
       .delete(`/events/${id}`)
       .set(hostAuth('host-b'))
       .expect(403);
+  });
+
+  it('GET /events/mine requires a host and returns only that host events', async () => {
+    await request(app.getHttpServer()).get('/events/mine').expect(401);
+
+    const created = await request(app.getHttpServer())
+      .post('/events')
+      .set(hostAuth('host-a'))
+      .send({ title: 'A only', date: new Date().toISOString(), capacity: 3 })
+      .expect(201);
+
+    const mineA = await request(app.getHttpServer())
+      .get('/events/mine')
+      .set(hostAuth('host-a'))
+      .expect(200);
+    expect(
+      mineA.body.find((e: { id: string }) => e.id === created.body.id),
+    ).toBeTruthy();
+
+    const mineB = await request(app.getHttpServer())
+      .get('/events/mine')
+      .set(hostAuth('host-b'))
+      .expect(200);
+    expect(
+      mineB.body.find((e: { id: string }) => e.id === created.body.id),
+    ).toBeFalsy();
   });
 });

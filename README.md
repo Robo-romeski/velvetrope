@@ -1,14 +1,14 @@
 # VelvetKey
 
-A sophisticated event management platform for exclusive events with Auth0 authentication, Stripe Connect payments, and application management.
+A sophisticated event management platform for exclusive events with local email/password authentication, Stripe Connect payments, and application management.
 
 ## Features Implemented
 
-### ✅ Authentication & Authorization (Auth0)
-- JWT verification on backend
+### ✅ Authentication & Authorization
+- Email/password register and login
+- JWT verification on the backend
 - RBAC with host/attendee roles
-- Frontend Auth0 integration with Next.js App Router
-- Protected routes and middleware
+- HttpOnly session cookie on the Next.js app
 
 ### ✅ Event Management
 - Full CRUD operations for events
@@ -19,7 +19,7 @@ A sophisticated event management platform for exclusive events with Auth0 authen
 ### ✅ Application System
 - Dynamic application form schema (per event)
 - Form validation (required fields)
-- Application submission with Auth0 user context
+- Application submission with the signed-in user
 - Host review and decision making (approve/reject)
 - Paginated application listing
 
@@ -45,7 +45,7 @@ A sophisticated event management platform for exclusive events with Auth0 authen
 
 - **Backend**: NestJS, TypeORM, SQLite (dev), Postgres (planned production)
 - **Frontend**: Next.js 15 (App Router), React 19
-- **Auth**: Auth0 (JWT + RBAC)
+- **Auth**: Local email/password (JWT + RBAC)
 - **Payments**: Stripe Connect
 - **Database**: SQLite (in-memory for tests, file-based for dev)
 
@@ -56,10 +56,9 @@ A sophisticated event management platform for exclusive events with Auth0 authen
    cp .env.example .env
    ```
 
-2. **Update `.env` with your actual credentials**:
-   - Auth0: `AUTH0_ISSUER` (backend JWT) plus `AUTH0_DOMAIN` / `AUTH0_CLIENT_ID` / `AUTH0_CLIENT_SECRET` / `AUTH0_SECRET` (frontend)
-   - Stripe secret key and webhook secret
-   - Generate a secure `AUTH0_SECRET` (32+ chars)
+2. **Update `.env` if needed**:
+   - `AUTH_SECRET` (32+ characters; a local default works for development)
+   - Stripe secret key and webhook secret (optional until payments)
 
 3. **Run the stack**:
    ```bash
@@ -92,7 +91,7 @@ npm run dev
 ```
 ├── backend/
 │   ├── src/
-│   │   ├── auth/           # Auth0 JWT guards, RBAC
+│   │   ├── auth/           # Users, JWT guards, RBAC
 │   │   ├── events/         # Event CRUD + status
 │   │   ├── applications/   # Application system + forms
 │   │   ├── invites/        # Invite code management
@@ -105,14 +104,20 @@ npm run dev
 │   │   ├── events/         # Event pages (apply, ticket)
 │   │   └── invite/         # Invite redemption
 │   └── lib/
-│       └── api.ts          # API helpers with Auth0 tokens
+│       └── api.ts          # API helpers with session tokens
 └── docker-compose.yml
 ```
 
 ## API Endpoints
 
+### Auth
+- `POST /auth/register` - Create an account (returns JWT)
+- `POST /auth/login` - Sign in (returns JWT)
+- `GET /auth/me` - Current user (auth required)
+
 ### Events
-- `GET /events` - List all events
+- `GET /events` - List published events
+- `GET /events/mine` - List the authenticated host's events
 - `GET /events/:id` - Get event details
 - `POST /events` - Create event (host only)
 - `PATCH /events/:id` - Update event (host only)
@@ -130,11 +135,13 @@ npm run dev
 ### Invites
 - `POST /invites/generate/:eventId` - Generate invite code (host only)
 - `GET /invites/validate/:code` - Validate code (public)
+- `GET /invites/event/:eventId` - List invite codes (event host only)
 - `POST /invites/redeem/:code` - Redeem code (auth required)
 
 ### Check-in
 - `POST /checkin/issue/:eventId` - Issue ticket for a user (event host only)
 - `POST /checkin/mine/:eventId` - Issue/return ticket for the authenticated attendee (approved applications only)
+- `GET /checkin/event/:eventId` - List issued tickets without raw tokens (event host only)
 - `POST /checkin/verify/:token` - Verify ticket (event host only)
 
 ### Stripe
@@ -151,7 +158,7 @@ npm run test:e2e
 ```
 
 Tests cover:
-- Auth0 JWT verification
+- Local JWT login/register
 - RBAC enforcement
 - Event lifecycle
 - Application flow
@@ -163,18 +170,13 @@ Tests cover:
 
 See `.env.example` (root), `backend/.env.example`, and `frontend/.env.example`.
 
-### Backend (JWT)
-- `AUTH0_ISSUER`
-- `AUTH0_AUDIENCE`
+### Backend
+- `AUTH_SECRET` (32+ characters; optional in development)
 - `PORT` (default `3010`)
+- `DATABASE_PATH` (default `data/dev.sqlite`)
 
-### Frontend (Auth0 SDK)
-- `AUTH0_DOMAIN`
-- `AUTH0_CLIENT_ID`
-- `AUTH0_CLIENT_SECRET`
-- `AUTH0_SECRET` (32+ characters)
-- `APP_BASE_URL`
-- `NEXT_PUBLIC_AUTH0_AUDIENCE`
+### Frontend
+- `APP_BASE_URL` (default `http://localhost:3000`)
 - `NEXT_PUBLIC_API_BASE_URL` (default `http://localhost:3010`)
 
 ### Stripe
@@ -187,7 +189,7 @@ See `.env.example` (root), `backend/.env.example`, and `frontend/.env.example`.
 - [ ] Implement Stripe payment flow
 - [ ] Add email notifications
 - [ ] Host dashboard with analytics
-- [ ] Event capacity limits
+- [x] Event capacity limits
 - [ ] Waitlist management
 - [ ] Photo verification for check-in
 

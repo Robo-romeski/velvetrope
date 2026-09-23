@@ -97,9 +97,10 @@
             "description": "Create detailed schema definitions for all required tables with proper relationships and constraints",
             "dependencies": [],
             "details": "Define complete table structures including primary keys, foreign keys, indexes, and constraints for Users, Events, Invitations, Attendance, Feedback, and Reports tables. Document all relationships between tables (one-to-many, many-to-many). Include data types, nullability, and default values for each column.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Create entity-relationship diagrams and validate them against requirements. Review schema with team members to ensure all necessary fields and relationships are captured.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-09-18T03:20:51.868Z"
           },
           {
             "id": 2,
@@ -153,7 +154,8 @@
         ],
         "complexity": 7,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Break down the database schema design into detailed subtasks covering: 1) Entity relationship modeling and normalization, 2) PostgreSQL schema implementation with proper constraints and indexes, 3) Migration system setup with Alembic, and 4) ORM layer implementation with SQLAlchemy."
+        "expansionPrompt": "Break down the database schema design into detailed subtasks covering: 1) Entity relationship modeling and normalization, 2) PostgreSQL schema implementation with proper constraints and indexes, 3) Migration system setup with Alembic, and 4) ORM layer implementation with SQLAlchemy.",
+        "updatedAt": "2026-09-18T03:20:51.868Z"
       },
       {
         "id": "3",
@@ -401,7 +403,7 @@
           "2",
           "3"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -433,9 +435,10 @@
               "6.2"
             ],
             "details": "Develop a dashboard showing all events created by the host with filtering and sorting options. Include event metrics (registrations, capacity), status indicators, and quick action buttons for editing, publishing, or cancelling events. Implement pagination for hosts with many events.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Test dashboard loading with various numbers of events. Verify filtering and sorting functionality. Test event status changes and confirm they update in real-time.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-09-18T03:26:56.078Z"
           },
           {
             "id": 4,
@@ -466,7 +469,8 @@
         ],
         "complexity": 6,
         "recommendedSubtasks": 3,
-        "expansionPrompt": "Break down the event management functionality into detailed subtasks covering: 1) Event CRUD operations and form validation, 2) Event dashboard and status management, and 3) Invite code generation and management system."
+        "expansionPrompt": "Break down the event management functionality into detailed subtasks covering: 1) Event CRUD operations and form validation, 2) Event dashboard and status management, and 3) Invite code generation and management system.",
+        "updatedAt": "2026-09-18T03:26:56.078Z"
       },
       {
         "id": "7",
@@ -563,9 +567,10 @@
             "description": "Develop a system to generate unique QR codes for approved attendees with encrypted event and attendee information",
             "dependencies": [],
             "details": "Create a secure algorithm to generate unique QR codes containing encrypted attendee ID, event ID, and timestamp. Implement a database structure to store QR code data and validation status. Ensure QR codes are regenerated periodically for security.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Test QR code uniqueness across multiple attendees. Verify encryption security. Test QR code validation with expired codes and invalid data.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-09-18T03:51:31.530Z"
           },
           {
             "id": 2,
@@ -575,9 +580,10 @@
               "8.1"
             ],
             "details": "Add a dedicated section in the attendee dashboard to display the QR code. Implement download functionality for offline access. Add options to share QR code via email or messaging. Include clear instructions for attendees on how to use the QR code.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test QR code rendering across different devices and screen sizes. Verify download functionality preserves QR code quality. Test sharing options with various platforms.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-09-18T03:51:31.545Z"
           },
           {
             "id": 3,
@@ -587,9 +593,10 @@
               "8.1"
             ],
             "details": "Create a mobile-optimized QR scanner using device camera. Implement QR code validation against the database. Add visual and audio feedback for successful/failed scans. Include manual entry option for damaged QR codes. Develop offline scanning capability with local validation and synchronization.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": "Test scanner in various lighting conditions. Verify scanning works across different device types. Test offline functionality with subsequent synchronization.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-09-18T03:51:31.558Z"
           },
           {
             "id": 4,
@@ -599,9 +606,10 @@
               "8.3"
             ],
             "details": "Create database structure for attendance records. Implement check-in validation logic with timestamp and location data. Develop duplicate check-in prevention. Add attendance status indicators (checked-in, no-show, etc.). Create API endpoints for attendance data retrieval.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test concurrent check-ins for the same event. Verify duplicate check-in prevention. Test attendance data accuracy and completeness.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-09-18T03:51:31.575Z"
           },
           {
             "id": 5,
@@ -618,7 +626,8 @@
         ],
         "complexity": 7,
         "recommendedSubtasks": 3,
-        "expansionPrompt": "Break down the QR code check-in system into detailed subtasks covering: 1) QR code generation and display for attendees, 2) QR code scanning functionality with validation, and 3) Offline mode implementation and attendance tracking."
+        "expansionPrompt": "Break down the QR code check-in system into detailed subtasks covering: 1) QR code generation and display for attendees, 2) QR code scanning functionality with validation, and 3) Offline mode implementation and attendance tracking.",
+        "updatedAt": "2026-09-18T03:51:31.575Z"
       },
       {
         "id": "9",
@@ -639,9 +648,10 @@
             "description": "Set up Stripe Connect account and API credentials for the platform",
             "dependencies": [],
             "details": "Create a Stripe Connect account for the platform, generate API keys, configure webhook endpoints, and set up the necessary platform settings for handling connected accounts and payments",
-            "status": "in-progress",
+            "status": "deferred",
             "testStrategy": "Verify API credentials work correctly in test mode and webhook endpoints receive test events",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2026-09-18T03:51:31.027Z"
           },
           {
             "id": 2,
@@ -696,7 +706,8 @@
         ],
         "complexity": 8,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Break down the Stripe Connect integration into detailed subtasks covering: 1) Stripe Connect account setup and host onboarding, 2) Payment processing for event tickets, 3) Payout management and financial reporting, and 4) Webhook handling and error management."
+        "expansionPrompt": "Break down the Stripe Connect integration into detailed subtasks covering: 1) Stripe Connect account setup and host onboarding, 2) Payment processing for event tickets, 3) Payout management and financial reporting, and 4) Webhook handling and error management.",
+        "updatedAt": "2026-09-18T03:51:31.027Z"
       },
       {
         "id": "10",
@@ -2161,9 +2172,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-09-03T22:57:03.799Z",
+      "lastModified": "2026-09-18T03:51:31.575Z",
       "taskCount": 26,
-      "completedCount": 2,
+      "completedCount": 3,
       "tags": [
         "master"
       ]

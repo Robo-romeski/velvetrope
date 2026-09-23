@@ -3,11 +3,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiGetAuth, apiPatchAuth } from '@/lib/api';
 import { useParams } from 'next/navigation';
+import HostLoginPrompt from '@/app/components/HostLoginPrompt';
+import { useAuth } from '@/lib/auth';
 
 type Application = { id: string; eventId: string; applicantSub: string; status: string; answers?: string };
 type Paged<T> = { items: T[]; total: number; page: number; pageSize: number };
 
 export default function HostApplicationsPage() {
+  const { user, loading: authLoading } = useAuth();
   const params = useParams();
   const eventId = useMemo(() => String(params?.eventId ?? ''), [params]);
   const [items, setItems] = useState<Application[]>([]);
@@ -33,10 +36,10 @@ export default function HostApplicationsPage() {
   };
 
   useEffect(() => {
-    if (!eventId) return;
+    if (!eventId || authLoading || !user) return;
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, page, pageSize, status]);
+  }, [eventId, page, pageSize, status, authLoading, user]);
 
   const decide = async (id: string, status: 'approved' | 'rejected') => {
     try {
@@ -46,6 +49,18 @@ export default function HostApplicationsPage() {
       alert(e instanceof Error ? e.message : 'Decision failed');
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="max-w-3xl mx-auto p-6">
+        <div className="text-sm">Loading…</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <HostLoginPrompt title="Applications" />;
+  }
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-4">

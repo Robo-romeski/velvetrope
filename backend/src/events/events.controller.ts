@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { EventsService, EventItem } from './events.service';
+import { EventsService, EventItem, HostEventItem } from './events.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
@@ -29,7 +29,15 @@ export class EventsController {
 
   @Get()
   async list(): Promise<EventItem[]> {
-    return await this.events.list();
+    return await this.events.listPublished();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('host')
+  @Get('mine')
+  async mine(@Req() req: Request): Promise<HostEventItem[]> {
+    const { sub } = getAuthUser(req);
+    return await this.events.listByHost(sub);
   }
 
   @Get(':id')

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiGet } from '@/lib/api';
+import { EventCtaLinks } from '@/app/components/EventCtaLinks';
+import { useMyApplicationByEvent } from '@/lib/my-applications';
 
 type PublicEvent = {
   id: string;
@@ -17,6 +19,7 @@ export default function Home() {
   const [events, setEvents] = useState<PublicEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { getStatus, loading: appsLoading, loggedIn } = useMyApplicationByEvent();
 
   useEffect(() => {
     let mounted = true;
@@ -44,6 +47,13 @@ export default function Home() {
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
           Invite-only gatherings. Apply with a code, then bring your ticket.
         </p>
+        {loggedIn && (
+          <p className="text-sm mt-2">
+            <Link href="/applications" className="text-blue-600 underline">
+              My applications
+            </Link>
+          </p>
+        )}
       </div>
       {loading && <div className="text-sm">Loading…</div>}
       {error && (
@@ -54,21 +64,22 @@ export default function Home() {
       <div className="space-y-3">
         {events.map((event) => (
           <div key={event.id} className="border rounded p-4 space-y-2">
-            <div className="font-medium">{event.title}</div>
+            <Link href={`/events/${event.id}`} className="font-medium text-blue-600 underline">
+              {event.title}
+            </Link>
             {event.description && (
               <div className="text-sm text-gray-600 dark:text-gray-400">{event.description}</div>
             )}
             <div className="text-xs text-gray-500">
               {new Date(event.date).toLocaleString()} · capacity {event.capacity}
             </div>
-            <div className="flex gap-3 text-sm">
-              <Link className="text-blue-600 underline" href={`/events/${event.id}/apply`}>
-                Apply
-              </Link>
-              <Link className="text-blue-600 underline" href={`/events/${event.id}/ticket`}>
-                Ticket
-              </Link>
-            </div>
+            {!appsLoading && (
+              <EventCtaLinks
+                eventId={event.id}
+                applicationStatus={getStatus(event.id)}
+                loggedIn={loggedIn}
+              />
+            )}
           </div>
         ))}
         {!loading && !error && events.length === 0 && (

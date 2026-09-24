@@ -7,6 +7,10 @@ import { AppModule } from './../src/app.module';
 describe('Auth (e2e)', () => {
   let app: INestApplication<App>;
 
+  beforeAll(() => {
+    process.env.EXPOSE_PASSWORD_RESET_TOKEN = 'true';
+  });
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -89,6 +93,36 @@ describe('Auth (e2e)', () => {
       .post('/auth/login')
       .send({ email, password: 'wrong-pass' })
       .expect(401);
+  });
+
+  it('password reset flow updates password', async () => {
+    const email = `reset-${Date.now()}@example.com`;
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({ email, password: 'password1' })
+      .expect(201);
+
+    const forgot = await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email })
+      .expect(201);
+    expect(typeof forgot.body.resetToken).toBe('string');
+
+    await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({ token: forgot.body.resetToken, password: 'newpassword9' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password: 'password1' })
+      .expect(401);
+
+    const loggedIn = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password: 'newpassword9' })
+      .expect(201);
+    expect(loggedIn.body.user.email).toBe(email);
   });
 
   it('attendee tokens cannot call host-only routes', async () => {

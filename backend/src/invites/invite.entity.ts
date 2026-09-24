@@ -24,6 +24,9 @@ export class InviteEntity {
   @Column({ type: 'datetime', nullable: true })
   usedAt?: Date | null;
 
+  @Column({ type: 'datetime', nullable: true })
+  expiresAt?: Date | null;
+
   @CreateDateColumn({ type: 'datetime' })
   createdAt!: Date;
 }

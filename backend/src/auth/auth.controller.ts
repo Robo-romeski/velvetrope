@@ -1,13 +1,16 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { getAuthUser } from './request-user';
 
+@UseGuards(ThrottlerGuard)
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post('register')
   async register(
     @Body()
@@ -26,10 +29,28 @@ export class AuthController {
     });
   }
 
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post('login')
   async login(@Body() body: { email?: string; password?: string }) {
     return await this.auth.login({
       email: body.email ?? '',
+      password: body.password ?? '',
+    });
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: { email?: string }) {
+    return await this.auth.requestPasswordReset(body.email ?? '');
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('reset-password')
+  async resetPassword(
+    @Body() body: { token?: string; password?: string },
+  ) {
+    return await this.auth.resetPassword({
+      token: body.token ?? '',
       password: body.password ?? '',
     });
   }

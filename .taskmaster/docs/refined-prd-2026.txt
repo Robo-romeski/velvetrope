@@ -1,0 +1,124 @@
+Product: VelvetKey (velvetrope)
+Repository: NestJS 11 + Next.js 15 App Router, TypeORM, SQLite (dev/tests), Docker Compose
+Auth: Local email/password, JWT (HS256, AUTH_SECRET), roles host + attendee — NOT Auth0
+Payments: Stripe Connect scaffolding exists; ticket checkout NOT live — enable only when product owner opts in
+Infrastructure: Local + GitHub Actions CI only — NO AWS EKS/GHCR prod compose from old PR #1
+
+================================================================================
+ALREADY SHIPPED (do not re-implement; reference for dependencies only)
+================================================================================
+- User entity, register/login/me, JWT guard, test headers in e2e
+- Event CRUD, hostId ownership, draft/publish/cancel, host dashboard (list/create/edit/delete)
+- Application dynamic form schema, submit with invite code, host approve/reject, capacity on approve
+- Event invites: generate, list, validate, one-time redeem on apply
+- Check-in: attendee ticket after approval, host verify, attendance list, camera QR on scan page
+- Frontend session cookie, login/register pages, auth gates on host + apply pages
+- MVP hardening: crypto check-in tokens, webhook fail-closed, journey e2e test
+- CI: backend unit + e2e, frontend build (AUTH_SECRET not Auth0)
+
+================================================================================
+PHASE 1 — Complete the local MVP loop (priority: high, no external vendors required)
+================================================================================
+
+1. Attendee experience
+   - "My applications" page: list user's applications with status per event
+   - Link from home/event pages to apply and ticket when approved
+   - Clear messaging when event is draft/unpublished on apply page (already partial)
+   - Optional: applicant view of host decision feedback field if added to API
+
+2. Invite system hardening
+   - Replace Math.random invite codes with crypto.randomBytes (url-safe)
+   - Invite list UI: show used/unused, usedBy, usedAt (API may exist — align UI)
+   - Invite analytics for hosts: counts generated, redeemed, conversion rate per event
+   - Optional phase 1b: configurable expiry on codes (default none)
+
+3. Host operations polish
+   - Attendance dashboard: export CSV, filters (checked-in vs not), simple stats on scan page or sibling route
+   - Application review: show parsed answers JSON readably; bulk approve where safe
+   - Consistent navigation between event sub-pages (form, invites, applications, scan, edit)
+
+4. Taskmaster & docs hygiene
+   - README and .env examples stay aligned with AUTH_SECRET and local auth
+   - Remove or archive stale Auth0/FastAPI references in docs
+
+================================================================================
+PHASE 2 — Production readiness (priority: high before public deploy)
+================================================================================
+
+5. Postgres + TypeORM migrations
+   - Add Postgres in docker-compose for dev optional profile
+   - Turn synchronize off; initial migration matching current entities including User
+   - Keep e2e on SQLite in-memory OR document Postgres test container — must stay green in CI
+   - Data migration notes from SQLite file to Postgres (optional script)
+
+6. Auth & account security
+   - Password reset flow (email token or signed link — requires email provider choice)
+   - Email verification optional flag on User
+   - Rate limiting on /auth/login and /auth/register
+   - SESSION/JWT rotation and secure cookie flags review for production APP_BASE_URL
+
+7. Platform security baseline
+   - Helmet/security headers on Nest
+   - CORS locked to configured origins in production
+   - Audit sensitive host mutations (structured logs, no PII leaks)
+
+================================================================================
+PHASE 3 — Monetization (priority: medium, DEFER until owner enables Stripe dashboard)
+================================================================================
+
+8. Stripe Connect completion
+   - Verify onboarding uses authenticated host sub only (no hardcoded host ids)
+   - Host UI for Connect status already exists — polish error states
+
+9. Ticket payments
+   - PaymentIntent or Checkout Session for priced events
+   - Record payment on application or ticket entity
+   - Webhook handlers for payment success/failure/refund
+   - Do not block free events; payments optional per event
+
+================================================================================
+PHASE 4 — Trust, safety, and growth (priority: low / backlog — not MVP blockers)
+================================================================================
+
+10. Notifications
+    - Email provider integration (e.g. Resend): application decided, event reminder
+    - In-app notification center later
+
+11. Safety & compliance
+    - Code of conduct acceptance on apply
+    - User reporting and admin review (minimal MVP: store report, email admin)
+
+12. Identity verification
+    - Defer Persona/Onfido until product requires verified attendees
+
+13. Comms & feedback
+    - Event chat, post-event feedback, reputation — future epics
+
+14. Admin console
+    - Platform admin role, user/event moderation
+
+15. Performance & PWA
+    - Redis caching deferred; PWA/offline QR deferred
+
+================================================================================
+EXPLICIT OUT OF SCOPE (unless product owner reopens)
+================================================================================
+- Auth0 or third-party IdP for primary login
+- AWS EKS, fake production docker-compose, GHCR deploy from Automaton PR #1
+- Alembic, FastAPI, SQLAlchemy — stack is Nest + TypeORM only
+- Full PRD "sexual wellness tutorials" stages — separate product line, not this repo MVP
+
+================================================================================
+TECH CONSTRAINTS FOR ALL NEW WORK
+================================================================================
+- Match existing patterns: Nest modules, JwtAuthGuard, apiGetAuth in frontend, useAuth gates
+- Tests: extend backend/test e2e for new API behavior; frontend tsc in CI
+- Minimal diff; no over-engineering
+
+================================================================================
+SUCCESS CRITERIA FOR "MVP COMPLETE" (end of Phase 1 + 2)
+================================================================================
+- Two real users can complete publish → invite → apply → approve → ticket → check-in without manual API calls
+- Host sees invite metrics and attendance export
+- Deployable to a single VPS or PaaS with Postgres and AUTH_SECRET configured
+- Task list in Taskmaster reflects this document, not the 2025 Auth0/FastAPI PRD

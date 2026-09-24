@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { apiGet, apiPutAuth, apiPostAuth } from '@/lib/api';
 import { useParams } from 'next/navigation';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
+import { HostEventNav } from '@/app/components/HostEventNav';
 import { useAuth } from '@/lib/auth';
 
 export default function HostEventFormEditor() {
@@ -93,8 +94,9 @@ export default function HostEventFormEditor() {
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Application Form - {eventId}</h1>
+      <HostEventNav eventId={eventId} />
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-2xl font-semibold">Application form</h1>
         <div className="flex items-center gap-2 text-sm">
           <span className="px-2 py-1 border rounded">Status: {eventStatus ?? 'unknown'}</span>
           <button onClick={publish} disabled={loading} className="px-3 py-1 border rounded disabled:opacity-50">Publish</button>

@@ -17,4 +17,10 @@ export class UserEntity {
 
   @Column({ type: 'simple-json' })
   roles!: string[];
+
+  @Column({ type: 'text', nullable: true })
+  passwordResetTokenHash?: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  passwordResetExpiresAt?: Date | null;
 }

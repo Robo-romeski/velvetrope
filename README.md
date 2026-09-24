@@ -47,7 +47,7 @@ A sophisticated event management platform for exclusive events with local email/
 - **Frontend**: Next.js 15 (App Router), React 19
 - **Auth**: Local email/password (JWT + RBAC)
 - **Payments**: Stripe Connect
-- **Database**: SQLite (in-memory for tests, file-based for dev)
+- **Database**: SQLite by default; Postgres via `DATABASE_URL` (TypeORM migrations, no `synchronize` in dev/prod)
 
 ## Quick Start with Docker Compose
 
@@ -69,6 +69,14 @@ A sophisticated event management platform for exclusive events with local email/
    - Frontend: http://localhost:3000
    - Backend: http://localhost:3010
    - Health check: http://localhost:3010/healthz
+
+### Docker with Postgres (optional)
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.postgres.yml --profile postgres up --build
+```
+
+Backend uses `DATABASE_URL=postgres://velvet:velvet@postgres:5432/velvetkey` and runs migrations on startup.
 
 ## Local Development (without Docker)
 
@@ -113,6 +121,8 @@ npm run dev
 ### Auth
 - `POST /auth/register` - Create an account (returns JWT)
 - `POST /auth/login` - Sign in (returns JWT)
+- `POST /auth/forgot-password` - Request password reset (generic response; no email enumeration)
+- `POST /auth/reset-password` - Set new password with reset token
 - `GET /auth/me` - Current user (auth required)
 
 ### Events
@@ -126,6 +136,7 @@ npm run dev
 - `POST /events/:id/cancel` - Cancel event (host only)
 
 ### Applications
+- `GET /applications/mine` - List the authenticated user's applications (auth required)
 - `POST /applications` - Submit application (auth required)
 - `GET /applications/event/:eventId` - List applications (host only)
 - `PATCH /applications/:id/decision` - Approve/reject (host only)
@@ -136,6 +147,7 @@ npm run dev
 - `POST /invites/generate/:eventId` - Generate invite code (host only)
 - `GET /invites/validate/:code` - Validate code (public)
 - `GET /invites/event/:eventId` - List invite codes (event host only)
+- `GET /invites/event/:eventId/stats` - Invite metrics for hosts (generated, redeemed, conversion)
 - `POST /invites/redeem/:code` - Redeem code (auth required)
 
 ### Check-in
@@ -173,7 +185,26 @@ See `.env.example` (root), `backend/.env.example`, and `frontend/.env.example`.
 ### Backend
 - `AUTH_SECRET` (32+ characters; optional in development)
 - `PORT` (default `3010`)
-- `DATABASE_PATH` (default `data/dev.sqlite`)
+- `DATABASE_PATH` (SQLite file when `DATABASE_URL` is unset; default `data/dev.sqlite`)
+- `DATABASE_URL` (Postgres connection string; enables Postgres driver)
+
+### Database migrations
+
+```bash
+cd backend
+npm run migration:run    # apply pending migrations (CLI)
+npm run migration:show   # status
+```
+
+Nest runs pending migrations automatically on startup when not in `NODE_ENV=test`. E2e tests use in-memory SQLite with `synchronize` for speed.
+
+### Security
+
+- Helmet security headers on the API (`configureHttpApp` in `main.ts`)
+- CORS: `CORS_ORIGINS` (comma-separated) or `APP_BASE_URL` in production; localhost frontend in dev
+- Host mutation audit logs (`HostAudit` logger): method, path, user id — no passwords or tokens
+
+If local SQLite fails after upgrading from auto-sync, delete `backend/data/dev.sqlite` and restart.
 
 ### Frontend
 - `APP_BASE_URL` (default `http://localhost:3000`)
@@ -185,7 +216,7 @@ See `.env.example` (root), `backend/.env.example`, and `frontend/.env.example`.
 
 ## Next Steps / TODO
 
-- [ ] Migrate to Postgres for production
+- [x] Postgres + TypeORM migrations (optional `DATABASE_URL` / Docker profile)
 - [ ] Implement Stripe payment flow
 - [ ] Add email notifications
 - [ ] Host dashboard with analytics

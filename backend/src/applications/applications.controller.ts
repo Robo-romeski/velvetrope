@@ -43,6 +43,13 @@ export class ApplicationsController {
     return await this.apps.submit({ ...dto, applicantSub: sub });
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('mine')
+  async mine(@Req() req: Request) {
+    const { sub } = getAuthUser(req);
+    return await this.apps.listForApplicant(sub);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('host')
   @Get('event/:eventId')

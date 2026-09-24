@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { apiGetAuth, apiPostAuth, isUnauthorized } from '@/lib/api';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
+import { HostEventNav } from '@/app/components/HostEventNav';
 import { useAuth } from '@/lib/auth';
+import { downloadCsv } from '@/lib/csv';
 import QrCamera from '@/app/components/QrCamera';
 
 type Ticket = {
@@ -15,6 +17,8 @@ type Ticket = {
   usedAt?: string | null;
 };
 
+type AttendanceFilter = 'all' | 'checked-in' | 'not-checked-in';
+
 export default function HostScanPage() {
   const { user, loading: authLoading } = useAuth();
   const params = useParams();
@@ -23,6 +27,7 @@ export default function HostScanPage() {
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [filter, setFilter] = useState<AttendanceFilter>('all');
   const [unauthorized, setUnauthorized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,6 +80,25 @@ export default function HostScanPage() {
     [verify],
   );
 
+  const filtered = tickets.filter((ticket) => {
+    if (filter === 'checked-in') return !!ticket.usedAt;
+    if (filter === 'not-checked-in') return !ticket.usedAt;
+    return true;
+  });
+
+  const exportAttendance = () => {
+    const rows: string[][] = [
+      ['userSub', 'issuedAt', 'checkedIn', 'usedAt'],
+      ...tickets.map((ticket) => [
+        ticket.userSub,
+        ticket.issuedAt,
+        ticket.usedAt ? 'yes' : 'no',
+        ticket.usedAt ?? '',
+      ]),
+    ];
+    downloadCsv(`attendance-${eventId}.csv`, rows);
+  };
+
   if (authLoading) {
     return (
       <div className="max-w-xl mx-auto p-6">
@@ -91,6 +115,7 @@ export default function HostScanPage() {
 
   return (
     <div className="max-w-xl mx-auto p-6 space-y-4">
+      <HostEventNav eventId={eventId} />
       <h1 className="text-2xl font-semibold">Check-in</h1>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         {used}/{tickets.length} checked in
@@ -111,17 +136,50 @@ export default function HostScanPage() {
       </button>
       {result && <div className="text-sm">{result}</div>}
       {error && <div className="text-sm text-red-600">{error}</div>}
+
+      <div className="flex flex-wrap items-center gap-3 text-sm pt-2">
+        <label className="flex items-center gap-2">
+          <span>Show</span>
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as AttendanceFilter)}
+            className="border rounded px-2 py-1 bg-transparent"
+          >
+            <option value="all">All tickets</option>
+            <option value="checked-in">Checked in</option>
+            <option value="not-checked-in">Not checked in</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          onClick={exportAttendance}
+          disabled={tickets.length === 0}
+          className="px-3 py-1 border rounded disabled:opacity-50"
+        >
+          Export CSV
+        </button>
+      </div>
+
       <div className="space-y-2">
-        {tickets.map((ticket) => (
-          <div key={ticket.id} className="border rounded p-3 text-sm flex items-center justify-between gap-3">
+        {filtered.map((ticket) => (
+          <div
+            key={ticket.id}
+            className="border rounded p-3 text-sm flex items-center justify-between gap-3"
+          >
             <div className="break-all">{ticket.userSub}</div>
-            <div className="text-xs text-gray-500 whitespace-nowrap">
-              {ticket.usedAt ? 'Checked in' : 'Not checked in'}
+            <div className="text-xs text-gray-500 whitespace-nowrap text-right">
+              {ticket.usedAt ? (
+                <>Checked in {new Date(ticket.usedAt).toLocaleString()}</>
+              ) : (
+                'Not checked in'
+              )}
             </div>
           </div>
         ))}
-        {tickets.length === 0 && (
-          <div className="text-sm text-gray-500">No tickets issued yet.</div>
+        {filtered.length === 0 && (
+          <div className="text-sm text-gray-500">
+            {tickets.length === 0 ? 'No tickets issued yet.' : 'No tickets match this filter.'}
+          </div>
         )}
       </div>
     </div>

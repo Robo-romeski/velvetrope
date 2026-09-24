@@ -3,6 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { configureHttpApp } from './../src/bootstrap';
 
 describe('Health (e2e)', () => {
   let app: INestApplication<App>;
@@ -13,6 +14,7 @@ describe('Health (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    configureHttpApp(app);
     await app.init();
   });
 
@@ -25,5 +27,10 @@ describe('Health (e2e)', () => {
       .get('/healthz')
       .expect(200)
       .expect({ status: 'ok' });
+  });
+
+  it('/healthz (GET) should include security headers from helmet', async () => {
+    const res = await request(app.getHttpServer()).get('/healthz').expect(200);
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
   });
 });

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { apiGet, apiPostAuth, isUnauthorized } from '@/lib/api';
+import { EventPageNav } from '@/app/components/EventPageNav';
 import QRCode from 'react-qr-code';
 
 export default function EventTicketPage() {
@@ -33,6 +34,7 @@ export default function EventTicketPage() {
         const res = await apiPostAuth(`/checkin/mine/${encodeURIComponent(eventId)}`, {});
         if (!mounted) return;
         setToken(res?.token ?? null);
+        setError(null);
       } catch (e) {
         if (!mounted) return;
         if (isUnauthorized(e)) {
@@ -65,6 +67,7 @@ export default function EventTicketPage() {
   if (unauthorized) {
     return (
       <div className="max-w-xl mx-auto p-6 space-y-3">
+        <EventPageNav eventId={eventId} title={title} />
         <h1 className="text-2xl font-semibold">{title ?? 'Your ticket'}</h1>
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Log in to show your check-in QR.
@@ -83,12 +86,28 @@ export default function EventTicketPage() {
 
   return (
     <div className="max-w-xl mx-auto p-6 space-y-4">
+      <EventPageNav eventId={eventId} title={title} />
       <h1 className="text-2xl font-semibold">{title ?? 'Your ticket'}</h1>
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Show this QR at the door. Hosts can also paste the token if the camera cannot read it.
       </p>
       {loading && <div>Loading…</div>}
-      {error && <div className="text-sm text-red-600">{error}</div>}
+      {error && (
+        <div className="text-sm space-y-2">
+          <div className="text-red-600">{error}</div>
+          <p className="text-gray-600 dark:text-gray-400">
+            Tickets are available after the host approves your application.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link href={`/events/${eventId}/apply`} className="text-blue-600 underline">
+              Apply
+            </Link>
+            <Link href="/applications" className="text-blue-600 underline">
+              My applications
+            </Link>
+          </div>
+        </div>
+      )}
       {token && (
         <div className="space-y-3">
           <div id="ticket-qr-wrap" className="p-4 bg-white rounded shadow inline-block">
@@ -98,6 +117,9 @@ export default function EventTicketPage() {
           <button onClick={download} className="px-4 py-2 border rounded text-sm">
             Download QR
           </button>
+          <Link href="/applications" className="block text-sm text-blue-600 underline">
+            My applications
+          </Link>
         </div>
       )}
     </div>

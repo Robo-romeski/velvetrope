@@ -10,20 +10,24 @@ import configuration from './config/configuration';
 import * as Joi from 'joi';
 import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { EventEntity } from './events/event.entity';
-import { ApplicationEntity } from './applications/application.entity';
-import { ApplicationFormEntity } from './applications/application-form.entity';
 import { StripeModule } from './stripe/stripe.module';
-import { StripeAccountEntity } from './stripe/stripe-account.entity';
 import { InvitesModule } from './invites/invites.module';
-import { InviteEntity } from './invites/invite.entity';
 import { CheckinModule } from './checkin/checkin.module';
-import { CheckinTicketEntity } from './checkin/checkin-ticket.entity';
 import { ApplicationsModule } from './applications/applications.module';
-import { UserEntity } from './auth/user.entity';
+import { buildTypeOrmOptions } from './database/typeorm-options';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { SecurityModule } from './security/security.module';
+
+const isTest = process.env.NODE_ENV === 'test';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000,
+        limit: isTest ? 10_000 : 120,
+      },
+    ]),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
@@ -34,22 +38,10 @@ import { UserEntity } from './auth/user.entity';
         PORT: Joi.number().default(3010),
       }),
     }),
+    SecurityModule,
     AuthModule,
     TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database:
-        process.env.DATABASE_PATH ||
-        (process.env.NODE_ENV === 'test' ? ':memory:' : 'data/dev.sqlite'),
-      entities: [
-        EventEntity,
-        ApplicationEntity,
-        ApplicationFormEntity,
-        InviteEntity,
-        CheckinTicketEntity,
-        StripeAccountEntity,
-        UserEntity,
-      ],
-      synchronize: true,
+      ...buildTypeOrmOptions(),
       retryAttempts: process.env.NODE_ENV === 'test' ? 1 : 10,
     }),
     EventsModule,

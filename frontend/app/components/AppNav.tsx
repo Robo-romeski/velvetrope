@@ -19,6 +19,7 @@ export function AppNav() {
       <div className="flex items-center gap-4 text-sm">
         <Link href="/">Events</Link>
         <Link href="/host/events">Host</Link>
+        {!loading && user && <Link href="/applications">My applications</Link>}
         <Link href="/host/stripe">Stripe</Link>
         {!loading && !user && <Link href="/auth/login">Login</Link>}
         {!loading && !user && <Link href="/auth/register">Sign up</Link>}

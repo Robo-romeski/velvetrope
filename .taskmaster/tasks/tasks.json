@@ -3,6 +3,448 @@
     "tasks": [
       {
         "id": "1",
+        "title": "Foundation (shipped)",
+        "description": "Local auth, event loop, CI, and MVP hardening are on main. Do not rebuild; extend from here.",
+        "details": "Shipped: User entity + register/login/me; JWT + RBAC; event CRUD with hostId ownership; publish/cancel; applications + dynamic forms; invites (generate/list/redeem); check-in (mine/verify/attendance list); host dashboard + auth gates; journey e2e; AUTH_SECRET CI; crypto tokens; Stripe webhook fail-closed.\n\nSource of truth: README.md and backend/test/*.e2e-spec.ts.\n\nOut of scope: Auth0, FastAPI, AWS EKS.",
+        "testStrategy": "cd backend && npm run test:e2e — all green on main.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Local authentication",
+            "description": "Email/password, JWT, session cookie, login/register UI",
+            "dependencies": [],
+            "details": "backend/src/auth/*, frontend/app/auth/*, frontend/lib/auth.tsx",
+            "status": "done",
+            "testStrategy": "auth.e2e-spec.ts",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Host events & ownership",
+            "description": "CRUD, publish/cancel, host dashboard",
+            "dependencies": [],
+            "details": "frontend/app/host/events/**, events.service ownership checks",
+            "status": "done",
+            "testStrategy": "events.e2e-spec.ts",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Applications & invites",
+            "description": "Form schema, apply with invite, host decisions, capacity",
+            "dependencies": [],
+            "details": "applications.*, invites.*",
+            "status": "done",
+            "testStrategy": "applications.e2e-spec.ts, invites.e2e-spec.ts",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Check-in & tickets",
+            "description": "Attendee ticket after approval, host scan/verify, attendance list",
+            "dependencies": [],
+            "details": "checkin.*, QrCamera on scan page",
+            "status": "done",
+            "testStrategy": "checkin.e2e-spec.ts, journey.e2e-spec.ts",
+            "parentId": "undefined"
+          }
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 5,
+        "expansionPrompt": "Break down the project infrastructure setup into detailed subtasks covering: 1) Repository and development environment setup, 2) Frontend Next.js configuration, 3) Backend FastAPI configuration, 4) AWS infrastructure provisioning with IaC, and 5) CI/CD and observability implementation."
+      },
+      {
+        "id": "2",
+        "title": "Attendee experience",
+        "description": "Complete the apply → status → ticket journey in the UI without host-only APIs.",
+        "details": "- My applications page (status per event, links to apply/ticket)\n- Home/event discovery: only published events; clear CTAs\n- Apply page: messaging for draft/cancelled events\n- Optional: show host decision notes if API adds feedback field",
+        "testStrategy": "Manual two-account flow; optional frontend component test for empty/loading states.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "My applications page",
+            "description": "List authenticated user's applications with status and event title",
+            "dependencies": [],
+            "details": "Add GET /applications/mine or reuse existing endpoints; page under /applications or /me/applications",
+            "status": "done",
+            "testStrategy": "e2e: submit app as user A, list shows pending then approved",
+            "updatedAt": "2026-09-23T21:48:02.488Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Navigation and CTAs",
+            "description": "Link home, event detail, apply, and ticket pages consistently",
+            "dependencies": [
+              "2.1"
+            ],
+            "details": "AppNav or event cards: Apply | View ticket based on status",
+            "status": "done",
+            "testStrategy": "Manual walkthrough after approve",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-23T21:54:30.413Z"
+          }
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the database schema design into detailed subtasks covering: 1) Entity relationship modeling and normalization, 2) PostgreSQL schema implementation with proper constraints and indexes, 3) Migration system setup with Alembic, and 4) ORM layer implementation with SQLAlchemy.",
+        "updatedAt": "2026-09-23T21:54:30.413Z"
+      },
+      {
+        "id": "3",
+        "title": "Invite analytics & lifecycle",
+        "description": "Hosts see invite performance; optional expiry without breaking one-time redeem.",
+        "details": "Crypto codes already via common/random-token.ts. Add metrics: generated, redeemed, pending. Host UI charts or summary on invites page.",
+        "testStrategy": "e2e: generate 2 codes, redeem 1, analytics show 50% conversion.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Invite metrics API",
+            "description": "Per-event stats for hosts",
+            "dependencies": [],
+            "details": "GET /invites/event/:id/stats or embed in list response",
+            "status": "done",
+            "testStrategy": "invites e2e extension",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-23T22:00:50.062Z"
+          },
+          {
+            "id": 2,
+            "title": "Host invites UI analytics",
+            "description": "Display stats on invites page",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "frontend/app/host/events/[eventId]/invites/page.tsx",
+            "status": "done",
+            "testStrategy": "Visual check with seed data",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-23T22:00:50.089Z"
+          },
+          {
+            "id": 3,
+            "title": "Optional invite expiry",
+            "description": "expiresAt on invite entity; reject expired on redeem",
+            "dependencies": [
+              "3.1"
+            ],
+            "details": "Migration when Postgres lands; SQLite ok for dev with synchronize until task 5",
+            "status": "done",
+            "testStrategy": "e2e with clock or short TTL in test env",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-23T22:00:50.106Z"
+          }
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the Auth0 integration into detailed subtasks covering: 1) Auth0 tenant configuration and API setup, 2) Frontend authentication flows and protected routes, 3) Backend JWT validation and session management, and 4) Role-based access control implementation.",
+        "updatedAt": "2026-09-23T22:00:50.106Z"
+      },
+      {
+        "id": "4",
+        "title": "Host operations polish",
+        "description": "Review applications and run check-in efficiently at the door.",
+        "details": "Readable application answers, attendance export, cross-links between event admin pages.",
+        "testStrategy": "Host can export CSV of attendance; approve from applications with full answers visible.",
+        "priority": "medium",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Application answers display",
+            "description": "Parse and show JSON answers in host applications list/detail",
+            "dependencies": [],
+            "details": "applications/page.tsx",
+            "status": "done",
+            "testStrategy": "Submit form with fields; host sees values",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-23T22:01:30.817Z"
+          },
+          {
+            "id": 2,
+            "title": "Attendance export",
+            "description": "CSV download from check-in/attendance view",
+            "dependencies": [],
+            "details": "Client-side CSV from GET /checkin/event/:id",
+            "status": "done",
+            "testStrategy": "Export file opens with correct columns",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-23T22:01:30.837Z"
+          },
+          {
+            "id": 3,
+            "title": "Event admin navigation",
+            "description": "Shared sub-nav for form, invites, applications, scan, edit",
+            "dependencies": [],
+            "details": "Small HostEventNav component",
+            "status": "done",
+            "testStrategy": "Click through all tabs for one event",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-23T22:01:30.841Z"
+          }
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the ID verification integration into detailed subtasks covering: 1) Persona/Onfido API integration and credential management, 2) Frontend verification flow and UI components, 3) Backend verification endpoints and webhook handlers, and 4) Verification status management and admin review system.",
+        "updatedAt": "2026-09-23T22:01:30.841Z"
+      },
+      {
+        "id": "5",
+        "title": "Postgres and TypeORM migrations",
+        "description": "Production-ready persistence; synchronize off.",
+        "details": "See refined-prd-2026 Phase 2. Docker compose optional Postgres profile. CI stays fast (SQLite in-memory e2e unless container adopted).",
+        "testStrategy": "migration:run on fresh DB; e2e green; manual create event on Postgres dev profile.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initial migration",
+            "description": "Schema matching all entities including User",
+            "dependencies": [],
+            "details": "synchronize: false in production",
+            "status": "done",
+            "testStrategy": "Empty DB migrates cleanly",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-23T22:45:24.104Z"
+          },
+          {
+            "id": 2,
+            "title": "Docker Postgres profile",
+            "description": "Document DATABASE_URL vs DATABASE_PATH",
+            "dependencies": [
+              "5.1"
+            ],
+            "details": "docker-compose.yml service postgres",
+            "status": "done",
+            "testStrategy": "compose up with profile connects",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-23T22:45:24.134Z"
+          }
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the user onboarding flow into detailed subtasks covering: 1) Multi-step onboarding UI and state management, 2) Form validation and data collection, 3) Integration with authentication and verification services, and 4) Onboarding progress tracking and resumption functionality.",
+        "updatedAt": "2026-09-23T22:45:24.134Z"
+      },
+      {
+        "id": "6",
+        "title": "Auth and account security",
+        "description": "Production auth hygiene beyond MVP login.",
+        "details": "Password reset requires email provider (Resend/SMTP). Rate limit auth endpoints. Review cookie flags for production.",
+        "testStrategy": "Reset flow e2e with mock mail; rate limit returns 429 after threshold.",
+        "priority": "medium",
+        "dependencies": [
+          "5"
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Rate limiting",
+            "description": "Throttle /auth/login and /auth/register",
+            "dependencies": [],
+            "details": "@nestjs/throttler or similar",
+            "status": "done",
+            "testStrategy": "e2e or unit burst test",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-24T16:52:04.443Z"
+          },
+          {
+            "id": 2,
+            "title": "Password reset",
+            "description": "Token-based reset email + UI",
+            "dependencies": [],
+            "details": "Blocked on email provider task 8.1 if shared",
+            "status": "done",
+            "testStrategy": "End-to-end with test inbox",
+            "parentId": "undefined",
+            "updatedAt": "2026-09-24T16:52:04.542Z"
+          }
+        ],
+        "complexity": 6,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the event management functionality into detailed subtasks covering: 1) Event CRUD operations and form validation, 2) Event dashboard and status management, and 3) Invite code generation and management system.",
+        "updatedAt": "2026-09-24T16:52:04.542Z"
+      },
+      {
+        "id": "7",
+        "title": "Platform security baseline",
+        "description": "Headers, CORS production config, audit logging for host mutations.",
+        "details": "Helmet, strict CORS from env, structured logs without secrets.",
+        "testStrategy": "Security headers present on /healthz; wrong Origin blocked in prod mode.",
+        "priority": "medium",
+        "dependencies": [
+          "5"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "complexity": 6,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the event application system into detailed subtasks covering: 1) Application form creation with dynamic questions, 2) Application review dashboard and approval workflow, and 3) Notification system for application status updates.",
+        "updatedAt": "2026-09-24T17:40:18.695Z"
+      },
+      {
+        "id": "8",
+        "title": "Email notifications",
+        "description": "Transactional email for application decisions and optional event reminders.",
+        "details": "Integrate Resend or SMTP. Templates for approved/rejected. Defer SMS.",
+        "testStrategy": "Test mode captures emails; e2e mocks provider.",
+        "priority": "medium",
+        "dependencies": [
+          "2"
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Email provider setup",
+            "description": "Env vars, send helper, dev stub",
+            "dependencies": [],
+            "details": "backend notification module",
+            "status": "pending",
+            "testStrategy": "Unit test mock send called on decision",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Application decision emails",
+            "description": "Notify applicant on approve/reject",
+            "dependencies": [
+              "8.1"
+            ],
+            "details": "Hook applications.service decision path",
+            "status": "pending",
+            "testStrategy": "e2e with provider mock",
+            "parentId": "undefined"
+          }
+        ],
+        "complexity": 7,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the QR code check-in system into detailed subtasks covering: 1) QR code generation and display for attendees, 2) QR code scanning functionality with validation, and 3) Offline mode implementation and attendance tracking."
+      },
+      {
+        "id": "9",
+        "title": "Stripe Connect and ticket payments",
+        "description": "Monetization when product owner enables Stripe dashboard keys.",
+        "details": "Connect onboarding exists. Add Checkout/PaymentIntent for paid events; webhooks for payment state. Free events unchanged.",
+        "testStrategy": "Stripe test mode: pay → application/ticket marked paid; webhook idempotent.",
+        "priority": "low",
+        "dependencies": [
+          "1"
+        ],
+        "status": "deferred",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Connect onboarding polish",
+            "description": "Error states and status on host stripe page",
+            "dependencies": [],
+            "details": "Already bound to JWT sub",
+            "status": "pending",
+            "testStrategy": "stripe.e2e-spec.ts",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Ticket checkout",
+            "description": "Payment for priced events",
+            "dependencies": [
+              "9.1"
+            ],
+            "details": "Deferred until owner opts in",
+            "status": "deferred",
+            "testStrategy": "Stripe test cards",
+            "parentId": "undefined"
+          }
+        ],
+        "complexity": 8,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the Stripe Connect integration into detailed subtasks covering: 1) Stripe Connect account setup and host onboarding, 2) Payment processing for event tickets, 3) Payout management and financial reporting, and 4) Webhook handling and error management."
+      },
+      {
+        "id": "10",
+        "title": "Trust, safety, and compliance",
+        "description": "Code of conduct, reporting, data export — post-MVP backlog.",
+        "details": "Not required for invite-only MVP loop. CoC acceptance on apply; minimal report entity.",
+        "testStrategy": "Define when prioritised.",
+        "priority": "low",
+        "dependencies": [
+          "2",
+          "8"
+        ],
+        "status": "deferred",
+        "subtasks": [],
+        "complexity": 5,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the code of conduct system into detailed subtasks covering: 1) Code of conduct creation and customization, 2) Acceptance flow and display throughout the application, and 3) Violation reporting and enforcement mechanisms."
+      },
+      {
+        "id": "11",
+        "title": "Identity verification",
+        "description": "Persona/Onfido integration for verified attendees.",
+        "details": "Explicitly deferred until product requires IDV.",
+        "testStrategy": "N/A",
+        "priority": "low",
+        "dependencies": [
+          "10"
+        ],
+        "status": "deferred",
+        "subtasks": [],
+        "complexity": 7,
+        "recommendedSubtasks": 3,
+        "expansionPrompt": "Break down the reporting system into detailed subtasks covering: 1) Report submission with categorization and anonymity options, 2) Admin review dashboard and resolution workflow, and 3) Safety features including user blocking and automated responses."
+      },
+      {
+        "id": "12",
+        "title": "Future product epics",
+        "description": "Chat, feedback/reputation, admin console, PWA, analytics dashboards.",
+        "details": "Track in separate PRD when MVP + Postgres + notifications are stable. Not part of current sprint.",
+        "testStrategy": "N/A",
+        "priority": "low",
+        "dependencies": [
+          "1"
+        ],
+        "status": "deferred",
+        "subtasks": [],
+        "complexity": 9,
+        "recommendedSubtasks": 4,
+        "expansionPrompt": "Break down the data privacy implementation into detailed subtasks covering: 1) Data retention policy and automated purging system, 2) User data export and account deletion functionality, 3) Privacy controls and consent management, and 4) Audit logging and compliance reporting."
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-09-24T17:40:18.699Z",
+      "taskCount": 12,
+      "completedCount": 7,
+      "tags": [
+        "master"
+      ]
+    }
+  },
+  "legacy-prd-2025": {
+    "tasks": [
+      {
+        "id": "1",
         "title": "Setup Project Infrastructure",
         "description": "Local NestJS + Next.js + Docker Compose are on main. Remaining: small GitHub Actions that use AUTH0_ISSUER, app-focused .env.example, port/CORS alignment. AWS EKS is deferred. Do not merge velvetrope PR #1.",
         "details": "Shipped on main (https://github.com/Robo-romeski/velvetrope): Next.js 15 frontend, NestJS 11 backend, Docker Compose, Dockerfiles, GET /healthz.\n\nThis is not FastAPI. AWS EKS/S3/CloudFront and Grafana/Loki/OTel are deferred.\n\nRemaining:\n- Close Automaton PR https://github.com/Robo-romeski/velvetrope/pull/1 without merging (duplicates scaffold, red CI, wrong env names, fake prod compose).\n- Add a small GitHub Actions workflow: backend unit + e2e with AUTH0_ISSUER set, frontend lint/build. Do not copy PR #1 GHCR deploy or docker-compose.prod.yml.\n- Replace root .env.example (Taskmaster AI keys) with Auth0/Stripe vars using AUTH0_ISSUER and NEXT_PUBLIC_API_BASE_URL.\n- Unify PORT defaults (3000 vs 3001 vs 3010) and CORS.\n",
@@ -2176,8 +2618,9 @@
       "taskCount": 26,
       "completedCount": 3,
       "tags": [
-        "master"
-      ]
+        "legacy-prd-2025"
+      ],
+      "description": "Archived 2025 PRD task list (Auth0/FastAPI references). Superseded by master v2 Mar 2026."
     }
   }
 }

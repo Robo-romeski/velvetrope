@@ -29,6 +29,49 @@ describe('Applications (e2e)', () => {
       .expect(401);
   });
 
+  it('GET /applications/mine lists the authenticated applicant applications', async () => {
+    const event = await createEvent(app.getHttpServer());
+
+    await request(app.getHttpServer())
+      .get('/applications/mine')
+      .set(userAuth('user|mine-list'))
+      .expect(200)
+      .expect({ items: [] });
+
+    const invite = await request(app.getHttpServer())
+      .post(`/invites/generate/${event.id}`)
+      .set(hostAuth())
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/applications')
+      .set(userAuth('user|mine-list'))
+      .send({ eventId: event.id, answers: {}, inviteCode: invite.body.code })
+      .expect(201);
+
+    const mine = await request(app.getHttpServer())
+      .get('/applications/mine')
+      .set(userAuth('user|mine-list'))
+      .expect(200);
+
+    expect(mine.body.items).toHaveLength(1);
+    expect(mine.body.items[0].eventId).toBe(event.id);
+    expect(mine.body.items[0].eventTitle).toBe('Party');
+    expect(mine.body.items[0].status).toBe('pending');
+
+    await request(app.getHttpServer())
+      .patch(`/applications/${mine.body.items[0].id}/decision`)
+      .set(hostAuth())
+      .send({ status: 'approved' })
+      .expect(200);
+
+    const after = await request(app.getHttpServer())
+      .get('/applications/mine')
+      .set(userAuth('user|mine-list'))
+      .expect(200);
+    expect(after.body.items[0].status).toBe('approved');
+  });
+
   it('submit/list/decide flow (host protected listing/decision)', async () => {
     const event = await createEvent(app.getHttpServer());
 

@@ -9,6 +9,11 @@ import { Repository } from 'typeorm';
 import { UserEntity } from './user.entity';
 import { hashPassword, verifyPassword } from './password';
 import {
+  createPasswordResetToken,
+  hashPasswordResetToken,
+  shouldExposePasswordResetToken,
+} from './password-reset';
+import {
   AUTH_AUDIENCE,
   AUTH_ISSUER,
   AUTH_TOKEN_TTL,
@@ -88,6 +93,68 @@ export class AuthService {
     const user = await this.users.findOne({ where: { id } });
     if (!user) throw new UnauthorizedException();
     return this.toPublic(user);
+  }
+
+  async requestPasswordReset(email: string): Promise<{
+    message: string;
+    resetToken?: string;
+  }> {
+    const normalized = this.normalizeEmail(email);
+    const message =
+      'If an account exists for that email, password reset instructions have been sent.';
+
+    if (!normalized) {
+      return { message };
+    }
+
+    const user = await this.users.findOne({ where: { email: normalized } });
+    if (!user) {
+      return { message };
+    }
+
+    const { token, hash, expiresAt } = createPasswordResetToken();
+    user.passwordResetTokenHash = hash;
+    user.passwordResetExpiresAt = expiresAt;
+    await this.users.save(user);
+
+    const result: { message: string; resetToken?: string } = { message };
+    if (shouldExposePasswordResetToken()) {
+      result.resetToken = token;
+    }
+    return result;
+  }
+
+  async resetPassword(input: {
+    token: string;
+    password: string;
+  }): Promise<{ message: string }> {
+    const token = (input.token ?? '').trim();
+    const password = input.password ?? '';
+    if (!token) {
+      throw new BadRequestException('Reset token required');
+    }
+    if (password.length < 8) {
+      throw new BadRequestException('Password must be at least 8 characters');
+    }
+
+    const hash = hashPasswordResetToken(token);
+    const user = await this.users.findOne({
+      where: { passwordResetTokenHash: hash },
+    });
+    if (
+      !user ||
+      !user.passwordResetExpiresAt ||
+      user.passwordResetExpiresAt.getTime() <= Date.now()
+    ) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    user.passwordHash = await hashPassword(password);
+    user.passwordResetTokenHash = null;
+    user.passwordResetExpiresAt = null;
+    await this.users.save(user);
+
+    return { message: 'Password updated. You can log in with your new password.' };
   }
 
   private normalizeEmail(email: string): string {

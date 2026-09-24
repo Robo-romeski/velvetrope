@@ -32,6 +32,47 @@ export class ApplicationsService {
     private readonly events: EventsService,
   ) {}
 
+  async listForApplicant(applicantSub: string): Promise<{
+    items: Array<{
+      id: string;
+      eventId: string;
+      eventTitle: string;
+      eventStatus: string;
+      status: ApplicationStatus;
+      createdAt: string;
+    }>;
+  }> {
+    const applications = await this.repo.find({
+      where: { applicantSub },
+      order: { createdAt: 'DESC' },
+    });
+    if (applications.length === 0) {
+      return { items: [] };
+    }
+
+    const eventIds = [...new Set(applications.map((a) => a.eventId))];
+    const events = await Promise.all(
+      eventIds.map((id) => this.events.get(id).catch(() => null)),
+    );
+    const eventById = new Map(
+      events.filter(Boolean).map((event) => [event!.id, event!]),
+    );
+
+    const items = applications.map((app) => {
+      const event = eventById.get(app.eventId);
+      return {
+        id: app.id,
+        eventId: app.eventId,
+        eventTitle: event?.title ?? app.eventId,
+        eventStatus: event?.status ?? 'unknown',
+        status: app.status,
+        createdAt: app.createdAt.toISOString(),
+      };
+    });
+
+    return { items };
+  }
+
   async listForEvent(
     eventId: string,
     opts?: {

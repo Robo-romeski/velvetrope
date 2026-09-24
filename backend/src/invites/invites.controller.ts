@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import { InvitesService } from './invites.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -17,10 +17,25 @@ export class InvitesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('host')
   @Post('generate/:eventId')
-  async generate(@Param('eventId') eventId: string, @Req() req: Request) {
+  async generate(
+    @Param('eventId') eventId: string,
+    @Req() req: Request,
+    @Body() body?: { expiresInHours?: number },
+  ) {
     const { sub } = getAuthUser(req);
     await this.events.requireHost(eventId, sub);
-    return await this.invites.generate(eventId);
+    return await this.invites.generate(eventId, {
+      expiresInHours: body?.expiresInHours,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('host')
+  @Get('event/:eventId/stats')
+  async statsForEvent(@Param('eventId') eventId: string, @Req() req: Request) {
+    const { sub } = getAuthUser(req);
+    await this.events.requireHost(eventId, sub);
+    return await this.invites.statsForEvent(eventId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

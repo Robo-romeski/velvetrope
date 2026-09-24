@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { apiGet, apiPatchAuth } from '@/lib/api';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
+import { HostEventNav } from '@/app/components/HostEventNav';
 import { useAuth } from '@/lib/auth';
 
 function toLocalInput(iso: string) {
@@ -88,6 +89,7 @@ export default function EditHostEventPage() {
 
   return (
     <div className="max-w-xl mx-auto p-6 space-y-4">
+      <HostEventNav eventId={eventId} />
       <h1 className="text-2xl font-semibold">Edit event</h1>
       {loading && <div className="text-sm">Loading…</div>}
       {!loading && error && !title && (

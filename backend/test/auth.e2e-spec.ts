@@ -3,6 +3,10 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import {
+  clearCapturedEmails,
+  getCapturedEmails,
+} from '../src/email/email-outbox';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication<App>;
@@ -96,6 +100,7 @@ describe('Auth (e2e)', () => {
   });
 
   it('password reset flow updates password', async () => {
+    clearCapturedEmails();
     const email = `reset-${Date.now()}@example.com`;
     await request(app.getHttpServer())
       .post('/auth/register')
@@ -107,6 +112,9 @@ describe('Auth (e2e)', () => {
       .send({ email })
       .expect(201);
     expect(typeof forgot.body.resetToken).toBe('string');
+    const resetMail = getCapturedEmails().find((m) => m.to === email);
+    expect(resetMail?.subject.toLowerCase()).toContain('reset');
+    expect(resetMail?.text).toContain(forgot.body.resetToken);
 
     await request(app.getHttpServer())
       .post('/auth/reset-password')

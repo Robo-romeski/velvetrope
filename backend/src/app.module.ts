@@ -17,6 +17,7 @@ import { ApplicationsModule } from './applications/applications.module';
 import { buildTypeOrmOptions } from './database/typeorm-options';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { SecurityModule } from './security/security.module';
+import { EmailModule } from './email/email.module';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -39,6 +40,7 @@ const isTest = process.env.NODE_ENV === 'test';
       }),
     }),
     SecurityModule,
+    EmailModule,
     AuthModule,
     TypeOrmModule.forRoot({
       ...buildTypeOrmOptions(),

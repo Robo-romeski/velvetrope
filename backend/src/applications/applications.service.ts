@@ -9,6 +9,8 @@ import { ApplicationEntity, ApplicationStatus } from './application.entity';
 import { ApplicationFormEntity } from './application-form.entity';
 import { InvitesService } from '../invites/invites.service';
 import { EventsService } from '../events/events.service';
+import { UserEntity } from '../auth/user.entity';
+import { EmailService } from '../email/email.service';
 
 export interface CreateApplicationDto {
   eventId: string;
@@ -30,6 +32,9 @@ export class ApplicationsService {
     private readonly forms: Repository<ApplicationFormEntity>,
     private readonly invites: InvitesService,
     private readonly events: EventsService,
+    @InjectRepository(UserEntity)
+    private readonly users: Repository<UserEntity>,
+    private readonly email: EmailService,
   ) {}
 
   async listForApplicant(applicantSub: string): Promise<{
@@ -180,6 +185,7 @@ export class ApplicationsService {
 
   async decide(id: string, decision: DecisionDto): Promise<ApplicationEntity> {
     const app = await this.get(id);
+    const previousStatus = app.status;
     if (decision.status === 'approved' && app.status !== 'approved') {
       const event = await this.events.get(app.eventId);
       const approved = await this.repo.count({
@@ -190,7 +196,44 @@ export class ApplicationsService {
       }
     }
     app.status = decision.status;
-    return await this.repo.save(app);
+    const saved = await this.repo.save(app);
+    if (
+      previousStatus !== decision.status &&
+      (decision.status === 'approved' || decision.status === 'rejected')
+    ) {
+      await this.notifyApplicantDecision(saved, decision);
+    }
+    return saved;
+  }
+
+  private async notifyApplicantDecision(
+    app: ApplicationEntity,
+    decision: DecisionDto,
+  ): Promise<void> {
+    const user = await this.users.findOne({
+      where: { id: app.applicantSub },
+    });
+    if (!user?.email) return;
+
+    let eventTitle = app.eventId;
+    try {
+      const event = await this.events.get(app.eventId);
+      eventTitle = event.title;
+    } catch {
+      // use event id fallback
+    }
+
+    try {
+      await this.email.sendApplicationDecision({
+        to: user.email,
+        eventTitle,
+        eventId: app.eventId,
+        status: decision.status,
+        reason: decision.reason,
+      });
+    } catch {
+      // Decision is already persisted; do not fail the host action.
+    }
   }
 
   async setFormSchema(

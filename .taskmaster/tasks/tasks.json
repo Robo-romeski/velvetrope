@@ -313,7 +313,7 @@
         "dependencies": [
           "2"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -321,7 +321,7 @@
             "description": "Env vars, send helper, dev stub",
             "dependencies": [],
             "details": "backend notification module",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Unit test mock send called on decision",
             "parentId": "undefined"
           },
@@ -333,7 +333,7 @@
               "8.1"
             ],
             "details": "Hook applications.service decision path",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "e2e with provider mock",
             "parentId": "undefined"
           }

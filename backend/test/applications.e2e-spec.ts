@@ -5,6 +5,10 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { hostAuth, userAuth } from './auth-headers';
 import { createEvent } from './create-event';
+import {
+  clearCapturedEmails,
+  getCapturedEmails,
+} from '../src/email/email-outbox';
 
 describe('Applications (e2e)', () => {
   let app: INestApplication<App>;
@@ -212,5 +216,41 @@ describe('Applications (e2e)', () => {
       .set(hostAuth())
       .send({ status: 'approved' })
       .expect(400);
+  });
+
+  it('sends a decision email when the applicant is a registered user', async () => {
+    clearCapturedEmails();
+    const email = `applicant-${Date.now()}@example.com`;
+    const registered = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({ email, password: 'password1', host: false })
+      .expect(201);
+    const token = registered.body.token as string;
+    const applicantId = registered.body.user.id as string;
+
+    const event = await createEvent(app.getHttpServer());
+    const invite = await request(app.getHttpServer())
+      .post(`/invites/generate/${event.id}`)
+      .set(hostAuth())
+      .expect(201);
+
+    const application = await request(app.getHttpServer())
+      .post('/applications')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ eventId: event.id, answers: {}, inviteCode: invite.body.code })
+      .expect(201);
+    expect(application.body.applicantSub).toBe(applicantId);
+
+    await request(app.getHttpServer())
+      .patch(`/applications/${application.body.id}/decision`)
+      .set(hostAuth())
+      .send({ status: 'approved', reason: 'See you there' })
+      .expect(200);
+
+    const sent = getCapturedEmails();
+    expect(sent.some((m) => m.to === email && m.subject.includes('Party'))).toBe(
+      true,
+    );
+    expect(sent.some((m) => m.text.includes('See you there'))).toBe(true);
   });
 });

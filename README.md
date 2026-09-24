@@ -121,7 +121,7 @@ npm run dev
 ### Auth
 - `POST /auth/register` - Create an account (returns JWT)
 - `POST /auth/login` - Sign in (returns JWT)
-- `POST /auth/forgot-password` - Request password reset (generic response; no email enumeration)
+- `POST /auth/forgot-password` - Request password reset (email when configured; no enumeration)
 - `POST /auth/reset-password` - Set new password with reset token
 - `GET /auth/me` - Current user (auth required)
 
@@ -187,6 +187,11 @@ See `.env.example` (root), `backend/.env.example`, and `frontend/.env.example`.
 - `PORT` (default `3010`)
 - `DATABASE_PATH` (SQLite file when `DATABASE_URL` is unset; default `data/dev.sqlite`)
 - `DATABASE_URL` (Postgres connection string; enables Postgres driver)
+- `RESEND_API_KEY` (optional; sends mail via Resend when set)
+- `EMAIL_FROM` (sender address for Resend; default Resend sandbox from)
+- `APP_BASE_URL` (links in password reset and application emails)
+
+Without `RESEND_API_KEY`, the backend captures outbound mail in memory (e2e) and logs in development.
 
 ### Database migrations
 
@@ -218,7 +223,7 @@ If local SQLite fails after upgrading from auto-sync, delete `backend/data/dev.s
 
 - [x] Postgres + TypeORM migrations (optional `DATABASE_URL` / Docker profile)
 - [ ] Implement Stripe payment flow
-- [ ] Add email notifications
+- [x] Add email notifications (Resend or capture mode without API key)
 - [ ] Host dashboard with analytics
 - [x] Event capacity limits
 - [ ] Waitlist management

@@ -19,6 +19,7 @@ import {
   AUTH_TOKEN_TTL,
   resolveAuthSecret,
 } from './auth.constants';
+import { EmailService } from '../email/email.service';
 
 export type PublicUser = {
   id: string;
@@ -37,6 +38,7 @@ export class AuthService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly users: Repository<UserEntity>,
+    private readonly email: EmailService,
   ) {}
 
   toPublic(user: UserEntity): PublicUser {
@@ -116,6 +118,15 @@ export class AuthService {
     user.passwordResetTokenHash = hash;
     user.passwordResetExpiresAt = expiresAt;
     await this.users.save(user);
+
+    try {
+      await this.email.sendPasswordReset({
+        to: user.email,
+        resetToken: token,
+      });
+    } catch {
+      // Do not reveal delivery failures; user can retry forgot-password.
+    }
 
     const result: { message: string; resetToken?: string } = { message };
     if (shouldExposePasswordResetToken()) {

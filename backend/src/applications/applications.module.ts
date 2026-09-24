@@ -6,10 +6,15 @@ import { ApplicationsService } from './applications.service';
 import { ApplicationsController } from './applications.controller';
 import { InvitesModule } from '../invites/invites.module';
 import { EventsModule } from '../events/events.module';
+import { UserEntity } from '../auth/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ApplicationEntity, ApplicationFormEntity]),
+    TypeOrmModule.forFeature([
+      ApplicationEntity,
+      ApplicationFormEntity,
+      UserEntity,
+    ]),
     InvitesModule,
     EventsModule,
   ],

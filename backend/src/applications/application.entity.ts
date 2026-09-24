@@ -24,6 +24,9 @@ export class ApplicationEntity {
   @Column({ type: 'text', default: 'pending' })
   status!: ApplicationStatus;
 
+  @Column({ type: 'datetime', nullable: true })
+  codeOfConductAcceptedAt?: Date | null;
+
   @CreateDateColumn({ type: 'datetime' })
   createdAt!: Date;
 }

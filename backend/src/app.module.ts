@@ -18,6 +18,7 @@ import { buildTypeOrmOptions } from './database/typeorm-options';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { SecurityModule } from './security/security.module';
 import { EmailModule } from './email/email.module';
+import { TrustModule } from './trust/trust.module';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -51,6 +52,7 @@ const isTest = process.env.NODE_ENV === 'test';
     StripeModule,
     InvitesModule,
     CheckinModule,
+    TrustModule,
   ],
   controllers: [AppController, HealthController, HostController],
   providers: [AppService, RolesGuard],

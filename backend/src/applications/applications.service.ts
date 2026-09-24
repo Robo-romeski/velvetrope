@@ -16,6 +16,7 @@ export interface CreateApplicationDto {
   eventId: string;
   applicantSub: string;
   answers?: unknown;
+  acceptedCodeOfConduct?: boolean;
 }
 
 export interface DecisionDto {
@@ -141,6 +142,10 @@ export class ApplicationsService {
       }
     }
 
+    if (dto.acceptedCodeOfConduct !== true) {
+      throw new BadRequestException('Code of conduct acceptance required');
+    }
+
     // Require a valid invite code and redeem it prior to saving
     const code = (dto.inviteCode || '').trim();
     if (!code) {
@@ -164,6 +169,7 @@ export class ApplicationsService {
       applicantSub: dto.applicantSub,
       answers: dto.answers ? JSON.stringify(dto.answers) : null,
       status: 'pending',
+      codeOfConductAcceptedAt: new Date(),
     });
     return await this.repo.save(entity);
   }

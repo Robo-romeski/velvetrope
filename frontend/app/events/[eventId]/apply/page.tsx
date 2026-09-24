@@ -26,6 +26,7 @@ export default function ApplyToEventPage() {
   const [eventStatus, setEventStatus] = useState<'draft' | 'published' | 'cancelled' | null>(null);
   const [inviteCode, setInviteCode] = useState<string>('');
   const [submitted, setSubmitted] = useState(false);
+  const [acceptedCoC, setAcceptedCoC] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -93,6 +94,10 @@ export default function ApplyToEventPage() {
       if (!inviteCode || inviteCode.trim() === '') {
         missing.push('inviteCode');
       }
+      if (!acceptedCoC) {
+        setMessage('You must accept the code of conduct to apply.');
+        return;
+      }
       if (missing.length > 0) {
         const nextErrors: Record<string, string | null> = {};
         for (const f of fields) {
@@ -108,6 +113,7 @@ export default function ApplyToEventPage() {
         eventId,
         answers: values,
         inviteCode: inviteCode?.trim() || undefined,
+        acceptedCodeOfConduct: true,
       });
       setSubmitted(true);
       setMessage('Submitted. Track status in My applications.');
@@ -211,9 +217,24 @@ export default function ApplyToEventPage() {
               </div>
             ))}
           </div>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={acceptedCoC}
+              onChange={(e) => setAcceptedCoC(e.target.checked)}
+              className="mt-1"
+            />
+            <span>
+              I agree to the{' '}
+              <Link href="/trust/code-of-conduct" className="text-blue-600 underline" target="_blank">
+                VelvetKey code of conduct
+              </Link>
+              .
+            </span>
+          </label>
           <button
             onClick={submit}
-            disabled={loading || eventStatus !== 'published'}
+            disabled={loading || eventStatus !== 'published' || !acceptedCoC}
             className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
           >
             {loading ? 'Submitting...' : 'Submit Application'}

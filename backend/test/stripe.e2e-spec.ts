@@ -92,7 +92,12 @@ describe('Stripe (e2e)', () => {
     const application = await request(app.getHttpServer())
       .post('/applications')
       .set('Authorization', `Bearer ${token}`)
-      .send({ eventId: event.id, answers: {}, inviteCode: invite.body.code })
+      .send({
+        eventId: event.id,
+        answers: {},
+        inviteCode: invite.body.code,
+        acceptedCodeOfConduct: true,
+      })
       .expect(201);
 
     await request(app.getHttpServer())

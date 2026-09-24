@@ -22,6 +22,7 @@ interface SubmitDto {
   eventId: string;
   answers?: unknown;
   inviteCode?: string;
+  acceptedCodeOfConduct?: boolean;
 }
 
 interface DecisionDto {
@@ -40,7 +41,11 @@ export class ApplicationsController {
   @Post()
   async submit(@Req() req: Request, @Body() dto: SubmitDto) {
     const { sub } = getAuthUser(req);
-    return await this.apps.submit({ ...dto, applicantSub: sub });
+    return await this.apps.submit({
+      ...dto,
+      applicantSub: sub,
+      acceptedCodeOfConduct: dto.acceptedCodeOfConduct,
+    });
   }
 
   @UseGuards(JwtAuthGuard)

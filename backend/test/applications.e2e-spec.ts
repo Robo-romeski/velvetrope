@@ -50,7 +50,7 @@ describe('Applications (e2e)', () => {
     await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|mine-list'))
-      .send({ eventId: event.id, answers: {}, inviteCode: invite.body.code })
+      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: invite.body.code })
       .expect(201);
 
     const mine = await request(app.getHttpServer())
@@ -88,7 +88,7 @@ describe('Applications (e2e)', () => {
     const submit = await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|abc'))
-      .send({ eventId: event.id, answers: { q1: 'Yes' }, inviteCode: code })
+      .send({ eventId: event.id, answers: { q1: 'Yes' }, acceptedCodeOfConduct: true, inviteCode: code })
       .expect(201);
     const appId = submit.body.id as string;
     expect(submit.body.applicantSub).toBe('user|abc');
@@ -128,6 +128,25 @@ describe('Applications (e2e)', () => {
     expect(got.body?.schema?.fields?.[0]?.name).toBe('why');
   });
 
+  it('submit requires code of conduct acceptance', async () => {
+    const event = await createEvent(app.getHttpServer());
+    const invite = await request(app.getHttpServer())
+      .post(`/invites/generate/${event.id}`)
+      .set(hostAuth())
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/applications')
+      .set(userAuth('user|coc'))
+      .send({
+        eventId: event.id,
+        answers: {},
+        inviteCode: invite.body.code,
+        acceptedCodeOfConduct: false,
+      })
+      .expect(400);
+  });
+
   it('submit should 400 when required fields missing', async () => {
     const event = await createEvent(app.getHttpServer());
 
@@ -142,7 +161,7 @@ describe('Applications (e2e)', () => {
     await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|abc'))
-      .send({ eventId: event.id, answers: {}, inviteCode: 'SOME_CODE' })
+      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: 'SOME_CODE' })
       .expect(400);
   });
 
@@ -158,25 +177,25 @@ describe('Applications (e2e)', () => {
     await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|one'))
-      .send({ eventId: event.id, answers: {} })
+      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true })
       .expect(400);
 
     await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|one'))
-      .send({ eventId: event.id, answers: {}, inviteCode: code })
+      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: code })
       .expect(201);
 
     await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|two'))
-      .send({ eventId: event.id, answers: {}, inviteCode: code })
+      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: code })
       .expect(400);
 
     await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|two'))
-      .send({ eventId: event.id, answers: {}, inviteCode: 'INVALID' })
+      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: 'INVALID' })
       .expect(400);
   });
 
@@ -197,12 +216,12 @@ describe('Applications (e2e)', () => {
     const first = await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|one'))
-      .send({ eventId: event.id, answers: {}, inviteCode: inviteA.body.code })
+      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: inviteA.body.code })
       .expect(201);
     const second = await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|two'))
-      .send({ eventId: event.id, answers: {}, inviteCode: inviteB.body.code })
+      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: inviteB.body.code })
       .expect(201);
 
     await request(app.getHttpServer())
@@ -237,7 +256,7 @@ describe('Applications (e2e)', () => {
     const application = await request(app.getHttpServer())
       .post('/applications')
       .set('Authorization', `Bearer ${token}`)
-      .send({ eventId: event.id, answers: {}, inviteCode: invite.body.code })
+      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: invite.body.code })
       .expect(201);
     expect(application.body.applicantSub).toBe(applicantId);
 

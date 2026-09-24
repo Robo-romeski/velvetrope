@@ -13,3 +13,11 @@ export function userAuth(sub: string) {
     'x-test-sub': sub,
   };
 }
+
+export function adminAuth(sub = 'platform-admin') {
+  return {
+    Authorization: 'Bearer invalid.token',
+    'x-test-roles': '["admin"]',
+    'x-test-sub': sub,
+  };
+}

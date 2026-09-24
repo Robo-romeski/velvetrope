@@ -50,7 +50,12 @@ describe('Full journey (e2e)', () => {
     const application = await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('attendee-journey'))
-      .send({ eventId, answers: { note: 'hello' }, inviteCode: code })
+      .send({
+        eventId,
+        answers: { note: 'hello' },
+        inviteCode: code,
+        acceptedCodeOfConduct: true,
+      })
       .expect(201);
 
     await request(app.getHttpServer())

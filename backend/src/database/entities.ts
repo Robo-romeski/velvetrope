@@ -6,6 +6,7 @@ import { CheckinTicketEntity } from '../checkin/checkin-ticket.entity';
 import { StripeAccountEntity } from '../stripe/stripe-account.entity';
 import { EventPaymentEntity } from '../stripe/event-payment.entity';
 import { UserEntity } from '../auth/user.entity';
+import { TrustReportEntity } from '../trust/report.entity';
 
 export const entities = [
   EventEntity,
@@ -16,4 +17,5 @@ export const entities = [
   StripeAccountEntity,
   EventPaymentEntity,
   UserEntity,
+  TrustReportEntity,
 ];

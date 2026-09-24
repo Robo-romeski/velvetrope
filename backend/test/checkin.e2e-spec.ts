@@ -60,7 +60,12 @@ describe('Checkin (e2e)', () => {
     const submitted = await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|guest'))
-      .send({ eventId: event.id, answers: {}, inviteCode: invite.body.code })
+      .send({
+        eventId: event.id,
+        answers: {},
+        inviteCode: invite.body.code,
+        acceptedCodeOfConduct: true,
+      })
       .expect(201);
 
     await request(app.getHttpServer())

@@ -135,6 +135,15 @@ npm run dev
 - `POST /events/:id/publish` - Publish event (host only)
 - `POST /events/:id/cancel` - Cancel event (host only)
 
+### Trust & safety
+- `GET /trust/code-of-conduct` - Platform code of conduct (public)
+- `POST /trust/reports` - File a safety report (auth required)
+- `GET /trust/reports` - List reports (`admin` role)
+- `PATCH /trust/reports/:id/resolve` - Resolve a report (`admin` role)
+- `GET /trust/export` - Download JSON export of profile + applications (auth required)
+
+Application submit requires `acceptedCodeOfConduct: true`. Assign the `admin` role on a user (database) for report review; set `TRUST_REPORT_NOTIFY_EMAIL` for new-report alerts.
+
 ### Applications
 - `GET /applications/mine` - List the authenticated user's applications (auth required)
 - `POST /applications` - Submit application (auth required)

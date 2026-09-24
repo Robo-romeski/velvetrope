@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { hostAuth } from './auth-headers';
+import { createEvent } from './create-event';
 
 describe('Stripe (e2e)', () => {
   let app: INestApplication<App>;
@@ -57,5 +58,75 @@ describe('Stripe (e2e)', () => {
       .post('/stripe/webhook')
       .send({ type: 'account.updated' })
       .expect(400);
+  });
+
+  it('paid event requires checkout before ticket; fulfill is idempotent', async () => {
+    await request(app.getHttpServer())
+      .get('/stripe/onboarding')
+      .set(hostAuth('host-paid'))
+      .expect(200);
+
+    const event = await createEvent(app.getHttpServer(), 'host-paid');
+    await request(app.getHttpServer())
+      .patch(`/events/${event.id}`)
+      .set(hostAuth('host-paid'))
+      .send({ ticketPriceCents: 1500 })
+      .expect(200);
+    await request(app.getHttpServer())
+      .post(`/events/${event.id}/publish`)
+      .set(hostAuth('host-paid'))
+      .expect(201);
+
+    const email = `paid-${Date.now()}@example.com`;
+    const registered = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({ email, password: 'password1', host: false })
+      .expect(201);
+    const token = registered.body.token as string;
+
+    const invite = await request(app.getHttpServer())
+      .post(`/invites/generate/${event.id}`)
+      .set(hostAuth('host-paid'))
+      .expect(201);
+
+    const application = await request(app.getHttpServer())
+      .post('/applications')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ eventId: event.id, answers: {}, inviteCode: invite.body.code })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/applications/${application.body.id}/decision`)
+      .set(hostAuth('host-paid'))
+      .send({ status: 'approved' })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .post(`/checkin/mine/${event.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(403);
+
+    const checkout = await request(app.getHttpServer())
+      .post(`/stripe/checkout/${event.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+    const sessionId = checkout.body.sessionId as string;
+    expect(sessionId).toMatch(/^cs_test_/);
+
+    await request(app.getHttpServer())
+      .post('/stripe/test/fulfill-checkout')
+      .send({ sessionId })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/stripe/test/fulfill-checkout')
+      .send({ sessionId })
+      .expect(201);
+
+    const ticket = await request(app.getHttpServer())
+      .post(`/checkin/mine/${event.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+    expect(ticket.body.token).toBeTruthy();
   });
 });

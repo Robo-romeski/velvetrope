@@ -16,6 +16,7 @@ export interface EventItem {
   date: string; // ISO
   capacity: number;
   status: EventEntity['status'];
+  ticketPriceCents: number;
 }
 
 export type HostEventItem = EventItem & {
@@ -88,8 +89,10 @@ export class EventsService {
   async create(
     data: Omit<EventItem, 'id' | 'status'> & { status?: EventItem['status'] },
   ): Promise<EventItem> {
+    const ticketPriceCents = Math.max(0, Math.floor(data.ticketPriceCents ?? 0));
     const entity = this.repo.create({
       ...data,
+      ticketPriceCents,
       status: data.status ?? 'draft',
     } as Partial<EventEntity>);
     const saved = await this.repo.save(entity);
@@ -110,7 +113,14 @@ export class EventsService {
     data: Partial<Omit<EventItem, 'id' | 'hostId'>>,
   ): Promise<EventItem> {
     const existing = await this.requireHost(id, hostSub);
-    const merged = this.repo.merge(existing, data as Partial<EventEntity>);
+    const patch = { ...data } as Partial<EventEntity>;
+    if (patch.ticketPriceCents !== undefined) {
+      patch.ticketPriceCents = Math.max(
+        0,
+        Math.floor(Number(patch.ticketPriceCents)),
+      );
+    }
+    const merged = this.repo.merge(existing, patch);
     const saved = await this.repo.save(merged);
     return saved;
   }

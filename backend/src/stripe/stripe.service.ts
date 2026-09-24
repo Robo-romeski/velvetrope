@@ -53,13 +53,37 @@ export class StripeService {
     return { url: link.url };
   }
 
-  async getStatus(
-    hostId: string,
-  ): Promise<{ connected: boolean; accountId?: string }> {
+  async getStatus(hostId: string): Promise<{
+    connected: boolean;
+    accountId?: string;
+    chargesEnabled?: boolean;
+    payoutsEnabled?: boolean;
+    detailsSubmitted?: boolean;
+    stripeConfigured: boolean;
+  }> {
+    const stripeConfigured = !!this.stripe;
     const record = await this.accounts.findOne({ where: { hostId } });
-    if (!record) return { connected: false };
-    if (!this.stripe) return { connected: true, accountId: record.accountId };
+    if (!record) {
+      return { connected: false, stripeConfigured };
+    }
+    if (!this.stripe) {
+      return {
+        connected: true,
+        accountId: record.accountId,
+        chargesEnabled: true,
+        payoutsEnabled: true,
+        detailsSubmitted: true,
+        stripeConfigured: false,
+      };
+    }
     const acct = await this.stripe.accounts.retrieve(record.accountId);
-    return { connected: !!acct.details_submitted, accountId: record.accountId };
+    return {
+      connected: !!acct.details_submitted,
+      accountId: record.accountId,
+      chargesEnabled: !!acct.charges_enabled,
+      payoutsEnabled: !!acct.payouts_enabled,
+      detailsSubmitted: !!acct.details_submitted,
+      stripeConfigured: true,
+    };
   }
 }

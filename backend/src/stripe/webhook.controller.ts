@@ -12,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { StripeAccountEntity } from './stripe-account.entity';
+import { StripePaymentsService } from './stripe-payments.service';
 
 @Controller('stripe')
 export class StripeWebhookController {
@@ -21,6 +22,7 @@ export class StripeWebhookController {
     private readonly config: ConfigService,
     @InjectRepository(StripeAccountEntity)
     private readonly accounts: Repository<StripeAccountEntity>,
+    private readonly payments: StripePaymentsService,
   ) {
     const key = this.config.get<string>('STRIPE_SECRET_KEY');
     if (key && process.env.NODE_ENV !== 'test') {
@@ -58,6 +60,12 @@ export class StripeWebhookController {
     if (event.type === 'account.updated') {
       const account = event.data.object;
       await this.accounts.findOne({ where: { accountId: account.id } });
+    }
+
+    if (event.type === 'checkout.session.completed') {
+      await this.payments.handleCheckoutSessionCompleted(
+        event.data.object as Stripe.Checkout.Session,
+      );
     }
 
     return { ok: true };

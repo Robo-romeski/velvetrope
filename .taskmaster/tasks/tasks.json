@@ -352,7 +352,7 @@
         "dependencies": [
           "1"
         ],
-        "status": "deferred",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -360,7 +360,7 @@
             "description": "Error states and status on host stripe page",
             "dependencies": [],
             "details": "Already bound to JWT sub",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "stripe.e2e-spec.ts",
             "parentId": "undefined"
           },
@@ -372,7 +372,7 @@
               "9.1"
             ],
             "details": "Deferred until owner opts in",
-            "status": "deferred",
+            "status": "done",
             "testStrategy": "Stripe test cards",
             "parentId": "undefined"
           }

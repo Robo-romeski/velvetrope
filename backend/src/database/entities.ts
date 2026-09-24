@@ -4,6 +4,7 @@ import { ApplicationFormEntity } from '../applications/application-form.entity';
 import { InviteEntity } from '../invites/invite.entity';
 import { CheckinTicketEntity } from '../checkin/checkin-ticket.entity';
 import { StripeAccountEntity } from '../stripe/stripe-account.entity';
+import { EventPaymentEntity } from '../stripe/event-payment.entity';
 import { UserEntity } from '../auth/user.entity';
 
 export const entities = [
@@ -13,5 +14,6 @@ export const entities = [
   InviteEntity,
   CheckinTicketEntity,
   StripeAccountEntity,
+  EventPaymentEntity,
   UserEntity,
 ];

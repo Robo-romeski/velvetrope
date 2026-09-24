@@ -159,7 +159,9 @@ npm run dev
 ### Stripe
 - `GET /stripe/onboarding` - Get onboarding link for the authenticated host
 - `GET /stripe/status` - Get Connect account status for the authenticated host
-- `POST /stripe/webhook` - Stripe webhook handler (fails closed on bad/missing signature)
+- `GET /stripe/payment/:eventId` - Ticket payment status for the authenticated attendee
+- `POST /stripe/checkout/:eventId` - Start Checkout for an approved application (paid events)
+- `POST /stripe/webhook` - Stripe webhook handler (fails closed on bad/missing signature; handles `checkout.session.completed`)
 
 ## Testing
 
@@ -222,7 +224,7 @@ If local SQLite fails after upgrading from auto-sync, delete `backend/data/dev.s
 ## Next Steps / TODO
 
 - [x] Postgres + TypeORM migrations (optional `DATABASE_URL` / Docker profile)
-- [ ] Implement Stripe payment flow
+- [x] Implement Stripe payment flow (Checkout + Connect transfer; free events unchanged)
 - [x] Add email notifications (Resend or capture mode without API key)
 - [ ] Host dashboard with analytics
 - [x] Event capacity limits

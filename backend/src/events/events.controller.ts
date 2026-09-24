@@ -21,6 +21,7 @@ interface CreateEventDto {
   description?: string;
   date: string;
   capacity: number;
+  ticketPriceCents?: number;
 }
 
 @Controller('events')

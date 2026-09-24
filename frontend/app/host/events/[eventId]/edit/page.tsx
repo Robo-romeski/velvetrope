@@ -24,6 +24,7 @@ export default function EditHostEventPage() {
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [capacity, setCapacity] = useState(20);
+  const [ticketPriceUsd, setTicketPriceUsd] = useState('0');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +40,8 @@ export default function EditHostEventPage() {
         setDescription(event.description ?? '');
         setDate(toLocalInput(event.date));
         setCapacity(event.capacity ?? 20);
+        const cents = Number(event.ticketPriceCents ?? 0);
+        setTicketPriceUsd(Number.isFinite(cents) ? (cents / 100).toFixed(2) : '0');
       } catch (e) {
         if (!mounted) return;
         setError(e instanceof Error ? e.message : 'Could not load event');
@@ -73,6 +76,10 @@ export default function EditHostEventPage() {
         description: description.trim() || undefined,
         date: new Date(date).toISOString(),
         capacity: Number(capacity),
+        ticketPriceCents: Math.max(
+          0,
+          Math.round(Number.parseFloat(ticketPriceUsd || '0') * 100),
+        ),
       });
       router.push('/host/events');
     } catch (e) {
@@ -140,6 +147,18 @@ export default function EditHostEventPage() {
               onChange={(e) => setCapacity(Number(e.target.value))}
               className="w-full border rounded px-3 py-2 bg-transparent"
             />
+          </label>
+          <label className="block text-sm space-y-1">
+            <span>Ticket price (USD)</span>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={ticketPriceUsd}
+              onChange={(e) => setTicketPriceUsd(e.target.value)}
+              className="w-full border rounded px-3 py-2 bg-transparent"
+            />
+            <span className="text-xs text-gray-500">0 = free. Requires Stripe Connect for paid tickets.</span>
           </label>
           {error && <div className="text-sm text-red-600">{error}</div>}
           <div className="flex items-center gap-3">

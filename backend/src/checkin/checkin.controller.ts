@@ -17,6 +17,7 @@ import { Roles } from '../auth/roles.decorator';
 import { EventsService } from '../events/events.service';
 import { ApplicationsService } from '../applications/applications.service';
 import { getAuthUser } from '../auth/request-user';
+import { StripePaymentsService } from '../stripe/stripe-payments.service';
 
 @Controller('checkin')
 export class CheckinController {
@@ -24,6 +25,7 @@ export class CheckinController {
     private readonly svc: CheckinService,
     private readonly events: EventsService,
     private readonly apps: ApplicationsService,
+    private readonly payments: StripePaymentsService,
   ) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -47,6 +49,7 @@ export class CheckinController {
     const approved = await this.apps.findApproved(eventId, sub);
     if (!approved)
       throw new ForbiddenException('No approved application for this event');
+    await this.payments.assertPaidIfRequired(eventId, sub);
     return await this.svc.issue(eventId, sub);
   }
 

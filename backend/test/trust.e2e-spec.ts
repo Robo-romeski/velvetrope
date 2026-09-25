@@ -98,4 +98,29 @@ describe('Trust (e2e)', () => {
     expect(Array.isArray(exported.body.applications)).toBe(true);
     expect(exported.body.exportedAt).toBeTruthy();
   });
+
+  it('POST /trust/delete-account removes attendee data after password confirm', async () => {
+    const email = `delete-${Date.now()}@example.com`;
+    const registered = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({ email, password: 'password1', host: false })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/trust/delete-account')
+      .set('Authorization', `Bearer ${registered.body.token}`)
+      .send({ password: 'wrong' })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .post('/trust/delete-account')
+      .set('Authorization', `Bearer ${registered.body.token}`)
+      .send({ password: 'password1' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password: 'password1' })
+      .expect(401);
+  });
 });

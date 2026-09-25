@@ -10,6 +10,11 @@ import { codeOfConductSummary } from './code-of-conduct';
 import { EmailService } from '../email/email.service';
 import { UserEntity } from '../auth/user.entity';
 import { ApplicationEntity } from '../applications/application.entity';
+import { EventEntity } from '../events/event.entity';
+import { CheckinTicketEntity } from '../checkin/checkin-ticket.entity';
+import { EventPaymentEntity } from '../stripe/event-payment.entity';
+import { StripeAccountEntity } from '../stripe/stripe-account.entity';
+import { verifyPassword } from '../auth/password';
 
 const REPORT_CATEGORIES: ReportCategory[] = [
   'harassment',
@@ -27,6 +32,14 @@ export class TrustService {
     private readonly users: Repository<UserEntity>,
     @InjectRepository(ApplicationEntity)
     private readonly applications: Repository<ApplicationEntity>,
+    @InjectRepository(EventEntity)
+    private readonly events: Repository<EventEntity>,
+    @InjectRepository(CheckinTicketEntity)
+    private readonly tickets: Repository<CheckinTicketEntity>,
+    @InjectRepository(EventPaymentEntity)
+    private readonly payments: Repository<EventPaymentEntity>,
+    @InjectRepository(StripeAccountEntity)
+    private readonly stripeAccounts: Repository<StripeAccountEntity>,
     private readonly email: EmailService,
   ) {}
 
@@ -122,6 +135,30 @@ export class TrustService {
           : null,
       })),
     };
+  }
+
+  async deleteAccount(userId: string, password: string): Promise<{ ok: true }> {
+    const user = await this.users.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    if (!(await verifyPassword(password ?? '', user.passwordHash))) {
+      throw new BadRequestException('Invalid password');
+    }
+
+    const hosted = await this.events.count({ where: { hostId: userId } });
+    if (hosted > 0) {
+      throw new BadRequestException(
+        'Remove or transfer hosted events before deleting your account',
+      );
+    }
+
+    await this.applications.delete({ applicantSub: userId });
+    await this.tickets.delete({ userSub: userId });
+    await this.payments.delete({ userSub: userId });
+    await this.reports.delete({ reporterSub: userId });
+    await this.stripeAccounts.delete({ hostId: userId });
+    await this.users.delete({ id: userId });
+
+    return { ok: true };
   }
 
   private async notifyAdmins(report: TrustReportEntity): Promise<void> {

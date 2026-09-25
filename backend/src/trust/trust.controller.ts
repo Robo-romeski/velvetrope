@@ -66,4 +66,14 @@ export class TrustController {
     const { sub } = getAuthUser(req);
     return await this.trust.exportUserData(sub);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('delete-account')
+  async deleteAccount(
+    @Req() req: Request,
+    @Body() body: { password?: string },
+  ) {
+    const { sub } = getAuthUser(req);
+    return await this.trust.deleteAccount(sub, body.password ?? '');
+  }
 }

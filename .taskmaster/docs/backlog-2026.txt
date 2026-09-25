@@ -1,0 +1,18 @@
+VelvetKey — post-MVP backlog (tasks 11–12)
+============================================
+
+Master roadmap tasks 1–10 are implemented on main. Do not reopen unless product owner requests.
+
+TASK 11 — Identity verification (defer)
+- Persona or Onfido (or similar) for verified attendees
+- Webhooks, verification status on user, optional gate on apply/ticket
+- Requires vendor account, legal review, and UX for failed/pending states
+
+TASK 12 — Future epics (separate PRDs / tags)
+- Event chat and post-event feedback / reputation
+- Full admin console (moderation beyond trust reports)
+- Host analytics dashboard (conversion, revenue — partial invite stats exist)
+- PWA / offline QR, Redis caching
+- Waitlist, photo verification at check-in
+
+Account deletion and JSON export ship under task 10 (trust module).

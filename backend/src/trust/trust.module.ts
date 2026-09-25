@@ -5,6 +5,10 @@ import { TrustService } from './trust.service';
 import { TrustController } from './trust.controller';
 import { UserEntity } from '../auth/user.entity';
 import { ApplicationEntity } from '../applications/application.entity';
+import { EventEntity } from '../events/event.entity';
+import { CheckinTicketEntity } from '../checkin/checkin-ticket.entity';
+import { EventPaymentEntity } from '../stripe/event-payment.entity';
+import { StripeAccountEntity } from '../stripe/stripe-account.entity';
 
 @Module({
   imports: [
@@ -12,6 +16,10 @@ import { ApplicationEntity } from '../applications/application.entity';
       TrustReportEntity,
       UserEntity,
       ApplicationEntity,
+      EventEntity,
+      CheckinTicketEntity,
+      EventPaymentEntity,
+      StripeAccountEntity,
     ]),
   ],
   controllers: [TrustController],

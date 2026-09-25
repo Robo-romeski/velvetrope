@@ -402,7 +402,7 @@
         "id": "11",
         "title": "Identity verification",
         "description": "Persona/Onfido integration for verified attendees.",
-        "details": "Explicitly deferred until product requires IDV.",
+        "details": "Deferred — see .taskmaster/docs/backlog-2026.txt. No implementation until vendor + legal sign-off.",
         "testStrategy": "N/A",
         "priority": "low",
         "dependencies": [
@@ -418,7 +418,7 @@
         "id": "12",
         "title": "Future product epics",
         "description": "Chat, feedback/reputation, admin console, PWA, analytics dashboards.",
-        "details": "Track in separate PRD when MVP + Postgres + notifications are stable. Not part of current sprint.",
+        "details": "Deferred — see .taskmaster/docs/backlog-2026.txt. Split into new tags/PRDs when prioritised (not master sprint).",
         "testStrategy": "N/A",
         "priority": "low",
         "dependencies": [
@@ -433,9 +433,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-09-24T17:40:18.699Z",
+      "lastModified": "2026-09-25T02:50:00.000Z",
       "taskCount": 12,
-      "completedCount": 7,
+      "completedCount": 10,
       "tags": [
         "master"
       ]

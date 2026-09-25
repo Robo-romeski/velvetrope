@@ -141,6 +141,7 @@ npm run dev
 - `GET /trust/reports` - List reports (`admin` role)
 - `PATCH /trust/reports/:id/resolve` - Resolve a report (`admin` role)
 - `GET /trust/export` - Download JSON export of profile + applications (auth required)
+- `POST /trust/delete-account` - Delete account after password confirm (blocked if user hosts events)
 
 Application submit requires `acceptedCodeOfConduct: true`. Assign the `admin` role on a user (database) for report review; set `TRUST_REPORT_NOTIFY_EMAIL` for new-report alerts.
 
@@ -230,15 +231,14 @@ If local SQLite fails after upgrading from auto-sync, delete `backend/data/dev.s
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 
-## Next Steps / TODO
+## Roadmap status
 
-- [x] Postgres + TypeORM migrations (optional `DATABASE_URL` / Docker profile)
-- [x] Implement Stripe payment flow (Checkout + Connect transfer; free events unchanged)
-- [x] Add email notifications (Resend or capture mode without API key)
-- [ ] Host dashboard with analytics
-- [x] Event capacity limits
-- [ ] Waitlist management
-- [ ] Photo verification for check-in
+**Shipped on `main` (refined PRD tasks 1–10):** local auth, attendee/host flows, Postgres migrations, email, security baseline, Stripe Checkout for paid events, trust (CoC, reports, export, account deletion).
+
+**Deferred (see `.taskmaster/docs/backlog-2026.txt`):**
+
+- Identity verification (Persona/Onfido) — when product requires verified attendees
+- Chat, full admin console, host analytics dashboard, PWA/offline QR, waitlist, photo check-in
 
 ## License
 

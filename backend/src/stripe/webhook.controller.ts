@@ -63,9 +63,7 @@ export class StripeWebhookController {
     }
 
     if (event.type === 'checkout.session.completed') {
-      await this.payments.handleCheckoutSessionCompleted(
-        event.data.object as Stripe.Checkout.Session,
-      );
+      await this.payments.handleCheckoutSessionCompleted(event.data.object);
     }
 
     return { ok: true };

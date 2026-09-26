@@ -36,7 +36,7 @@ export class EmailService {
     to: string;
     eventTitle: string;
     eventId: string;
-    status: 'approved' | 'rejected';
+    status: 'approved' | 'waitlisted' | 'rejected';
     reason?: string;
   }): Promise<void> {
     const content = applicationDecisionEmail({

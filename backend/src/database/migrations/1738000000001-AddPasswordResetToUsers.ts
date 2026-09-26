@@ -1,6 +1,9 @@
 import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
+import { migrationDateTimeType } from '../migration-column-types';
 
-export class AddPasswordResetToUsers1738000000001 implements MigrationInterface {
+export class AddPasswordResetToUsers1738000000001
+  implements MigrationInterface
+{
   name = 'AddPasswordResetToUsers1738000000001';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -16,7 +19,7 @@ export class AddPasswordResetToUsers1738000000001 implements MigrationInterface 
       'users',
       new TableColumn({
         name: 'passwordResetExpiresAt',
-        type: 'datetime',
+        type: migrationDateTimeType(queryRunner),
         isNullable: true,
       }),
     );

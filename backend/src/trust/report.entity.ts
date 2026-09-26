@@ -6,11 +6,7 @@ import {
 } from 'typeorm';
 
 export type ReportSubjectType = 'event' | 'user';
-export type ReportCategory =
-  | 'harassment'
-  | 'safety'
-  | 'spam'
-  | 'other';
+export type ReportCategory = 'harassment' | 'safety' | 'spam' | 'other';
 export type ReportStatus = 'open' | 'resolved';
 
 @Entity({ name: 'trust_reports' })
@@ -36,6 +32,6 @@ export class TrustReportEntity {
   @Column({ type: 'text', default: 'open' })
   status!: ReportStatus;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn()
   createdAt!: Date;
 }

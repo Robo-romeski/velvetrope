@@ -441,6 +441,118 @@
       ]
     }
   },
+  "feature-waitlist": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Add waitlist and decision data model",
+        "description": "Persist waitlist status, FIFO rank, decision metadata, and one application per attendee/event.",
+        "details": "See .taskmaster/docs/waitlist-prd.txt. Add migration 1738000000004 without editing shipped migrations.",
+        "testStrategy": "Fresh migration plus duplicate application e2e.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "2",
+        "title": "Implement transactional decisions and FIFO promotion",
+        "description": "Serialize capacity checks and enforce host-triggered FIFO promotion.",
+        "details": "Persist host reason/timestamps; reject non-first promotion and full-capacity promotion.",
+        "testStrategy": "Capacity and FIFO e2e scenarios.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "3",
+        "title": "Add waitlist host and attendee UX",
+        "description": "Expose queue state, reasons, filters, waitlist action, promotion, and revocation.",
+        "details": "Extend existing application pages and CTA components.",
+        "testStrategy": "Frontend typecheck/build plus manual host/attendee walkthrough.",
+        "priority": "high",
+        "dependencies": [
+          "2"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "4",
+        "title": "Verify migration and regression coverage",
+        "description": "Run backend and frontend validation and document remaining manual checks.",
+        "details": "Do not mark complete until all automated checks pass.",
+        "testStrategy": "Backend e2e/lint/build; frontend lint/typecheck/build; fresh migration smoke.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2",
+          "3"
+        ],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-09-26T01:06:00.000Z",
+      "taskCount": 4,
+      "completedCount": 4,
+      "description": "Waitlist and application decision integrity"
+    }
+  },
+  "feature-host-analytics": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Add privacy-safe analytics API",
+        "description": "Aggregate event funnel, revenue, and attendance with host ownership checks.",
+        "details": "See .taskmaster/docs/host-analytics-prd.txt. Do not return attendee identifiers.",
+        "testStrategy": "Ownership and aggregate e2e coverage.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "2",
+        "title": "Build host analytics UI",
+        "description": "Add host summary cards and a per-event analytics dashboard.",
+        "details": "Extend HostEventNav and host events page; create event analytics route.",
+        "testStrategy": "Frontend lint/typecheck/build and manual visual review.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "3",
+        "title": "Verify host analytics",
+        "description": "Run backend and frontend regression checks.",
+        "details": "No migration is required for this aggregate-only slice.",
+        "testStrategy": "Backend lint/build/e2e; frontend lint/typecheck/build.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-09-26T01:10:00.000Z",
+      "taskCount": 3,
+      "completedCount": 3,
+      "description": "Privacy-safe host analytics dashboards"
+    }
+  },
   "legacy-prd-2025": {
     "tasks": [
       {

@@ -5,6 +5,7 @@ import {
   TableColumn,
   TableIndex,
 } from 'typeorm';
+import { migrationDateTimeType } from '../migration-column-types';
 
 export class AddTicketPriceAndEventPayments1738000000002
   implements MigrationInterface
@@ -12,6 +13,8 @@ export class AddTicketPriceAndEventPayments1738000000002
   name = 'AddTicketPriceAndEventPayments1738000000002';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    const dateTime = migrationDateTimeType(queryRunner);
+
     await queryRunner.addColumn(
       'events',
       new TableColumn({
@@ -38,8 +41,8 @@ export class AddTicketPriceAndEventPayments1738000000002
           },
           { name: 'stripeCheckoutSessionId', type: 'text', isNullable: true },
           { name: 'stripePaymentIntentId', type: 'text', isNullable: true },
-          { name: 'paidAt', type: 'datetime', isNullable: true },
-          { name: 'createdAt', type: 'datetime', isNullable: false },
+          { name: 'paidAt', type: dateTime, isNullable: true },
+          { name: 'createdAt', type: dateTime, isNullable: false },
         ],
       }),
       true,

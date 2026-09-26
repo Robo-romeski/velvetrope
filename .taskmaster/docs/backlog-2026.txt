@@ -11,8 +11,11 @@ TASK 11 — Identity verification (defer)
 TASK 12 — Future epics (separate PRDs / tags)
 - Event chat and post-event feedback / reputation
 - Full admin console (moderation beyond trust reports)
-- Host analytics dashboard (conversion, revenue — partial invite stats exist)
 - PWA / offline QR, Redis caching
-- Waitlist, photo verification at check-in
+- Photo verification at check-in
 
 Account deletion and JSON export ship under task 10 (trust module).
+FIFO waitlist and persisted application decisions ship under the
+feature-waitlist tag.
+Privacy-safe funnel, revenue, and attendance analytics ship under the
+feature-host-analytics tag.

@@ -1,0 +1,35 @@
+VelvetKey — Host Analytics Dashboard
+=====================================
+
+Goal
+----
+Give hosts a privacy-safe view of event conversion, revenue, and attendance
+using existing operational data.
+
+Requirements
+------------
+1. Event analytics endpoint is host-only and ownership-scoped.
+2. Host summary endpoint includes only events owned by the authenticated host.
+3. Return aggregate counts only; never return attendee identifiers.
+4. Event funnel includes generated/redeemed invites, applications by status,
+   approvals, tickets issued, and check-ins.
+5. Revenue reports gross paid amount in cents and distinguishes free events.
+6. All rates return zero when the denominator is zero.
+7. Host events page shows summary cards.
+8. Event admin navigation links to a detailed analytics page.
+9. Analytics use existing tables; no denormalized analytics entity or migration.
+
+Verification
+------------
+- Non-owner receives 403 for event analytics.
+- Aggregate test covers two invites/applications, approval, waitlist, ticket,
+  and check-in.
+- Host summary includes only that host's events.
+- Backend lint/build/e2e.
+- Frontend lint/typecheck/build.
+
+Out of scope
+------------
+- User-level drill-down or PII exports.
+- Time-series warehousing, scheduled reports, or external BI.
+- Net Stripe payout/fee accounting.

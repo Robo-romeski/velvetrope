@@ -1,8 +1,10 @@
 import { resolveAppBaseUrl } from './email.config';
 
-export function passwordResetEmail(input: {
-  resetToken: string;
-}): { subject: string; text: string; html: string } {
+export function passwordResetEmail(input: { resetToken: string }): {
+  subject: string;
+  text: string;
+  html: string;
+} {
   const base = resolveAppBaseUrl();
   const url = `${base}/auth/reset-password?token=${encodeURIComponent(input.resetToken)}`;
   const subject = 'Reset your VelvetKey password';
@@ -23,20 +25,25 @@ export function passwordResetEmail(input: {
 export function applicationDecisionEmail(input: {
   eventTitle: string;
   eventId: string;
-  status: 'approved' | 'rejected';
+  status: 'approved' | 'waitlisted' | 'rejected';
   reason?: string;
 }): { subject: string; text: string; html: string } {
   const base = resolveAppBaseUrl();
   const eventUrl = `${base}/events/${encodeURIComponent(input.eventId)}`;
   const ticketUrl = `${base}/events/${encodeURIComponent(input.eventId)}/ticket`;
   const approved = input.status === 'approved';
+  const waitlisted = input.status === 'waitlisted';
   const subject = approved
     ? `You're in: ${input.eventTitle}`
-    : `Update on your application: ${input.eventTitle}`;
+    : waitlisted
+      ? `You're on the waitlist: ${input.eventTitle}`
+      : `Update on your application: ${input.eventTitle}`;
   const lines = [
     approved
       ? `Good news — your application for "${input.eventTitle}" was approved.`
-      : `Your application for "${input.eventTitle}" was not approved this time.`,
+      : waitlisted
+        ? `Your application for "${input.eventTitle}" was added to the waitlist.`
+        : `Your application for "${input.eventTitle}" was not approved this time.`,
   ];
   if (input.reason?.trim()) {
     lines.push('', `Note from the host: ${input.reason.trim()}`);
@@ -52,7 +59,11 @@ export function applicationDecisionEmail(input: {
     ? `<p>Good news — your application for <strong>${escapeHtml(input.eventTitle)}</strong> was approved.</p>
 ${reasonHtml(input.reason)}
 <p><a href="${ticketUrl}">View your ticket</a></p>`
-    : `<p>Your application for <strong>${escapeHtml(input.eventTitle)}</strong> was not approved this time.</p>
+    : waitlisted
+      ? `<p>Your application for <strong>${escapeHtml(input.eventTitle)}</strong> was added to the waitlist.</p>
+${reasonHtml(input.reason)}
+<p><a href="${eventUrl}">View event</a></p>`
+      : `<p>Your application for <strong>${escapeHtml(input.eventTitle)}</strong> was not approved this time.</p>
 ${reasonHtml(input.reason)}
 <p><a href="${eventUrl}">View event</a></p>`;
   return { subject, text, html };

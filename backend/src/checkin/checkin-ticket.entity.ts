@@ -5,6 +5,7 @@ import {
   Index,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { dateTimeColumnType } from '../database/column-types';
 
 @Entity({ name: 'checkin_tickets' })
 export class CheckinTicketEntity {
@@ -21,9 +22,9 @@ export class CheckinTicketEntity {
   @Column({ type: 'text' })
   userSub!: string;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn()
   issuedAt!: Date;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: dateTimeColumnType(), nullable: true })
   usedAt?: Date | null;
 }

@@ -165,7 +165,9 @@ export class AuthService {
     user.passwordResetExpiresAt = null;
     await this.users.save(user);
 
-    return { message: 'Password updated. You can log in with your new password.' };
+    return {
+      message: 'Password updated. You can log in with your new password.',
+    };
   }
 
   private normalizeEmail(email: string): string {

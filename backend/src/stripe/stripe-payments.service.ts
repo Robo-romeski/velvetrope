@@ -54,7 +54,11 @@ export class StripePaymentsService {
       return { required: true, status: 'pending', amountCents };
     }
     if (record.status === 'paid') {
-      return { required: true, status: 'paid', amountCents: record.amountCents };
+      return {
+        required: true,
+        status: 'paid',
+        amountCents: record.amountCents,
+      };
     }
     return {
       required: true,
@@ -225,7 +229,7 @@ export class StripePaymentsService {
       paymentIntentId:
         typeof session.payment_intent === 'string'
           ? session.payment_intent
-          : session.payment_intent?.id ?? null,
+          : (session.payment_intent?.id ?? null),
     });
   }
 }

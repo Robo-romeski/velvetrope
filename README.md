@@ -149,7 +149,8 @@ Application submit requires `acceptedCodeOfConduct: true`. Assign the `admin` ro
 - `GET /applications/mine` - List the authenticated user's applications (auth required)
 - `POST /applications` - Submit application (auth required)
 - `GET /applications/event/:eventId` - List applications (host only)
-- `PATCH /applications/:id/decision` - Approve/reject (host only)
+- `PATCH /applications/:id/decision` - Approve/waitlist/reject with optional host note (host only)
+- `POST /applications/:id/promote` - Promote the first FIFO waitlisted attendee when capacity is available (host only)
 - `PUT /applications/event/:eventId/form` - Set form schema (host only)
 - `GET /applications/event/:eventId/form` - Get form schema (public)
 
@@ -172,6 +173,10 @@ Application submit requires `acceptedCodeOfConduct: true`. Assign the `admin` ro
 - `GET /stripe/payment/:eventId` - Ticket payment status for the authenticated attendee
 - `POST /stripe/checkout/:eventId` - Start Checkout for an approved application (paid events)
 - `POST /stripe/webhook` - Stripe webhook handler (fails closed on bad/missing signature; handles `checkout.session.completed`)
+
+### Analytics
+- `GET /analytics/event/:eventId` - Aggregate funnel, revenue, and attendance (event host only)
+- `GET /analytics/host/summary` - Aggregate metrics across the authenticated host's events
 
 ## Testing
 
@@ -233,12 +238,13 @@ If local SQLite fails after upgrading from auto-sync, delete `backend/data/dev.s
 
 ## Roadmap status
 
-**Shipped on `main` (refined PRD tasks 1–10):** local auth, attendee/host flows, Postgres migrations, email, security baseline, Stripe Checkout for paid events, trust (CoC, reports, export, account deletion).
+**Shipped:** refined PRD tasks 1–10 plus FIFO waitlist and persisted
+application decisions and privacy-safe host analytics.
 
 **Deferred (see `.taskmaster/docs/backlog-2026.txt`):**
 
 - Identity verification (Persona/Onfido) — when product requires verified attendees
-- Chat, full admin console, host analytics dashboard, PWA/offline QR, waitlist, photo check-in
+- Chat, full admin console, PWA/offline QR, photo check-in
 
 ## License
 

@@ -19,6 +19,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { SecurityModule } from './security/security.module';
 import { EmailModule } from './email/email.module';
 import { TrustModule } from './trust/trust.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -53,6 +54,7 @@ const isTest = process.env.NODE_ENV === 'test';
     InvitesModule,
     CheckinModule,
     TrustModule,
+    AnalyticsModule,
   ],
   controllers: [AppController, HealthController, HostController],
   providers: [AppService, RolesGuard],

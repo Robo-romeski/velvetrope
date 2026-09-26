@@ -50,7 +50,12 @@ describe('Applications (e2e)', () => {
     await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|mine-list'))
-      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: invite.body.code })
+      .send({
+        eventId: event.id,
+        answers: {},
+        acceptedCodeOfConduct: true,
+        inviteCode: invite.body.code,
+      })
       .expect(201);
 
     const mine = await request(app.getHttpServer())
@@ -88,7 +93,12 @@ describe('Applications (e2e)', () => {
     const submit = await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|abc'))
-      .send({ eventId: event.id, answers: { q1: 'Yes' }, acceptedCodeOfConduct: true, inviteCode: code })
+      .send({
+        eventId: event.id,
+        answers: { q1: 'Yes' },
+        acceptedCodeOfConduct: true,
+        inviteCode: code,
+      })
       .expect(201);
     const appId = submit.body.id as string;
     expect(submit.body.applicantSub).toBe('user|abc');
@@ -105,9 +115,51 @@ describe('Applications (e2e)', () => {
     const decided = await request(app.getHttpServer())
       .patch(`/applications/${appId}/decision`)
       .set(hostAuth())
-      .send({ status: 'approved' })
+      .send({ status: 'approved', reason: 'Great application' })
       .expect(200);
     expect(decided.body.status).toBe('approved');
+    expect(decided.body.decisionReason).toBe('Great application');
+    expect(decided.body.decidedAt).toBeTruthy();
+    expect(decided.body.decidedByHostId).toBe('test-user');
+  });
+
+  it('rejects duplicate applications before consuming another invite', async () => {
+    const event = await createEvent(app.getHttpServer());
+    const firstInvite = await request(app.getHttpServer())
+      .post(`/invites/generate/${event.id}`)
+      .set(hostAuth())
+      .expect(201);
+    const secondInvite = await request(app.getHttpServer())
+      .post(`/invites/generate/${event.id}`)
+      .set(hostAuth())
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/applications')
+      .set(userAuth('user|duplicate'))
+      .send({
+        eventId: event.id,
+        answers: {},
+        acceptedCodeOfConduct: true,
+        inviteCode: firstInvite.body.code,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/applications')
+      .set(userAuth('user|duplicate'))
+      .send({
+        eventId: event.id,
+        answers: {},
+        acceptedCodeOfConduct: true,
+        inviteCode: secondInvite.body.code,
+      })
+      .expect(409);
+
+    const stillAvailable = await request(app.getHttpServer())
+      .get(`/invites/validate/${secondInvite.body.code}`)
+      .expect(200);
+    expect(stillAvailable.body.used).toBe(false);
   });
 
   it('form set/get flow (host set, public get)', async () => {
@@ -161,7 +213,12 @@ describe('Applications (e2e)', () => {
     await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|abc'))
-      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: 'SOME_CODE' })
+      .send({
+        eventId: event.id,
+        answers: {},
+        acceptedCodeOfConduct: true,
+        inviteCode: 'SOME_CODE',
+      })
       .expect(400);
   });
 
@@ -183,19 +240,34 @@ describe('Applications (e2e)', () => {
     await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|one'))
-      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: code })
+      .send({
+        eventId: event.id,
+        answers: {},
+        acceptedCodeOfConduct: true,
+        inviteCode: code,
+      })
       .expect(201);
 
     await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|two'))
-      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: code })
+      .send({
+        eventId: event.id,
+        answers: {},
+        acceptedCodeOfConduct: true,
+        inviteCode: code,
+      })
       .expect(400);
 
     await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|two'))
-      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: 'INVALID' })
+      .send({
+        eventId: event.id,
+        answers: {},
+        acceptedCodeOfConduct: true,
+        inviteCode: 'INVALID',
+      })
       .expect(400);
   });
 
@@ -216,12 +288,22 @@ describe('Applications (e2e)', () => {
     const first = await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|one'))
-      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: inviteA.body.code })
+      .send({
+        eventId: event.id,
+        answers: {},
+        acceptedCodeOfConduct: true,
+        inviteCode: inviteA.body.code,
+      })
       .expect(201);
     const second = await request(app.getHttpServer())
       .post('/applications')
       .set(userAuth('user|two'))
-      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: inviteB.body.code })
+      .send({
+        eventId: event.id,
+        answers: {},
+        acceptedCodeOfConduct: true,
+        inviteCode: inviteB.body.code,
+      })
       .expect(201);
 
     await request(app.getHttpServer())
@@ -235,6 +317,79 @@ describe('Applications (e2e)', () => {
       .set(hostAuth())
       .send({ status: 'approved' })
       .expect(400);
+  });
+
+  it('promotes waitlisted applications in FIFO order when capacity opens', async () => {
+    const event = await createEvent(app.getHttpServer(), 'test-user', {
+      capacity: 1,
+    });
+
+    const apply = async (userSub: string) => {
+      const invite = await request(app.getHttpServer())
+        .post(`/invites/generate/${event.id}`)
+        .set(hostAuth())
+        .expect(201);
+      return await request(app.getHttpServer())
+        .post('/applications')
+        .set(userAuth(userSub))
+        .send({
+          eventId: event.id,
+          answers: {},
+          acceptedCodeOfConduct: true,
+          inviteCode: invite.body.code,
+        })
+        .expect(201);
+    };
+
+    const approved = await apply('user|approved');
+    const firstWaitlisted = await apply('user|waitlist-one');
+    const secondWaitlisted = await apply('user|waitlist-two');
+
+    await request(app.getHttpServer())
+      .patch(`/applications/${approved.body.id}/decision`)
+      .set(hostAuth())
+      .send({ status: 'approved' })
+      .expect(200);
+    await request(app.getHttpServer())
+      .patch(`/applications/${firstWaitlisted.body.id}/decision`)
+      .set(hostAuth())
+      .send({ status: 'waitlisted', reason: 'Capacity reached' })
+      .expect(200);
+    await request(app.getHttpServer())
+      .patch(`/applications/${secondWaitlisted.body.id}/decision`)
+      .set(hostAuth())
+      .send({ status: 'waitlisted' })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .post(`/applications/${firstWaitlisted.body.id}/promote`)
+      .set(hostAuth())
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .patch(`/applications/${approved.body.id}/decision`)
+      .set(hostAuth())
+      .send({ status: 'rejected', reason: 'Approval withdrawn' })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .post(`/applications/${secondWaitlisted.body.id}/promote`)
+      .set(hostAuth())
+      .expect(400);
+
+    const promoted = await request(app.getHttpServer())
+      .post(`/applications/${firstWaitlisted.body.id}/promote`)
+      .set(hostAuth())
+      .expect(201);
+    expect(promoted.body.status).toBe('approved');
+    expect(promoted.body.promotedAt).toBeTruthy();
+
+    const mine = await request(app.getHttpServer())
+      .get('/applications/mine')
+      .set(userAuth('user|waitlist-two'))
+      .expect(200);
+    expect(mine.body.items[0].status).toBe('waitlisted');
+    expect(mine.body.items[0].waitlistPosition).toBe(1);
   });
 
   it('sends a decision email when the applicant is a registered user', async () => {
@@ -256,7 +411,12 @@ describe('Applications (e2e)', () => {
     const application = await request(app.getHttpServer())
       .post('/applications')
       .set('Authorization', `Bearer ${token}`)
-      .send({ eventId: event.id, answers: {}, acceptedCodeOfConduct: true, inviteCode: invite.body.code })
+      .send({
+        eventId: event.id,
+        answers: {},
+        acceptedCodeOfConduct: true,
+        inviteCode: invite.body.code,
+      })
       .expect(201);
     expect(application.body.applicantSub).toBe(applicantId);
 
@@ -267,9 +427,9 @@ describe('Applications (e2e)', () => {
       .expect(200);
 
     const sent = getCapturedEmails();
-    expect(sent.some((m) => m.to === email && m.subject.includes('Party'))).toBe(
-      true,
-    );
+    expect(
+      sent.some((m) => m.to === email && m.subject.includes('Party')),
+    ).toBe(true);
     expect(sent.some((m) => m.text.includes('See you there'))).toBe(true);
   });
 });

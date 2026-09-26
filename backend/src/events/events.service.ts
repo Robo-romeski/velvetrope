@@ -87,9 +87,15 @@ export class EventsService {
   }
 
   async create(
-    data: Omit<EventItem, 'id' | 'status'> & { status?: EventItem['status'] },
+    data: Omit<EventItem, 'id' | 'status' | 'ticketPriceCents'> & {
+      status?: EventItem['status'];
+      ticketPriceCents?: number;
+    },
   ): Promise<EventItem> {
-    const ticketPriceCents = Math.max(0, Math.floor(data.ticketPriceCents ?? 0));
+    const ticketPriceCents = Math.max(
+      0,
+      Math.floor(data.ticketPriceCents ?? 0),
+    );
     const entity = this.repo.create({
       ...data,
       ticketPriceCents,

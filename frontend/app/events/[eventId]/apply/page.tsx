@@ -156,6 +156,15 @@ export default function ApplyToEventPage() {
         </div>
       )}
 
+      {applicationStatus === 'waitlisted' && (
+        <div className="text-sm space-y-2 border rounded p-3">
+          <p>You are on the waitlist for this event.</p>
+          <Link href="/applications" className="text-blue-600 underline">
+            View waitlist status
+          </Link>
+        </div>
+      )}
+
       {applicationStatus === 'rejected' && (
         <div className="text-sm space-y-2 border rounded p-3">
           <p>Your application was not approved for this event.</p>

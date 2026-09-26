@@ -9,6 +9,7 @@ const tabs = [
   { suffix: 'invites', label: 'Invites' },
   { suffix: 'applications', label: 'Applications' },
   { suffix: 'scan', label: 'Check-in' },
+  { suffix: 'analytics', label: 'Analytics' },
 ] as const;
 
 export function HostEventNav({ eventId }: { eventId: string }) {

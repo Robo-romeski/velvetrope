@@ -1,19 +1,17 @@
-import {
-  MigrationInterface,
-  QueryRunner,
-  Table,
-  TableColumn,
-} from 'typeorm';
+import { MigrationInterface, QueryRunner, Table, TableColumn } from 'typeorm';
+import { migrationDateTimeType } from '../migration-column-types';
 
 export class TrustReportsAndCoc1738000000003 implements MigrationInterface {
   name = 'TrustReportsAndCoc1738000000003';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    const dateTime = migrationDateTimeType(queryRunner);
+
     await queryRunner.addColumn(
       'applications',
       new TableColumn({
         name: 'codeOfConductAcceptedAt',
-        type: 'datetime',
+        type: dateTime,
         isNullable: true,
       }),
     );
@@ -34,7 +32,7 @@ export class TrustReportsAndCoc1738000000003 implements MigrationInterface {
             isNullable: false,
             default: "'open'",
           },
-          { name: 'createdAt', type: 'datetime', isNullable: false },
+          { name: 'createdAt', type: dateTime, isNullable: false },
         ],
       }),
       true,

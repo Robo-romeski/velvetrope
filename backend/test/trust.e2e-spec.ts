@@ -71,9 +71,9 @@ describe('Trust (e2e)', () => {
       .set(adminAuth())
       .expect(200);
     expect(Array.isArray(listed.body)).toBe(true);
-    expect(listed.body.some((r: { id: string }) => r.id === created.body.id)).toBe(
-      true,
-    );
+    expect(
+      listed.body.some((r: { id: string }) => r.id === created.body.id),
+    ).toBe(true);
 
     const resolved = await request(app.getHttpServer())
       .patch(`/trust/reports/${created.body.id}/resolve`)

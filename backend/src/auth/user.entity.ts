@@ -1,4 +1,5 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import { dateTimeColumnType } from '../database/column-types';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -21,6 +22,6 @@ export class UserEntity {
   @Column({ type: 'text', nullable: true })
   passwordResetTokenHash?: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: dateTimeColumnType(), nullable: true })
   passwordResetExpiresAt?: Date | null;
 }

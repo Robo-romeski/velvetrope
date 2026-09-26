@@ -244,6 +244,13 @@ If local SQLite fails after upgrading from auto-sync, delete `backend/data/dev.s
 - `APP_BASE_URL` (default `http://localhost:3000`)
 - `NEXT_PUBLIC_API_BASE_URL` (default `http://localhost:3010`)
 
+### PWA / offline ticket
+
+Production builds generate a Serwist service worker. An approved attendee
+ticket that has been opened online is stored in IndexedDB and can be shown
+offline until one day after the event. Logout clears cached tickets. Host
+check-in and all authenticated mutations remain online-only.
+
 ### Stripe
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
@@ -252,12 +259,17 @@ If local SQLite fails after upgrading from auto-sync, delete `backend/data/dev.s
 
 **Shipped:** refined PRD tasks 1–10 plus FIFO waitlist and persisted
 application decisions, privacy-safe host analytics, and an audited admin
-console.
+console. The Next 16 PWA keeps approved attendee QR tickets available offline;
+host verification remains online.
 
 **Deferred (see `.taskmaster/docs/backlog-2026.txt`):**
 
 - Identity verification (Persona/Onfido) — when product requires verified attendees
-- Chat, PWA/offline QR, photo check-in
+- Chat, photo check-in
+
+`npm audit --omit=dev` reports zero production vulnerabilities. Serwist's
+build-time dependency tree currently reports two `browserslist` advisories;
+npm offers only a forced Serwist downgrade, so no forced audit fix is applied.
 
 ## License
 

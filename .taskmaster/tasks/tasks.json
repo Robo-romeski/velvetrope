@@ -616,6 +616,55 @@
       "description": "Audited platform administration and moderation"
     }
   },
+  "feature-pwa-offline-qr": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Configure production PWA shell",
+        "description": "Add Serwist, offline fallback, install metadata, and safe runtime caching.",
+        "details": "See .taskmaster/docs/pwa-offline-qr-prd.txt. Auth/admin/host routes remain network-only.",
+        "testStrategy": "Production build generates service worker and all routes.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "2",
+        "title": "Cache attendee QR in IndexedDB",
+        "description": "Store expiring ticket copies and clear them on logout or attendee request.",
+        "details": "No host check-in mutation may work offline.",
+        "testStrategy": "Manual online-to-offline ticket reload and logout cleanup.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "3",
+        "title": "Verify PWA and dependency security",
+        "description": "Run frontend checks and inspect production dependency advisories.",
+        "details": "Do not apply forced audit fixes automatically.",
+        "testStrategy": "Lint, typecheck, build, service-worker output, npm audit review.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-09-26T04:40:00.000Z",
+      "taskCount": 3,
+      "completedCount": 3,
+      "description": "Installable PWA with offline attendee QR"
+    }
+  },
   "legacy-prd-2025": {
     "tasks": [
       {

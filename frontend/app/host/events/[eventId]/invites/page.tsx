@@ -14,6 +14,7 @@ type Invite = {
   usedBy?: string | null;
   expiresAt?: string | null;
   createdAt?: string;
+  expired: boolean;
 };
 
 type InviteStats = {
@@ -30,7 +31,7 @@ function formatPercent(rate: number) {
 
 function inviteStatus(invite: Invite): string {
   if (invite.usedAt) return `Used by ${invite.usedBy ?? 'someone'}`;
-  if (invite.expiresAt && new Date(invite.expiresAt).getTime() <= Date.now()) {
+  if (invite.expired) {
     return 'Expired (unused)';
   }
   if (invite.expiresAt) {
@@ -57,7 +58,17 @@ export default function HostInvitesPage() {
         apiGetAuth(`/invites/event/${encodeURIComponent(eventId)}`),
         apiGetAuth(`/invites/event/${encodeURIComponent(eventId)}/stats`),
       ]);
-      setInvites(Array.isArray(list) ? list : []);
+      const loadedAt = Date.now();
+      setInvites(
+        (Array.isArray(list) ? list : []).map(
+          (invite: Omit<Invite, 'expired'>) => ({
+            ...invite,
+            expired:
+              !!invite.expiresAt &&
+              new Date(invite.expiresAt).getTime() <= loadedAt,
+          }),
+        ),
+      );
       setStats(statsRes as InviteStats);
       setUnauthorized(false);
       setError(null);
@@ -178,12 +189,11 @@ export default function HostInvitesPage() {
               <div className="font-mono font-semibold">{invite.code}</div>
               <div className="text-xs text-gray-500">{inviteStatus(invite)}</div>
             </div>
-            {!invite.usedAt &&
-              !(invite.expiresAt && new Date(invite.expiresAt).getTime() <= Date.now()) && (
+            {!invite.usedAt && !invite.expired && (
                 <button onClick={() => copy(invite.code)} className="text-sm text-blue-600 underline">
                   Copy
                 </button>
-              )}
+            )}
           </div>
         ))}
         {invites.length === 0 && <div className="text-sm text-gray-500">No invite codes yet.</div>}

@@ -6,11 +6,17 @@ import { useParams } from 'next/navigation';
 import { apiGet, apiGetAuth, apiPostAuth, isUnauthorized } from '@/lib/api';
 import { EventPageNav } from '@/app/components/EventPageNav';
 import QRCode from 'react-qr-code';
+import {
+  deleteOfflineTicket,
+  getOfflineTicket,
+  saveOfflineTicket,
+} from '@/lib/offline-ticket';
 
 export default function EventTicketPage() {
   const params = useParams();
   const eventId = useMemo(() => String(params?.eventId ?? ''), [params]);
   const [title, setTitle] = useState<string | null>(null);
+  const [eventDate, setEventDate] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -18,15 +24,33 @@ export default function EventTicketPage() {
   const [unauthorized, setUnauthorized] = useState(false);
   const [paymentRequired, setPaymentRequired] = useState(false);
   const [paymentAmountCents, setPaymentAmountCents] = useState(0);
+  const [isOnline, setIsOnline] = useState(true);
+  const [usingOfflineCopy, setUsingOfflineCopy] = useState(false);
+  const [availableOffline, setAvailableOffline] = useState(false);
 
   const loadTicket = async () => {
     if (!eventId) return;
     setLoading(true);
     setError(null);
+    const cached = await getOfflineTicket(eventId).catch(() => null);
+    if (cached) setAvailableOffline(true);
+    if (typeof navigator !== 'undefined' && !navigator.onLine && cached) {
+      setTitle(cached.eventTitle);
+      setEventDate(cached.eventDate);
+      setToken(cached.token);
+      setUsingOfflineCopy(true);
+      setLoading(false);
+      return;
+    }
     try {
+      let resolvedTitle = cached?.eventTitle ?? null;
+      let resolvedEventDate = cached?.eventDate ?? null;
       try {
         const ev = await apiGet(`/events/${encodeURIComponent(eventId)}`);
-        setTitle(ev?.title ?? null);
+        resolvedTitle = ev?.title ?? null;
+        resolvedEventDate = ev?.date ?? null;
+        setTitle(resolvedTitle);
+        setEventDate(resolvedEventDate);
         if (ev?.status && ev.status !== 'published') return;
       } catch {
         // Ticket fetch still tries; event title is optional.
@@ -44,8 +68,28 @@ export default function EventTicketPage() {
       setPaymentRequired(false);
 
       const res = await apiPostAuth(`/checkin/mine/${encodeURIComponent(eventId)}`, {});
-      setToken(res?.token ?? null);
+      const nextToken = res?.token ?? null;
+      setToken(nextToken);
+      setUsingOfflineCopy(false);
+      if (nextToken) {
+        await saveOfflineTicket({
+          eventId,
+          eventTitle: resolvedTitle,
+          eventDate: resolvedEventDate,
+          token: nextToken,
+        });
+        setAvailableOffline(true);
+      }
     } catch (e) {
+      if (cached) {
+        setTitle(cached.eventTitle);
+        setEventDate(cached.eventDate);
+        setToken(cached.token);
+        setUsingOfflineCopy(true);
+        setPaymentRequired(false);
+        setError(null);
+        return;
+      }
       if (isUnauthorized(e)) {
         setUnauthorized(true);
       } else {
@@ -74,6 +118,17 @@ export default function EventTicketPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
+
+  useEffect(() => {
+    const update = () => setIsOnline(navigator.onLine);
+    update();
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+    };
+  }, []);
 
   const startCheckout = async () => {
     setPaying(true);
@@ -134,9 +189,19 @@ export default function EventTicketPage() {
     <div className="max-w-xl mx-auto p-6 space-y-4">
       <EventPageNav eventId={eventId} title={title} />
       <h1 className="text-2xl font-semibold">{title ?? 'Your ticket'}</h1>
+      {eventDate && (
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {new Date(eventDate).toLocaleString()}
+        </p>
+      )}
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Show this QR at the door. Hosts can also paste the token if the camera cannot read it.
       </p>
+      {(!isOnline || usingOfflineCopy) && token && (
+        <div className="text-sm border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 rounded p-3">
+          Offline copy — host verification still requires their device to be online.
+        </div>
+      )}
       {loading && <div>Loading…</div>}
       {paymentRequired && !token && (
         <div className="text-sm space-y-3 border rounded p-4">
@@ -187,6 +252,21 @@ export default function EventTicketPage() {
           <button onClick={download} className="px-4 py-2 border rounded text-sm">
             Download QR
           </button>
+          {availableOffline && (
+            <div className="text-xs text-gray-500 space-y-1">
+              <div>Available offline on this device until one day after the event.</div>
+              <button
+                type="button"
+                onClick={async () => {
+                  await deleteOfflineTicket(eventId);
+                  setAvailableOffline(false);
+                }}
+                className="text-red-600 underline"
+              >
+                Remove offline copy
+              </button>
+            </div>
+          )}
           <Link href="/applications" className="block text-sm text-blue-600 underline">
             My applications
           </Link>

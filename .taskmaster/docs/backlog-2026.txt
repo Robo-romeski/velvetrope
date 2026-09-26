@@ -10,7 +10,7 @@ TASK 11 — Identity verification (defer)
 
 TASK 12 — Future epics (separate PRDs / tags)
 - Event chat and post-event feedback / reputation
-- PWA / offline QR, Redis caching
+- Redis caching
 - Photo verification at check-in
 
 Account deletion and JSON export ship under task 10 (trust module).
@@ -20,3 +20,5 @@ Privacy-safe funnel, revenue, and attendance analytics ship under the
 feature-host-analytics tag.
 Audited user, event, and report moderation ships under the
 feature-admin-console tag.
+Installable PWA and offline attendee QR ship under the
+feature-pwa-offline-qr tag; host scanning remains online-only.

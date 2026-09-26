@@ -1,14 +1,17 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 
 export function AppNav() {
   const { user, loading, logout } = useAuth();
+  const router = useRouter();
 
   const onLogout = async () => {
     await logout();
-    window.location.href = '/';
+    router.push('/');
+    router.refresh();
   };
 
   return (

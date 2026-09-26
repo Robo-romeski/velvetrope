@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserEntity } from './user.entity';
+import { AccountStatus, UserEntity } from './user.entity';
 import { hashPassword, verifyPassword } from './password';
 import {
   createPasswordResetToken,
@@ -26,6 +26,7 @@ export type PublicUser = {
   email: string;
   name: string | null;
   roles: string[];
+  accountStatus: AccountStatus;
 };
 
 export type AuthResult = {
@@ -47,6 +48,7 @@ export class AuthService {
       email: user.email,
       name: user.name ?? null,
       roles: user.roles,
+      accountStatus: user.accountStatus,
     };
   }
 
@@ -74,6 +76,7 @@ export class AuthService {
       passwordHash: await hashPassword(password),
       name: input.name?.trim() || null,
       roles,
+      accountStatus: 'active',
     });
     const saved = await this.users.save(user);
     return { token: await this.signToken(saved), user: this.toPublic(saved) };
@@ -84,6 +87,7 @@ export class AuthService {
     const user = await this.users.findOne({ where: { email } });
     if (
       !user ||
+      user.accountStatus === 'suspended' ||
       !(await verifyPassword(input.password ?? '', user.passwordHash))
     ) {
       throw new UnauthorizedException('Invalid email or password');
@@ -93,7 +97,9 @@ export class AuthService {
 
   async getById(id: string): Promise<PublicUser> {
     const user = await this.users.findOne({ where: { id } });
-    if (!user) throw new UnauthorizedException();
+    if (!user || user.accountStatus === 'suspended') {
+      throw new UnauthorizedException();
+    }
     return this.toPublic(user);
   }
 

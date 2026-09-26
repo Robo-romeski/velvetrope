@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TrustReportEntity, ReportCategory } from './report.entity';
+import {
+  TrustReportEntity,
+  ReportCategory,
+  ReportStatus,
+} from './report.entity';
 import { codeOfConductSummary } from './code-of-conduct';
 import { EmailService } from '../email/email.service';
 import { UserEntity } from '../auth/user.entity';
@@ -15,6 +19,7 @@ import { CheckinTicketEntity } from '../checkin/checkin-ticket.entity';
 import { EventPaymentEntity } from '../stripe/event-payment.entity';
 import { StripeAccountEntity } from '../stripe/stripe-account.entity';
 import { verifyPassword } from '../auth/password';
+import { AdminAuditEntity } from '../admin/admin-audit.entity';
 
 const REPORT_CATEGORIES: ReportCategory[] = [
   'harassment',
@@ -40,6 +45,8 @@ export class TrustService {
     private readonly payments: Repository<EventPaymentEntity>,
     @InjectRepository(StripeAccountEntity)
     private readonly stripeAccounts: Repository<StripeAccountEntity>,
+    @InjectRepository(AdminAuditEntity)
+    private readonly audit: Repository<AdminAuditEntity>,
     private readonly email: EmailService,
   ) {}
 
@@ -91,16 +98,69 @@ export class TrustService {
     });
   }
 
-  async resolveReport(id: string): Promise<TrustReportEntity> {
+  async reviewReport(
+    id: string,
+    actorSub: string,
+    input: {
+      assignedToAdminId?: string | null;
+      adminNotes?: string | null;
+      status?: ReportStatus;
+    },
+  ): Promise<TrustReportEntity> {
     const report = await this.reports.findOne({ where: { id } });
     if (!report) throw new NotFoundException('Report not found');
-    report.status = 'resolved';
-    return await this.reports.save(report);
+    if (input.status && !['open', 'resolved'].includes(input.status)) {
+      throw new BadRequestException('Invalid report status');
+    }
+    if (input.assignedToAdminId !== undefined) {
+      report.assignedToAdminId = input.assignedToAdminId?.trim() || null;
+    }
+    if (input.adminNotes !== undefined) {
+      const notes = input.adminNotes?.trim() || null;
+      if (notes && notes.length > 5000) {
+        throw new BadRequestException(
+          'Admin notes must be 5000 characters or fewer',
+        );
+      }
+      report.adminNotes = notes;
+    }
+    if (input.status) {
+      report.status = input.status;
+      report.resolvedAt = input.status === 'resolved' ? new Date() : null;
+    }
+    const saved = await this.reports.save(report);
+    await this.audit.save(
+      this.audit.create({
+        actorSub,
+        action: 'trust-report.reviewed',
+        targetType: 'trust-report',
+        targetId: saved.id,
+        metadata: JSON.stringify({
+          assignedToAdminId: saved.assignedToAdminId ?? null,
+          status: saved.status,
+          hasAdminNotes: !!saved.adminNotes,
+        }),
+      }),
+    );
+    return saved;
+  }
+
+  async resolveReport(
+    id: string,
+    actorSub: string,
+  ): Promise<TrustReportEntity> {
+    return await this.reviewReport(id, actorSub, { status: 'resolved' });
   }
 
   async exportUserData(userId: string): Promise<{
     exportedAt: string;
-    user: { id: string; email: string; name: string | null; roles: string[] };
+    user: {
+      id: string;
+      email: string;
+      name: string | null;
+      roles: string[];
+      accountStatus: string;
+    };
     applications: Array<{
       id: string;
       eventId: string;
@@ -124,6 +184,7 @@ export class TrustService {
         email: user.email,
         name: user.name ?? null,
         roles: user.roles,
+        accountStatus: user.accountStatus,
       },
       applications: apps.map((app) => ({
         id: app.id,

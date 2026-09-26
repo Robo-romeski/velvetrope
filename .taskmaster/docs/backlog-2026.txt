@@ -10,7 +10,6 @@ TASK 11 — Identity verification (defer)
 
 TASK 12 — Future epics (separate PRDs / tags)
 - Event chat and post-event feedback / reputation
-- Full admin console (moderation beyond trust reports)
 - PWA / offline QR, Redis caching
 - Photo verification at check-in
 
@@ -19,3 +18,5 @@ FIFO waitlist and persisted application decisions ship under the
 feature-waitlist tag.
 Privacy-safe funnel, revenue, and attendance analytics ship under the
 feature-host-analytics tag.
+Audited user, event, and report moderation ships under the
+feature-admin-console tag.

@@ -140,10 +140,22 @@ npm run dev
 - `POST /trust/reports` - File a safety report (auth required)
 - `GET /trust/reports` - List reports (`admin` role)
 - `PATCH /trust/reports/:id/resolve` - Resolve a report (`admin` role)
+- `PATCH /trust/reports/:id/review` - Assign, annotate, resolve, or reopen a report (`admin` role)
 - `GET /trust/export` - Download JSON export of profile + applications (auth required)
 - `POST /trust/delete-account` - Delete account after password confirm (blocked if user hosts events)
 
-Application submit requires `acceptedCodeOfConduct: true`. Assign the `admin` role on a user (database) for report review; set `TRUST_REPORT_NOTIFY_EMAIL` for new-report alerts.
+Application submit requires `acceptedCodeOfConduct: true`; set `TRUST_REPORT_NOTIFY_EMAIL` for new-report alerts.
+
+### Admin
+- `GET /admin/summary` - Platform moderation counts
+- `GET /admin/users`, `PATCH /admin/users/:id` - Search users and change roles/status
+- `GET /admin/events` - Search all events
+- `POST /admin/events/:id/cancel` - Administratively cancel an event
+- `GET /admin/audit` - Immutable moderation audit log
+
+Admin registration is intentionally unavailable. Bootstrap the first admin by
+adding `"admin"` to an existing user's `roles` JSON directly in the database.
+Subsequent role changes are available at `/admin/users`.
 
 ### Applications
 - `GET /applications/mine` - List the authenticated user's applications (auth required)
@@ -239,12 +251,13 @@ If local SQLite fails after upgrading from auto-sync, delete `backend/data/dev.s
 ## Roadmap status
 
 **Shipped:** refined PRD tasks 1–10 plus FIFO waitlist and persisted
-application decisions and privacy-safe host analytics.
+application decisions, privacy-safe host analytics, and an audited admin
+console.
 
 **Deferred (see `.taskmaster/docs/backlog-2026.txt`):**
 
 - Identity verification (Persona/Onfido) — when product requires verified attendees
-- Chat, full admin console, PWA/offline QR, photo check-in
+- Chat, PWA/offline QR, photo check-in
 
 ## License
 

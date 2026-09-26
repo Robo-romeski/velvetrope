@@ -20,6 +20,7 @@ import { SecurityModule } from './security/security.module';
 import { EmailModule } from './email/email.module';
 import { TrustModule } from './trust/trust.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { AdminModule } from './admin/admin.module';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -55,6 +56,7 @@ const isTest = process.env.NODE_ENV === 'test';
     CheckinModule,
     TrustModule,
     AnalyticsModule,
+    AdminModule,
   ],
   controllers: [AppController, HealthController, HostController],
   providers: [AppService, RolesGuard],

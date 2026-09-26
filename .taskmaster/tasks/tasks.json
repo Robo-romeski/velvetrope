@@ -553,6 +553,69 @@
       "description": "Privacy-safe host analytics dashboards"
     }
   },
+  "feature-admin-console": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Add live role and suspension enforcement",
+        "description": "Reload database roles/status for authenticated requests and block suspended users.",
+        "details": "See .taskmaster/docs/admin-console-prd.txt.",
+        "testStrategy": "Existing JWT reflects role/status changes in admin e2e.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "2",
+        "title": "Add audited moderation APIs",
+        "description": "User roles/suspension, event cancellation, report review, and immutable audit records.",
+        "details": "No endpoint may return password hashes or allow self-demotion.",
+        "testStrategy": "Admin e2e covers authorization and all mutation types.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "3",
+        "title": "Build role-gated admin console",
+        "description": "Overview, users, events, reports, and audit pages.",
+        "details": "Registration remains unable to request admin.",
+        "testStrategy": "Frontend lint/typecheck/build and manual admin walkthrough.",
+        "priority": "high",
+        "dependencies": [
+          "2"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "4",
+        "title": "Verify admin migration and regressions",
+        "description": "Run automated checks and SQLite/Postgres migration round-trips.",
+        "details": "Do not complete until both database drivers pass.",
+        "testStrategy": "Backend/frontend checks plus migrations.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2",
+          "3"
+        ],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-09-26T01:59:00.000Z",
+      "taskCount": 4,
+      "completedCount": 4,
+      "description": "Audited platform administration and moderation"
+    }
+  },
   "legacy-prd-2025": {
     "tasks": [
       {

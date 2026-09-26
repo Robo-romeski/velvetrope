@@ -9,6 +9,7 @@ import { EventEntity } from '../events/event.entity';
 import { CheckinTicketEntity } from '../checkin/checkin-ticket.entity';
 import { EventPaymentEntity } from '../stripe/event-payment.entity';
 import { StripeAccountEntity } from '../stripe/stripe-account.entity';
+import { AdminAuditEntity } from '../admin/admin-audit.entity';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { StripeAccountEntity } from '../stripe/stripe-account.entity';
       CheckinTicketEntity,
       EventPaymentEntity,
       StripeAccountEntity,
+      AdminAuditEntity,
     ]),
   ],
   controllers: [TrustController],

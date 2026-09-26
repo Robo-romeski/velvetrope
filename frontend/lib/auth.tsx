@@ -15,6 +15,7 @@ export type SessionUser = {
   email: string;
   name: string | null;
   roles: string[];
+  accountStatus: 'active' | 'suspended';
 };
 
 type AuthContextValue = {

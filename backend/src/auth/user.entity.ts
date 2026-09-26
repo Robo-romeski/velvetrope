@@ -1,6 +1,8 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 import { dateTimeColumnType } from '../database/column-types';
 
+export type AccountStatus = 'active' | 'suspended';
+
 @Entity({ name: 'users' })
 export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -18,6 +20,15 @@ export class UserEntity {
 
   @Column({ type: 'simple-json' })
   roles!: string[];
+
+  @Column({ type: 'text', default: 'active' })
+  accountStatus!: AccountStatus;
+
+  @Column({ type: dateTimeColumnType(), nullable: true })
+  suspendedAt?: Date | null;
+
+  @Column({ type: 'text', nullable: true })
+  suspensionReason?: string | null;
 
   @Column({ type: 'text', nullable: true })
   passwordResetTokenHash?: string | null;

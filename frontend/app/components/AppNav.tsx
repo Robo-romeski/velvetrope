@@ -23,7 +23,7 @@ export function AppNav() {
         <Link href="/trust/code-of-conduct">Conduct</Link>
         {!loading && user && <Link href="/trust/report">Report</Link>}
         {!loading && user?.roles?.includes('admin') && (
-          <Link href="/trust/reports">Admin reports</Link>
+          <Link href="/admin">Admin</Link>
         )}
         {!loading && user && <Link href="/trust/export">My data</Link>}
         <Link href="/host/stripe">Stripe</Link>

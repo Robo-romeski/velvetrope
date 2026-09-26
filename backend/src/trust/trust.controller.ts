@@ -56,8 +56,26 @@ export class TrustController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @Patch('reports/:id/resolve')
-  async resolveReport(@Param('id') id: string) {
-    return await this.trust.resolveReport(id);
+  async resolveReport(@Param('id') id: string, @Req() req: Request) {
+    const { sub } = getAuthUser(req);
+    return await this.trust.resolveReport(id, sub);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Patch('reports/:id/review')
+  async reviewReport(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Body()
+    body: {
+      assignedToAdminId?: string | null;
+      adminNotes?: string | null;
+      status?: 'open' | 'resolved';
+    },
+  ) {
+    const { sub } = getAuthUser(req);
+    return await this.trust.reviewReport(id, sub, body);
   }
 
   @UseGuards(JwtAuthGuard)

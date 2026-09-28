@@ -12,6 +12,14 @@ import {
   saveOfflineTicket,
 } from '@/lib/offline-ticket';
 
+type PhotoStatus = {
+  required: boolean;
+  configured: boolean;
+  uploaded: boolean;
+  verifiedAt: string | null;
+  expiresAt: string | null;
+};
+
 export default function EventTicketPage() {
   const params = useParams();
   const eventId = useMemo(() => String(params?.eventId ?? ''), [params]);
@@ -27,6 +35,8 @@ export default function EventTicketPage() {
   const [isOnline, setIsOnline] = useState(true);
   const [usingOfflineCopy, setUsingOfflineCopy] = useState(false);
   const [availableOffline, setAvailableOffline] = useState(false);
+  const [photoStatus, setPhotoStatus] = useState<PhotoStatus | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   const loadTicket = async () => {
     if (!eventId) return;
@@ -71,6 +81,10 @@ export default function EventTicketPage() {
       const nextToken = res?.token ?? null;
       setToken(nextToken);
       setUsingOfflineCopy(false);
+      const photo = await apiGetAuth(
+        `/checkin/photo/mine/${encodeURIComponent(eventId)}`,
+      ).catch(() => null);
+      if (photo) setPhotoStatus(photo as PhotoStatus);
       if (nextToken) {
         await saveOfflineTicket({
           eventId,
@@ -149,6 +163,40 @@ export default function EventTicketPage() {
       setError(e instanceof Error ? e.message : 'Could not start checkout');
     } finally {
       setPaying(false);
+    }
+  };
+
+  const uploadPhoto = async (file: File) => {
+    setPhotoUploading(true);
+    setError(null);
+    try {
+      const upload = await apiPostAuth(
+        `/checkin/photo/mine/${encodeURIComponent(eventId)}/upload`,
+        {
+          contentType: file.type,
+          sizeBytes: file.size,
+        },
+      );
+      const response = await fetch(upload.uploadUrl as string, {
+        method: 'PUT',
+        headers: upload.headers as Record<string, string>,
+        body: file,
+      });
+      if (!response.ok) {
+        throw new Error(`Photo upload failed: ${response.status}`);
+      }
+      await apiPostAuth(
+        `/checkin/photo/mine/${encodeURIComponent(eventId)}/complete`,
+        { photoId: upload.photoId },
+      );
+      const photo = await apiGetAuth(
+        `/checkin/photo/mine/${encodeURIComponent(eventId)}`,
+      );
+      setPhotoStatus(photo as PhotoStatus);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not upload photo');
+    } finally {
+      setPhotoUploading(false);
     }
   };
 
@@ -241,6 +289,42 @@ export default function EventTicketPage() {
               </div>
             </>
           )}
+        </div>
+      )}
+      {photoStatus?.required && (
+        <div className="border rounded p-4 text-sm space-y-3">
+          <h2 className="font-semibold">Check-in reference photo</h2>
+          {!photoStatus.configured ? (
+            <p className="text-amber-700 dark:text-amber-400">
+              The host enabled photo check-in, but private photo storage is not
+              configured. Contact the host before the event.
+            </p>
+          ) : photoStatus.uploaded ? (
+            <p className="text-green-700 dark:text-green-400">
+              Photo uploaded. The host will compare it visually at check-in.
+            </p>
+          ) : (
+            <>
+              <p className="text-gray-600 dark:text-gray-400">
+                Upload a clear photo of yourself. It is private, available only
+                to the event host, and deleted seven days after the event.
+              </p>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                capture="user"
+                disabled={photoUploading}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void uploadPhoto(file);
+                }}
+              />
+              <p className="text-xs text-gray-500">
+                JPEG, PNG, or WebP; maximum 5 MB.
+              </p>
+            </>
+          )}
+          {photoUploading && <p>Uploading…</p>}
         </div>
       )}
       {token && (

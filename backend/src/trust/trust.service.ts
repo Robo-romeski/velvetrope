@@ -20,6 +20,7 @@ import { EventPaymentEntity } from '../stripe/event-payment.entity';
 import { StripeAccountEntity } from '../stripe/stripe-account.entity';
 import { verifyPassword } from '../auth/password';
 import { AdminAuditEntity } from '../admin/admin-audit.entity';
+import { PhotoCheckinService } from '../checkin/photo-checkin.service';
 
 const REPORT_CATEGORIES: ReportCategory[] = [
   'harassment',
@@ -47,6 +48,7 @@ export class TrustService {
     private readonly stripeAccounts: Repository<StripeAccountEntity>,
     @InjectRepository(AdminAuditEntity)
     private readonly audit: Repository<AdminAuditEntity>,
+    private readonly photoCheckin: PhotoCheckinService,
     private readonly email: EmailService,
   ) {}
 
@@ -168,6 +170,12 @@ export class TrustService {
       createdAt: string;
       codeOfConductAcceptedAt: string | null;
     }>;
+    checkinPhotos: Array<{
+      eventId: string;
+      uploadedAt: string | null;
+      verifiedAt: string | null;
+      expiresAt: string;
+    }>;
   }> {
     const user = await this.users.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
@@ -176,6 +184,7 @@ export class TrustService {
       where: { applicantSub: userId },
       order: { createdAt: 'DESC' },
     });
+    const photos = await this.photoCheckin.listForUser(userId);
 
     return {
       exportedAt: new Date().toISOString(),
@@ -194,6 +203,12 @@ export class TrustService {
         codeOfConductAcceptedAt: app.codeOfConductAcceptedAt
           ? app.codeOfConductAcceptedAt.toISOString()
           : null,
+      })),
+      checkinPhotos: photos.map((photo) => ({
+        eventId: photo.eventId,
+        uploadedAt: photo.uploadedAt?.toISOString() ?? null,
+        verifiedAt: photo.verifiedAt?.toISOString() ?? null,
+        expiresAt: photo.expiresAt.toISOString(),
       })),
     };
   }
@@ -215,6 +230,7 @@ export class TrustService {
     await this.applications.delete({ applicantSub: userId });
     await this.tickets.delete({ userSub: userId });
     await this.payments.delete({ userSub: userId });
+    await this.photoCheckin.deleteForUser(userId);
     await this.reports.delete({ reporterSub: userId });
     await this.stripeAccounts.delete({ hostId: userId });
     await this.users.delete({ id: userId });

@@ -665,6 +665,69 @@
       "description": "Installable PWA with offline attendee QR"
     }
   },
+  "feature-photo-checkin": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Add private photo storage and retention",
+        "description": "S3-compatible presigned upload/read, metadata verification, and cleanup.",
+        "details": "See .taskmaster/docs/photo-checkin-prd.txt. No face recognition.",
+        "testStrategy": "Storage stub e2e plus real sandbox acceptance when credentials exist.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "2",
+        "title": "Gate opted-in event check-in on host photo confirmation",
+        "description": "Add event opt-in, attendee upload, host preview, and explicit confirmation.",
+        "details": "Signed host reads expire after five minutes.",
+        "testStrategy": "Required event e2e rejects missing/unconfirmed photos.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "3",
+        "title": "Integrate privacy export and deletion",
+        "description": "Export metadata only and remove storage objects with account deletion.",
+        "details": "Default retention is seven days after event date.",
+        "testStrategy": "Trust regression tests and cleanup service coverage.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "4",
+        "title": "Verify photo check-in",
+        "description": "Run backend/frontend checks, audits, and both migration drivers.",
+        "details": "Automated checks and both database drivers passed. Real S3 sandbox upload/read/delete remains an environment acceptance check because credentials were not provided.",
+        "testStrategy": "Lint/build/e2e/audit plus SQLite/Postgres apply/revert.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2",
+          "3"
+        ],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-09-27T15:58:00.000Z",
+      "taskCount": 4,
+      "completedCount": 4,
+      "description": "Private manual photo confirmation at check-in"
+    }
+  },
   "legacy-prd-2025": {
     "tasks": [
       {

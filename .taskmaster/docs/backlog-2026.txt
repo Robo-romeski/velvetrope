@@ -11,7 +11,6 @@ TASK 11 — Identity verification (defer)
 TASK 12 — Future epics (separate PRDs / tags)
 - Event chat and post-event feedback / reputation
 - Redis caching
-- Photo verification at check-in
 
 Account deletion and JSON export ship under task 10 (trust module).
 FIFO waitlist and persisted application decisions ship under the
@@ -22,3 +21,5 @@ Audited user, event, and report moderation ships under the
 feature-admin-console tag.
 Installable PWA and offline attendee QR ship under the
 feature-pwa-offline-qr tag; host scanning remains online-only.
+Private, manually confirmed photo check-in ships under the
+feature-photo-checkin tag; real S3 sandbox acceptance requires credentials.

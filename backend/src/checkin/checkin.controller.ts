@@ -18,6 +18,7 @@ import { EventsService } from '../events/events.service';
 import { ApplicationsService } from '../applications/applications.service';
 import { getAuthUser } from '../auth/request-user';
 import { StripePaymentsService } from '../stripe/stripe-payments.service';
+import { PhotoCheckinService } from './photo-checkin.service';
 
 @Controller('checkin')
 export class CheckinController {
@@ -26,6 +27,7 @@ export class CheckinController {
     private readonly events: EventsService,
     private readonly apps: ApplicationsService,
     private readonly payments: StripePaymentsService,
+    private readonly photos: PhotoCheckinService,
   ) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -62,13 +64,72 @@ export class CheckinController {
     return await this.svc.listForEvent(eventId);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('photo/mine/:eventId')
+  async photoStatus(@Param('eventId') eventId: string, @Req() req: Request) {
+    const { sub } = getAuthUser(req);
+    return await this.photos.getMine(eventId, sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('photo/mine/:eventId/upload')
+  async requestPhotoUpload(
+    @Param('eventId') eventId: string,
+    @Req() req: Request,
+    @Body() body: { contentType?: string; sizeBytes?: number },
+  ) {
+    const { sub } = getAuthUser(req);
+    return await this.photos.requestUpload({
+      eventId,
+      userSub: sub,
+      contentType: body.contentType ?? '',
+      sizeBytes: Number(body.sizeBytes),
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('photo/mine/:eventId/complete')
+  async completePhotoUpload(
+    @Param('eventId') eventId: string,
+    @Req() req: Request,
+    @Body() body: { photoId?: string },
+  ) {
+    const { sub } = getAuthUser(req);
+    if (!body.photoId) throw new BadRequestException('photoId required');
+    return await this.photos.completeUpload(eventId, sub, body.photoId);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('host')
-  @Post('verify/:token')
-  async verify(@Param('token') token: string, @Req() req: Request) {
+  @Get('photo/ticket/:token')
+  async photoForTicket(@Param('token') token: string, @Req() req: Request) {
     const { sub } = getAuthUser(req);
     const ticket = await this.svc.getByToken(token);
     await this.events.requireHost(ticket.eventId, sub);
-    return await this.svc.verifyAndUse(token);
+    return await this.photos.getHostPhoto(ticket.eventId, ticket.userSub);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('host')
+  @Post('verify/:token')
+  async verify(
+    @Param('token') token: string,
+    @Req() req: Request,
+    @Body() body: { photoConfirmed?: boolean },
+  ) {
+    const { sub } = getAuthUser(req);
+    const ticket = await this.svc.getByToken(token);
+    const event = await this.events.requireHost(ticket.eventId, sub);
+    if (event.requirePhotoCheckin) {
+      if (body.photoConfirmed !== true) {
+        throw new ForbiddenException('Host photo confirmation required');
+      }
+      await this.photos.assertReady(ticket.eventId, ticket.userSub);
+    }
+    const used = await this.svc.verifyAndUse(token);
+    if (event.requirePhotoCheckin) {
+      await this.photos.markVerified(ticket.eventId, ticket.userSub, sub);
+    }
+    return used;
   }
 }

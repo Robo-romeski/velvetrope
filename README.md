@@ -177,7 +177,11 @@ Subsequent role changes are available at `/admin/users`.
 - `POST /checkin/issue/:eventId` - Issue ticket for a user (event host only)
 - `POST /checkin/mine/:eventId` - Issue/return ticket for the authenticated attendee (approved applications only)
 - `GET /checkin/event/:eventId` - List issued tickets without raw tokens (event host only)
-- `POST /checkin/verify/:token` - Verify ticket (event host only)
+- `GET /checkin/photo/mine/:eventId` - Attendee photo requirement/status
+- `POST /checkin/photo/mine/:eventId/upload` - Request private signed photo upload
+- `POST /checkin/photo/mine/:eventId/complete` - Verify uploaded object metadata
+- `GET /checkin/photo/ticket/:token` - Five-minute signed photo read (event host only)
+- `POST /checkin/verify/:token` - Verify ticket; opted-in events require explicit host photo confirmation
 
 ### Stripe
 - `GET /stripe/onboarding` - Get onboarding link for the authenticated host
@@ -219,8 +223,13 @@ See `.env.example` (root), `backend/.env.example`, and `frontend/.env.example`.
 - `RESEND_API_KEY` (optional; sends mail via Resend when set)
 - `EMAIL_FROM` (sender address for Resend; default Resend sandbox from)
 - `APP_BASE_URL` (links in password reset and application emails)
+- `S3_PHOTO_BUCKET`, `S3_REGION` (private attendee reference photos)
+- `S3_ENDPOINT`, `S3_FORCE_PATH_STYLE` (optional S3-compatible provider)
+- `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` (optional with workload identity)
 
 Without `RESEND_API_KEY`, the backend captures outbound mail in memory (e2e) and logs in development.
+The private photo bucket must permit browser PUT requests from `APP_BASE_URL`;
+objects are never public and host reads use five-minute signed URLs.
 
 ### Database migrations
 
@@ -260,12 +269,16 @@ check-in and all authenticated mutations remain online-only.
 **Shipped:** refined PRD tasks 1–10 plus FIFO waitlist and persisted
 application decisions, privacy-safe host analytics, and an audited admin
 console. The Next 16 PWA keeps approved attendee QR tickets available offline;
-host verification remains online.
+host verification remains online. Opted-in events can require private,
+host-confirmed reference photos with seven-day retention.
 
 **Deferred (see `.taskmaster/docs/backlog-2026.txt`):**
 
 - Identity verification (Persona/Onfido) — when product requires verified attendees
-- Chat, photo check-in
+- Chat
+
+Real S3 upload/read/delete remains an environment acceptance check because
+sandbox credentials were not provided.
 
 `npm audit --omit=dev` reports zero production vulnerabilities. Serwist's
 build-time dependency tree currently reports two `browserslist` advisories;

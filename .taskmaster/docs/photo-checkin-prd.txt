@@ -1,0 +1,53 @@
+VelvetKey — Private Photo Check-in
+==================================
+
+Goal
+----
+Let a host opt into manual visual photo confirmation at the door without face
+recognition or public media URLs.
+
+Requirements
+------------
+1. Photo check-in is disabled by default and configured per event.
+2. Only approved/paid attendees can request a photo upload for an opted-in
+   event.
+3. Accept JPEG, PNG, and WebP up to 5 MB.
+4. Upload directly to a private S3-compatible bucket with a ten-minute signed
+   PUT URL.
+5. Confirm actual object type and size with HeadObject before accepting it.
+6. Hosts receive a five-minute signed GET URL only after presenting a ticket
+   belonging to their event.
+7. Photo-required check-in fails until the attendee has uploaded a current
+   photo and the host explicitly confirms the visual comparison.
+8. Store verification timestamp and host ID; never perform automated face
+   matching.
+9. Delete objects and metadata seven days after the event through a daily
+   idempotent cleanup.
+10. Include non-sensitive photo metadata in user export and delete the object
+    during account deletion.
+
+Configuration
+-------------
+- S3_PHOTO_BUCKET
+- S3_REGION
+- S3_ENDPOINT (optional for compatible providers)
+- S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY (optional when workload identity is used)
+- S3_FORCE_PATH_STYLE
+
+The bucket must be private and allow browser PUT requests from APP_BASE_URL.
+GET access is provided only through short-lived signed URLs.
+
+Verification
+------------
+- Backend lint/build/e2e and production dependency audit.
+- Invalid type/size rejected; non-owner host denied.
+- Required event cannot check in without photo confirmation.
+- SQLite and Postgres migration apply/revert.
+- Frontend lint/typecheck/build.
+- Real S3 sandbox upload/read/delete remains an environment acceptance check.
+
+Out of scope
+------------
+- Face recognition, similarity scores, liveness checks, or biometric profiles.
+- Public/CDN photo URLs.
+- Offline host photo verification.

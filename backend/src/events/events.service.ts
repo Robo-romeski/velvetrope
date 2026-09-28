@@ -17,6 +17,7 @@ export interface EventItem {
   capacity: number;
   status: EventEntity['status'];
   ticketPriceCents: number;
+  requirePhotoCheckin: boolean;
 }
 
 export type HostEventItem = EventItem & {
@@ -87,9 +88,13 @@ export class EventsService {
   }
 
   async create(
-    data: Omit<EventItem, 'id' | 'status' | 'ticketPriceCents'> & {
+    data: Omit<
+      EventItem,
+      'id' | 'status' | 'ticketPriceCents' | 'requirePhotoCheckin'
+    > & {
       status?: EventItem['status'];
       ticketPriceCents?: number;
+      requirePhotoCheckin?: boolean;
     },
   ): Promise<EventItem> {
     const ticketPriceCents = Math.max(
@@ -99,6 +104,7 @@ export class EventsService {
     const entity = this.repo.create({
       ...data,
       ticketPriceCents,
+      requirePhotoCheckin: data.requirePhotoCheckin ?? false,
       status: data.status ?? 'draft',
     } as Partial<EventEntity>);
     const saved = await this.repo.save(entity);

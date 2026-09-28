@@ -8,6 +8,7 @@ import { EventPaymentEntity } from '../stripe/event-payment.entity';
 import { UserEntity } from '../auth/user.entity';
 import { TrustReportEntity } from '../trust/report.entity';
 import { AdminAuditEntity } from '../admin/admin-audit.entity';
+import { CheckinPhotoEntity } from '../checkin/checkin-photo.entity';
 
 export const entities = [
   EventEntity,
@@ -20,4 +21,5 @@ export const entities = [
   UserEntity,
   TrustReportEntity,
   AdminAuditEntity,
+  CheckinPhotoEntity,
 ];

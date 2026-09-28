@@ -1,0 +1,48 @@
+VelvetKey — Event Chat and Feedback
+===================================
+
+Goal
+----
+Give approved attendees and hosts a bounded event conversation plus private
+post-event feedback without building a general social network.
+
+Chat requirements
+-----------------
+1. Access is limited to the event host and approved attendees.
+2. Attendee chat opens 48 hours before and closes 48 hours after event start;
+   the host retains moderation access.
+3. Persist every message before Socket.IO broadcast; REST history is the source
+   of truth and fallback.
+4. Limit messages to 1000 characters and ten messages per ten seconds.
+5. Authenticate socket handshakes with the same JWT and live database
+   role/status enforcement used by HTTP.
+6. Hosts can soft-delete messages; clients receive the moderated replacement.
+7. Attendees can report a message through the trust-report workflow.
+8. Single-instance rooms are acceptable for this MVP; add Redis adapter before
+   horizontal scaling.
+
+Feedback requirements
+---------------------
+1. Only approved attendees can submit feedback after event start.
+2. One response per attendee/event, enforced by a unique index.
+3. Rating is an integer from 1–5; comment is optional and limited to 2000
+   characters.
+4. Feedback is anonymous to the host by default; attendee can opt out.
+5. Host sees count, average, rating distribution, and comments.
+6. Include user chat/feedback in privacy export and remove it on account
+   deletion.
+
+Verification
+------------
+- REST e2e covers chat access, persistence, moderation, feedback timing,
+  uniqueness, anonymity, and host ownership.
+- Socket e2e covers JWT handshake, event-room join, persist-before-broadcast,
+  and REST history.
+- Backend/frontend lint, typecheck, builds, and production audits.
+- SQLite/Postgres migration apply/revert.
+
+Out of scope
+------------
+- Direct messages, attachments, reactions, threads, push notifications.
+- Multi-instance Socket.IO until Redis pub/sub is configured.
+- Reputation scores derived from feedback.

@@ -6,7 +6,7 @@ import {
 } from 'typeorm';
 import { dateTimeColumnType } from '../database/column-types';
 
-export type ReportSubjectType = 'event' | 'user';
+export type ReportSubjectType = 'event' | 'user' | 'message';
 export type ReportCategory = 'harassment' | 'safety' | 'spam' | 'other';
 export type ReportStatus = 'open' | 'resolved';
 

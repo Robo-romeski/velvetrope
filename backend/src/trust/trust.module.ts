@@ -11,6 +11,8 @@ import { EventPaymentEntity } from '../stripe/event-payment.entity';
 import { StripeAccountEntity } from '../stripe/stripe-account.entity';
 import { AdminAuditEntity } from '../admin/admin-audit.entity';
 import { CheckinModule } from '../checkin/checkin.module';
+import { ChatMessageEntity } from '../chat/chat-message.entity';
+import { EventFeedbackEntity } from '../feedback/event-feedback.entity';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { CheckinModule } from '../checkin/checkin.module';
       EventPaymentEntity,
       StripeAccountEntity,
       AdminAuditEntity,
+      ChatMessageEntity,
+      EventFeedbackEntity,
     ]),
     CheckinModule,
   ],

@@ -728,6 +728,82 @@
       "description": "Private manual photo confirmation at check-in"
     }
   },
+  "feature-comms-feedback": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Add persisted access-controlled event chat",
+        "description": "REST history plus authenticated Socket.IO event rooms and rate limits.",
+        "details": "See .taskmaster/docs/comms-feedback-prd.txt. Persist before broadcast.",
+        "testStrategy": "REST and real WebSocket e2e coverage.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "2",
+        "title": "Add chat moderation and reporting",
+        "description": "Host soft-delete plus attendee trust reports for messages.",
+        "details": "Single-instance rooms only until Redis adapter is configured.",
+        "testStrategy": "Non-owner moderation denied; replacement broadcast tested.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "3",
+        "title": "Add post-event attendee feedback",
+        "description": "One optional-anonymous response and aggregate host view.",
+        "details": "Feedback opens after event start; no reputation score.",
+        "testStrategy": "Timing, uniqueness, anonymity, and host summary e2e.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "4",
+        "title": "Integrate privacy export/deletion and UI",
+        "description": "Attendee chat/feedback pages, host views, export, and deletion.",
+        "details": "No attachment or direct-message support.",
+        "testStrategy": "Frontend lint/typecheck/build and trust regressions.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "3"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "5",
+        "title": "Verify chat and feedback",
+        "description": "Run automated checks, audits, and both migration drivers.",
+        "details": "Document Redis as required before multi-instance deployment.",
+        "testStrategy": "Full regression plus SQLite/Postgres apply/revert.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-09-28T05:36:00.000Z",
+      "taskCount": 5,
+      "completedCount": 5,
+      "description": "Event chat, moderation, and post-event feedback"
+    }
+  },
   "legacy-prd-2025": {
     "tasks": [
       {

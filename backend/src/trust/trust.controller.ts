@@ -30,7 +30,7 @@ export class TrustController {
     @Req() req: Request,
     @Body()
     body: {
-      subjectType?: 'event' | 'user';
+      subjectType?: 'event' | 'user' | 'message';
       subjectId?: string;
       category?: string;
       details?: string;

@@ -23,6 +23,7 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [eventStarted, setEventStarted] = useState(false);
   const { getStatus, loading: appsLoading, loggedIn } = useMyApplicationByEvent();
 
   useEffect(() => {
@@ -35,6 +36,9 @@ export default function EventDetailPage() {
         const data = await apiGet(`/events/${encodeURIComponent(eventId)}`);
         if (!mounted) return;
         setEvent(data as EventDetail);
+        setEventStarted(
+          !!data?.date && new Date(data.date).getTime() <= Date.now(),
+        );
       } catch (e) {
         if (!mounted) return;
         setError(e instanceof Error ? e.message : 'Event not found');
@@ -69,11 +73,31 @@ export default function EventDetailPage() {
             </p>
           )}
           {!appsLoading && (
-            <EventCtaLinks
-              eventId={eventId}
-              applicationStatus={applicationStatus}
-              loggedIn={loggedIn}
-            />
+            <>
+              <EventCtaLinks
+                eventId={eventId}
+                applicationStatus={applicationStatus}
+                loggedIn={loggedIn}
+              />
+              {applicationStatus === 'approved' && (
+                <div className="flex flex-wrap gap-3 text-sm">
+                  <Link
+                    href={`/events/${eventId}/chat`}
+                    className="text-blue-600 underline"
+                  >
+                    Event chat
+                  </Link>
+                  {eventStarted && (
+                    <Link
+                      href={`/events/${eventId}/feedback`}
+                      className="text-blue-600 underline"
+                    >
+                      Leave feedback
+                    </Link>
+                  )}
+                </div>
+              )}
+            </>
           )}
           {loggedIn && (
             <p className="text-xs text-gray-500">

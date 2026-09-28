@@ -10,6 +10,7 @@ const tabs = [
   { suffix: 'applications', label: 'Applications' },
   { suffix: 'scan', label: 'Check-in' },
   { suffix: 'analytics', label: 'Analytics' },
+  { suffix: 'feedback', label: 'Feedback' },
 ] as const;
 
 export function HostEventNav({ eventId }: { eventId: string }) {
@@ -37,6 +38,16 @@ export function HostEventNav({ eventId }: { eventId: string }) {
           </Link>
         );
       })}
+      <Link
+        href={`/events/${eventId}/chat`}
+        className={
+          pathname.includes(`/events/${eventId}/chat`)
+            ? 'px-3 py-1 rounded bg-blue-600 text-white'
+            : 'px-3 py-1 rounded border hover:bg-black/5 dark:hover:bg-white/10'
+        }
+      >
+        Chat
+      </Link>
     </nav>
   );
 }

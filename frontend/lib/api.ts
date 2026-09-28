@@ -5,7 +5,7 @@ export function isUnauthorized(error: unknown) {
   return message.includes('401') || message === 'Unauthorized';
 }
 
-async function getAccessTokenClient(): Promise<string> {
+export async function getAccessTokenClient(): Promise<string> {
   const res = await fetch('/api/token', { cache: 'no-store' });
   if (!res.ok) throw new Error('Unauthorized');
   const data = await res.json();

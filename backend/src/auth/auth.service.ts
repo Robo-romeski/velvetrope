@@ -180,6 +180,25 @@ export class AuthService {
     return (email ?? '').trim().toLowerCase();
   }
 
+  async authenticateToken(token: string): Promise<PublicUser> {
+    const { jwtVerify } = await import('jose');
+    try {
+      const result = await jwtVerify(
+        token,
+        new TextEncoder().encode(resolveAuthSecret()),
+        {
+          issuer: AUTH_ISSUER,
+          audience: AUTH_AUDIENCE,
+        },
+      );
+      const sub = String(result.payload.sub ?? '');
+      if (!sub) throw new UnauthorizedException();
+      return await this.getById(sub);
+    } catch {
+      throw new UnauthorizedException();
+    }
+  }
+
   private async signToken(user: UserEntity): Promise<string> {
     const { SignJWT } = await import('jose');
     return await new SignJWT({

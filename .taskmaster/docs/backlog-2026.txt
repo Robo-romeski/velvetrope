@@ -4,12 +4,11 @@ VelvetKey — post-MVP backlog (tasks 11–12)
 Master roadmap tasks 1–10 are implemented on main. Do not reopen unless product owner requests.
 
 TASK 11 — Identity verification (defer)
-- Persona or Onfido (or similar) for verified attendees
+- Persona for verified attendees
 - Webhooks, verification status on user, optional gate on apply/ticket
 - Requires vendor account, legal review, and UX for failed/pending states
 
 TASK 12 — Future epics (separate PRDs / tags)
-- Event chat and post-event feedback / reputation
 - Redis caching
 
 Account deletion and JSON export ship under task 10 (trust module).
@@ -23,3 +22,5 @@ Installable PWA and offline attendee QR ship under the
 feature-pwa-offline-qr tag; host scanning remains online-only.
 Private, manually confirmed photo check-in ships under the
 feature-photo-checkin tag; real S3 sandbox acceptance requires credentials.
+Bounded real-time event chat and post-event feedback ship under the
+feature-comms-feedback tag; add Redis before horizontal backend scaling.

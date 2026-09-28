@@ -194,6 +194,17 @@ Subsequent role changes are available at `/admin/users`.
 - `GET /analytics/event/:eventId` - Aggregate funnel, revenue, and attendance (event host only)
 - `GET /analytics/host/summary` - Aggregate metrics across the authenticated host's events
 
+### Chat and feedback
+- `GET/POST /chat/event/:eventId` - Approved-attendee/host chat history and HTTP fallback
+- Socket.IO namespace `/chat` - Authenticated event rooms and live message broadcasts
+- `DELETE /chat/messages/:id` - Soft-delete a message (event host only)
+- `POST /feedback/event/:eventId` - Submit one post-event response
+- `GET /feedback/mine/:eventId` - Attendee submission status
+- `GET /feedback/event/:eventId` - Aggregate host feedback
+
+Socket.IO uses in-process rooms. Configure a Redis adapter before running more
+than one backend instance.
+
 ## Testing
 
 ### Backend E2E Tests
@@ -270,12 +281,13 @@ check-in and all authenticated mutations remain online-only.
 application decisions, privacy-safe host analytics, and an audited admin
 console. The Next 16 PWA keeps approved attendee QR tickets available offline;
 host verification remains online. Opted-in events can require private,
-host-confirmed reference photos with seven-day retention.
+host-confirmed reference photos with seven-day retention. Approved attendees
+and hosts have bounded real-time event chat plus optional-anonymous post-event
+feedback.
 
 **Deferred (see `.taskmaster/docs/backlog-2026.txt`):**
 
-- Identity verification (Persona/Onfido) — when product requires verified attendees
-- Chat
+- Identity verification (Persona) — requires vendor credentials and legal sign-off
 
 Real S3 upload/read/delete remains an environment acceptance check because
 sandbox credentials were not provided.

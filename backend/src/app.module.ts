@@ -21,6 +21,8 @@ import { EmailModule } from './email/email.module';
 import { TrustModule } from './trust/trust.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AdminModule } from './admin/admin.module';
+import { ChatModule } from './chat/chat.module';
+import { FeedbackModule } from './feedback/feedback.module';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -57,6 +59,8 @@ const isTest = process.env.NODE_ENV === 'test';
     TrustModule,
     AnalyticsModule,
     AdminModule,
+    ChatModule,
+    FeedbackModule,
   ],
   controllers: [AppController, HealthController, HostController],
   providers: [AppService, RolesGuard],

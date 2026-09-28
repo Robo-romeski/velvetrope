@@ -21,6 +21,8 @@ import { StripeAccountEntity } from '../stripe/stripe-account.entity';
 import { verifyPassword } from '../auth/password';
 import { AdminAuditEntity } from '../admin/admin-audit.entity';
 import { PhotoCheckinService } from '../checkin/photo-checkin.service';
+import { ChatMessageEntity } from '../chat/chat-message.entity';
+import { EventFeedbackEntity } from '../feedback/event-feedback.entity';
 
 const REPORT_CATEGORIES: ReportCategory[] = [
   'harassment',
@@ -48,6 +50,10 @@ export class TrustService {
     private readonly stripeAccounts: Repository<StripeAccountEntity>,
     @InjectRepository(AdminAuditEntity)
     private readonly audit: Repository<AdminAuditEntity>,
+    @InjectRepository(ChatMessageEntity)
+    private readonly chatMessages: Repository<ChatMessageEntity>,
+    @InjectRepository(EventFeedbackEntity)
+    private readonly feedback: Repository<EventFeedbackEntity>,
     private readonly photoCheckin: PhotoCheckinService,
     private readonly email: EmailService,
   ) {}
@@ -58,7 +64,7 @@ export class TrustService {
 
   async createReport(input: {
     reporterSub: string;
-    subjectType: 'event' | 'user';
+    subjectType: 'event' | 'user' | 'message';
     subjectId: string;
     category: string;
     details: string;
@@ -176,6 +182,20 @@ export class TrustService {
       verifiedAt: string | null;
       expiresAt: string;
     }>;
+    chatMessages: Array<{
+      id: string;
+      eventId: string;
+      body: string;
+      createdAt: string;
+      deletedAt: string | null;
+    }>;
+    feedback: Array<{
+      eventId: string;
+      rating: number;
+      comment: string | null;
+      anonymous: boolean;
+      createdAt: string;
+    }>;
   }> {
     const user = await this.users.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
@@ -185,6 +205,16 @@ export class TrustService {
       order: { createdAt: 'DESC' },
     });
     const photos = await this.photoCheckin.listForUser(userId);
+    const [chatMessages, feedback] = await Promise.all([
+      this.chatMessages.find({
+        where: { authorSub: userId },
+        order: { createdAt: 'DESC' },
+      }),
+      this.feedback.find({
+        where: { userSub: userId },
+        order: { createdAt: 'DESC' },
+      }),
+    ]);
 
     return {
       exportedAt: new Date().toISOString(),
@@ -210,6 +240,20 @@ export class TrustService {
         verifiedAt: photo.verifiedAt?.toISOString() ?? null,
         expiresAt: photo.expiresAt.toISOString(),
       })),
+      chatMessages: chatMessages.map((message) => ({
+        id: message.id,
+        eventId: message.eventId,
+        body: message.body,
+        createdAt: message.createdAt.toISOString(),
+        deletedAt: message.deletedAt?.toISOString() ?? null,
+      })),
+      feedback: feedback.map((item) => ({
+        eventId: item.eventId,
+        rating: item.rating,
+        comment: item.comment ?? null,
+        anonymous: item.anonymous,
+        createdAt: item.createdAt.toISOString(),
+      })),
     };
   }
 
@@ -231,6 +275,8 @@ export class TrustService {
     await this.tickets.delete({ userSub: userId });
     await this.payments.delete({ userSub: userId });
     await this.photoCheckin.deleteForUser(userId);
+    await this.chatMessages.delete({ authorSub: userId });
+    await this.feedback.delete({ userSub: userId });
     await this.reports.delete({ reporterSub: userId });
     await this.stripeAccounts.delete({ hostId: userId });
     await this.users.delete({ id: userId });

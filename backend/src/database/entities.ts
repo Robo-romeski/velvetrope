@@ -9,6 +9,8 @@ import { UserEntity } from '../auth/user.entity';
 import { TrustReportEntity } from '../trust/report.entity';
 import { AdminAuditEntity } from '../admin/admin-audit.entity';
 import { CheckinPhotoEntity } from '../checkin/checkin-photo.entity';
+import { ChatMessageEntity } from '../chat/chat-message.entity';
+import { EventFeedbackEntity } from '../feedback/event-feedback.entity';
 
 export const entities = [
   EventEntity,
@@ -22,4 +24,6 @@ export const entities = [
   TrustReportEntity,
   AdminAuditEntity,
   CheckinPhotoEntity,
+  ChatMessageEntity,
+  EventFeedbackEntity,
 ];

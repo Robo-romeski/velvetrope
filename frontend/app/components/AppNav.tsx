@@ -1,14 +1,17 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 
 export function AppNav() {
   const { user, loading, logout } = useAuth();
+  const router = useRouter();
 
   const onLogout = async () => {
     await logout();
-    window.location.href = '/';
+    router.push('/');
+    router.refresh();
   };
 
   return (
@@ -22,8 +25,9 @@ export function AppNav() {
         {!loading && user && <Link href="/applications">My applications</Link>}
         <Link href="/trust/code-of-conduct">Conduct</Link>
         {!loading && user && <Link href="/trust/report">Report</Link>}
+        {!loading && user && <Link href="/identity/verify">Verify</Link>}
         {!loading && user?.roles?.includes('admin') && (
-          <Link href="/trust/reports">Admin reports</Link>
+          <Link href="/admin">Admin</Link>
         )}
         {!loading && user && <Link href="/trust/export">My data</Link>}
         <Link href="/host/stripe">Stripe</Link>

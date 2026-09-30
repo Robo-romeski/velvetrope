@@ -5,6 +5,7 @@ import {
   Index,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { dateTimeColumnType } from '../database/column-types';
 
 export type EventPaymentStatus = 'pending' | 'paid' | 'failed';
 
@@ -32,9 +33,9 @@ export class EventPaymentEntity {
   @Column({ type: 'text', nullable: true })
   stripePaymentIntentId?: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: dateTimeColumnType(), nullable: true })
   paidAt?: Date | null;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn()
   createdAt!: Date;
 }

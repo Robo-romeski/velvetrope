@@ -9,12 +9,14 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { clearOfflineTickets } from './offline-ticket';
 
 export type SessionUser = {
   id: string;
   email: string;
   name: string | null;
   roles: string[];
+  accountStatus: 'active' | 'suspended';
 };
 
 type AuthContextValue = {
@@ -56,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
+    await clearOfflineTickets().catch(() => undefined);
     setUser(null);
   }, []);
 

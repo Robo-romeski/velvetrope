@@ -4,13 +4,10 @@ import {
   Entity,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { dateTimeColumnType } from '../database/column-types';
 
-export type ReportSubjectType = 'event' | 'user';
-export type ReportCategory =
-  | 'harassment'
-  | 'safety'
-  | 'spam'
-  | 'other';
+export type ReportSubjectType = 'event' | 'user' | 'message';
+export type ReportCategory = 'harassment' | 'safety' | 'spam' | 'other';
 export type ReportStatus = 'open' | 'resolved';
 
 @Entity({ name: 'trust_reports' })
@@ -36,6 +33,15 @@ export class TrustReportEntity {
   @Column({ type: 'text', default: 'open' })
   status!: ReportStatus;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @Column({ type: 'text', nullable: true })
+  assignedToAdminId?: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  adminNotes?: string | null;
+
+  @Column({ type: dateTimeColumnType(), nullable: true })
+  resolvedAt?: Date | null;
+
+  @CreateDateColumn()
   createdAt!: Date;
 }

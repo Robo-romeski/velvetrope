@@ -28,7 +28,7 @@ export class StripePaymentsService {
   ) {
     const key = this.config.get<string>('STRIPE_SECRET_KEY');
     if (key && process.env.NODE_ENV !== 'test') {
-      this.stripe = new Stripe(key, { apiVersion: '2024-06-20' } as any);
+      this.stripe = new Stripe(key);
     }
   }
 
@@ -54,7 +54,11 @@ export class StripePaymentsService {
       return { required: true, status: 'pending', amountCents };
     }
     if (record.status === 'paid') {
-      return { required: true, status: 'paid', amountCents: record.amountCents };
+      return {
+        required: true,
+        status: 'paid',
+        amountCents: record.amountCents,
+      };
     }
     return {
       required: true,
@@ -121,25 +125,25 @@ export class StripePaymentsService {
       return { url: null, sessionId };
     }
 
-    const session = await this.stripe.checkout.sessions.create({
-      mode: 'payment',
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: 'usd',
-            unit_amount: amountCents,
-            product_data: { name: event.title },
+    const session = await this.stripe.checkout.sessions.create(
+      {
+        mode: 'payment',
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: 'usd',
+              unit_amount: amountCents,
+              product_data: { name: event.title },
+            },
           },
-        },
-      ],
-      payment_intent_data: {
-        transfer_data: { destination: hostAccount.accountId },
+        ],
+        success_url: `${baseUrl}/events/${encodeURIComponent(eventId)}/ticket?paid=1&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/events/${encodeURIComponent(eventId)}/ticket`,
+        metadata: { eventId, userSub },
       },
-      success_url: `${baseUrl}/events/${encodeURIComponent(eventId)}/ticket?paid=1`,
-      cancel_url: `${baseUrl}/events/${encodeURIComponent(eventId)}/ticket`,
-      metadata: { eventId, userSub },
-    });
+      { stripeAccount: hostAccount.accountId },
+    );
 
     const record =
       existing ??
@@ -155,6 +159,75 @@ export class StripePaymentsService {
     await this.payments.save(record);
 
     return { url: session.url ?? null, sessionId: session.id };
+  }
+
+  async confirmCheckoutSession(
+    eventId: string,
+    userSub: string,
+    sessionId: string,
+  ): Promise<EventPaymentEntity> {
+    const record = await this.payments.findOne({
+      where: { stripeCheckoutSessionId: sessionId },
+    });
+    if (
+      !record ||
+      record.eventId !== eventId ||
+      record.userSub !== userSub
+    ) {
+      throw new ForbiddenException('Checkout session does not match attendee');
+    }
+    if (record.status === 'paid') {
+      return record;
+    }
+
+    if (!this.stripe) {
+      return await this.fulfillCheckoutBySessionId(sessionId);
+    }
+
+    const event = await this.events.findOne({ where: { id: eventId } });
+    if (!event) throw new NotFoundException('Event not found');
+    const hostAccount = await this.accounts.findOne({
+      where: { hostId: event.hostId },
+    });
+    if (!hostAccount) {
+      throw new BadRequestException(
+        'Host has not connected Stripe for payouts',
+      );
+    }
+
+    const session = await this.stripe.checkout.sessions.retrieve(
+      sessionId,
+      { expand: ['payment_intent'] },
+      { stripeAccount: hostAccount.accountId },
+    );
+    if (
+      session.status !== 'complete' ||
+      session.payment_status !== 'paid'
+    ) {
+      throw new BadRequestException('Checkout session is not paid');
+    }
+    if (
+      session.metadata?.eventId !== eventId ||
+      session.metadata?.userSub !== userSub
+    ) {
+      throw new ForbiddenException('Checkout session metadata mismatch');
+    }
+    if (
+      session.amount_total !== record.amountCents ||
+      session.currency !== 'usd'
+    ) {
+      throw new BadRequestException('Checkout session amount mismatch');
+    }
+
+    return await this.fulfillCheckoutSession({
+      sessionId,
+      eventId,
+      userSub,
+      paymentIntentId:
+        typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : (session.payment_intent?.id ?? null),
+    });
   }
 
   async fulfillCheckoutSession(input: {
@@ -225,7 +298,7 @@ export class StripePaymentsService {
       paymentIntentId:
         typeof session.payment_intent === 'string'
           ? session.payment_intent
-          : session.payment_intent?.id ?? null,
+          : (session.payment_intent?.id ?? null),
     });
   }
 }

@@ -23,8 +23,7 @@ export function buildTypeOrmOptions(): DataSourceOptions {
   return {
     type: 'sqlite',
     database:
-      process.env.DATABASE_PATH ||
-      (isTest ? ':memory:' : 'data/dev.sqlite'),
+      process.env.DATABASE_PATH || (isTest ? ':memory:' : 'data/dev.sqlite'),
     entities,
     synchronize: isTest,
     migrations,

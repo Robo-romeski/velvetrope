@@ -1,0 +1,45 @@
+VelvetKey — Waitlist and Decision Integrity
+============================================
+
+Goal
+----
+Extend the existing application/capacity flow with a fair host-managed
+waitlist while preserving the invite-only attendee experience.
+
+Requirements
+------------
+1. One application per attendee per event, enforced by the database.
+2. Application statuses: pending, waitlisted, approved, rejected.
+3. Persist optional host decision reason, decision timestamp, and deciding host.
+4. Assign an immutable per-event waitlist rank when a pending application is
+   waitlisted.
+5. A host may promote only the first active waitlisted attendee (FIFO).
+6. Promotion must fail when event capacity is full.
+7. Capacity checks and promotion run in serializable transactions.
+8. Attendees see waitlist status, queue position, and host reason.
+9. Hosts can filter the waitlist, promote its first attendee, reject a
+   waitlisted attendee, and revoke an approval.
+10. Decision and promotion emails include the resulting status and host note.
+
+Data migration
+--------------
+- Add decisionReason, decidedAt, decidedByHostId, waitlistedAt, waitlistRank,
+  and promotedAt to applications.
+- Remove duplicate event/applicant rows, retaining the earliest.
+- Add a unique index on (eventId, applicantSub).
+
+Verification
+------------
+- Duplicate application returns 409 without consuming a second invite.
+- Capacity prevents an additional approval or promotion.
+- Non-first waitlisted attendee cannot be promoted.
+- First waitlisted attendee can be promoted after capacity opens.
+- Queue positions re-number from active FIFO order.
+- Decision reason/timestamps appear in host and attendee responses.
+- Backend e2e, backend build/lint, frontend TypeScript/lint/build.
+
+Out of scope
+------------
+- Automatic promotion.
+- Attendee self-removal from waitlist.
+- Host reordering or priority overrides.

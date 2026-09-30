@@ -1,0 +1,44 @@
+VelvetKey — PWA and Offline Attendee QR
+=======================================
+
+Goal
+----
+Make previously opened attendee tickets available offline while keeping all
+host verification and authenticated mutations server-authoritative.
+
+Requirements
+------------
+1. Configure a production service worker with an offline document fallback.
+2. Auth, token, admin, and host routes are network-only.
+3. Previously opened attendee ticket pages use network-first caching.
+4. Store the issued QR token and event metadata in IndexedDB after a successful
+   authenticated ticket response.
+5. When offline or the API is unavailable, show the unexpired cached ticket.
+6. Cached tickets expire one day after the event, or after seven days when no
+   event date was available.
+7. Logout clears all offline ticket records.
+8. Attendees can explicitly remove an offline copy from the ticket page.
+9. Clearly label an offline QR and explain that host verification remains
+   online.
+10. Provide an installable manifest icon and standalone metadata.
+
+Security
+--------
+- Never cache `/api/*`, `/admin/*`, or `/host/*`.
+- Never queue or locally approve host check-ins.
+- IndexedDB tokens are device-local bearer artifacts; remove them on logout
+  and expiry.
+
+Verification
+------------
+- Frontend lint/typecheck/production build generates `public/sw.js`.
+- Confirm manifest and service worker are valid in browser.
+- Manual: open an approved ticket online, disable network, reload ticket URL,
+  verify QR remains visible and marked offline.
+- Manual: logout and verify the cached QR is removed.
+
+Out of scope
+------------
+- Offline host scanning or background sync.
+- Push notifications.
+- Caching application/payment/admin data.

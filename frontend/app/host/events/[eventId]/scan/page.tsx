@@ -18,6 +18,10 @@ type Ticket = {
 };
 
 type AttendanceFilter = 'all' | 'checked-in' | 'not-checked-in';
+type PhotoReview = {
+  token: string;
+  url: string;
+};
 
 export default function HostScanPage() {
   const { user, loading: authLoading } = useAuth();
@@ -30,6 +34,7 @@ export default function HostScanPage() {
   const [filter, setFilter] = useState<AttendanceFilter>('all');
   const [unauthorized, setUnauthorized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [photoReview, setPhotoReview] = useState<PhotoReview | null>(null);
 
   const load = useCallback(async () => {
     if (!eventId) return;
@@ -53,15 +58,19 @@ export default function HostScanPage() {
   }, [load, authLoading, user]);
 
   const verify = useCallback(
-    async (value: string) => {
+    async (value: string, photoConfirmed = false) => {
       const scanned = value.trim();
       if (!scanned) return;
       setLoading(true);
       setResult(null);
       try {
-        const res = await apiPostAuth(`/checkin/verify/${encodeURIComponent(scanned)}`, {});
+        const res = await apiPostAuth(
+          `/checkin/verify/${encodeURIComponent(scanned)}`,
+          { photoConfirmed },
+        );
         setResult(`Checked in at ${res?.usedAt}`);
         setToken('');
+        setPhotoReview(null);
         await load();
       } catch (e) {
         setResult(e instanceof Error ? e.message : 'Verify failed');
@@ -72,12 +81,42 @@ export default function HostScanPage() {
     [load],
   );
 
+  const prepareVerification = useCallback(
+    async (value: string) => {
+      const scanned = value.trim();
+      if (!scanned) return;
+      setLoading(true);
+      setResult(null);
+      setPhotoReview(null);
+      try {
+        const photo = await apiGetAuth(
+          `/checkin/photo/ticket/${encodeURIComponent(scanned)}`,
+        );
+        if (photo?.required) {
+          if (!photo.uploaded || !photo.url) {
+            setResult('A required attendee photo has not been uploaded.');
+            return;
+          }
+          setPhotoReview({ token: scanned, url: photo.url as string });
+          setResult('Compare the attendee with the private reference photo.');
+          return;
+        }
+        await verify(scanned);
+      } catch (e) {
+        setResult(e instanceof Error ? e.message : 'Could not prepare check-in');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [verify],
+  );
+
   const onCode = useCallback(
     (value: string) => {
       setToken(value);
-      void verify(value);
+      void prepareVerification(value);
     },
-    [verify],
+    [prepareVerification],
   );
 
   const filtered = tickets.filter((ticket) => {
@@ -128,13 +167,44 @@ export default function HostScanPage() {
         onChange={(e) => setToken(e.target.value)}
       />
       <button
-        onClick={() => verify(token)}
+        onClick={() => prepareVerification(token)}
         disabled={loading || !token.trim()}
         className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
       >
         {loading ? 'Verifying…' : 'Verify'}
       </button>
       {result && <div className="text-sm">{result}</div>}
+      {photoReview && (
+        <div className="border rounded p-3 space-y-3">
+          {/* Signed URL expires after five minutes and is only issued to the event host. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={photoReview.url}
+            alt="Private attendee reference"
+            className="max-w-xs w-full rounded border"
+          />
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => void verify(photoReview.token, true)}
+              className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50"
+            >
+              Confirm photo and check in
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPhotoReview(null);
+                setResult('Check-in cancelled.');
+              }}
+              className="px-4 py-2 border rounded"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
       {error && <div className="text-sm text-red-600">{error}</div>}
 
       <div className="flex flex-wrap items-center gap-3 text-sm pt-2">

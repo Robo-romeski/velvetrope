@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { apiGetAuth, apiPatchAuth } from '@/lib/api';
+import { apiGetAuth, apiPatchAuth, apiPostAuth } from '@/lib/api';
 import { useParams } from 'next/navigation';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { HostEventNav } from '@/app/components/HostEventNav';
@@ -12,8 +12,11 @@ type Application = {
   id: string;
   eventId: string;
   applicantSub: string;
-  status: string;
+  status: 'pending' | 'waitlisted' | 'approved' | 'rejected';
   answers?: string;
+  decisionReason?: string | null;
+  decidedAt?: string | null;
+  waitlistedAt?: string | null;
 };
 type Paged<T> = { items: T[]; total: number; page: number; pageSize: number };
 
@@ -45,7 +48,11 @@ export default function HostApplicationsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
-  const [status, setStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [status, setStatus] = useState<
+    'all' | 'pending' | 'waitlisted' | 'approved' | 'rejected'
+  >('all');
+  const [reasonById, setReasonById] = useState<Record<string, string>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -69,12 +76,33 @@ export default function HostApplicationsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId, page, pageSize, status, authLoading, user]);
 
-  const decide = async (id: string, decision: 'approved' | 'rejected') => {
+  const decide = async (
+    id: string,
+    decision: 'approved' | 'waitlisted' | 'rejected',
+  ) => {
+    setBusyId(id);
     try {
-      await apiPatchAuth(`/applications/${id}/decision`, { status: decision });
+      await apiPatchAuth(`/applications/${id}/decision`, {
+        status: decision,
+        reason: reasonById[id]?.trim() || undefined,
+      });
       await load();
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Decision failed');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const promote = async (id: string) => {
+    setBusyId(id);
+    try {
+      await apiPostAuth(`/applications/${id}/promote`, {});
+      await load();
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Promotion failed');
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -131,12 +159,20 @@ export default function HostApplicationsPage() {
             value={status}
             onChange={(e) => {
               setPage(1);
-              setStatus(e.target.value as 'all' | 'pending' | 'approved' | 'rejected');
+              setStatus(
+                e.target.value as
+                  | 'all'
+                  | 'pending'
+                  | 'waitlisted'
+                  | 'approved'
+                  | 'rejected',
+              );
             }}
             className="border rounded px-2 py-1 bg-transparent"
           >
             <option value="all">All</option>
             <option value="pending">Pending</option>
+            <option value="waitlisted">Waitlisted</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
           </select>
@@ -145,29 +181,98 @@ export default function HostApplicationsPage() {
       {loading && <div className="text-sm">Loading…</div>}
       {error && <div className="text-sm text-red-600">{error}</div>}
       <div className="space-y-3">
-        {items.map((a) => (
+        {items.map((a, index) => (
           <div key={a.id} className="border rounded p-3 space-y-2">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="font-medium break-all">{a.applicantSub}</div>
                 <div className="text-xs text-gray-500 capitalize">Status: {a.status}</div>
+                {a.status === 'waitlisted' && status === 'waitlisted' && (
+                  <div className="text-xs text-gray-500">
+                    Waitlist position {(page - 1) * pageSize + index + 1}
+                  </div>
+                )}
+                {a.decisionReason && (
+                  <div className="text-sm mt-1">
+                    <span className="text-gray-600 dark:text-gray-400">Host note:</span>{' '}
+                    {a.decisionReason}
+                  </div>
+                )}
                 <ApplicationAnswers answers={a.answers} />
               </div>
               {a.status === 'pending' && (
+                <div className="space-y-2 shrink-0 min-w-56">
+                  <label className="block text-xs space-y-1">
+                    <span>Optional note to attendee</span>
+                    <textarea
+                      value={reasonById[a.id] ?? ''}
+                      maxLength={1000}
+                      rows={2}
+                      onChange={(e) =>
+                        setReasonById((current) => ({
+                          ...current,
+                          [a.id]: e.target.value,
+                        }))
+                      }
+                      className="w-full border rounded px-2 py-1 bg-transparent"
+                    />
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      disabled={busyId === a.id}
+                      onClick={() => decide(a.id, 'approved')}
+                      className="px-3 py-1 bg-green-600 text-white rounded text-sm disabled:opacity-50"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      disabled={busyId === a.id}
+                      onClick={() => decide(a.id, 'waitlisted')}
+                      className="px-3 py-1 bg-amber-600 text-white rounded text-sm disabled:opacity-50"
+                    >
+                      Waitlist
+                    </button>
+                    <button
+                      disabled={busyId === a.id}
+                      onClick={() => decide(a.id, 'rejected')}
+                      className="px-3 py-1 bg-red-600 text-white rounded text-sm disabled:opacity-50"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              )}
+              {a.status === 'waitlisted' && status === 'waitlisted' && (
                 <div className="flex gap-2 shrink-0">
                   <button
-                    onClick={() => decide(a.id, 'approved')}
-                    className="px-3 py-1 bg-green-600 text-white rounded text-sm"
+                    disabled={busyId === a.id || index !== 0 || page !== 1}
+                    onClick={() => promote(a.id)}
+                    title={
+                      index !== 0 || page !== 1
+                        ? 'Promote the first attendee in FIFO order'
+                        : undefined
+                    }
+                    className="px-3 py-1 bg-green-600 text-white rounded text-sm disabled:opacity-50"
                   >
-                    Approve
+                    Promote
                   </button>
                   <button
+                    disabled={busyId === a.id}
                     onClick={() => decide(a.id, 'rejected')}
-                    className="px-3 py-1 bg-red-600 text-white rounded text-sm"
+                    className="px-3 py-1 border border-red-600 text-red-700 dark:text-red-400 rounded text-sm disabled:opacity-50"
                   >
                     Reject
                   </button>
                 </div>
+              )}
+              {a.status === 'approved' && (
+                <button
+                  disabled={busyId === a.id}
+                  onClick={() => decide(a.id, 'rejected')}
+                  className="px-3 py-1 border border-red-600 text-red-700 dark:text-red-400 rounded text-sm disabled:opacity-50"
+                >
+                  Revoke approval
+                </button>
               )}
             </div>
           </div>

@@ -18,6 +18,14 @@ export const metadata: Metadata = {
   title: "VelvetKey",
   description: "Trust-first events platform.",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/icon.svg",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "VelvetKey",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {

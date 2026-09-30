@@ -150,7 +150,7 @@
         ],
         "complexity": 7,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Break down the Auth0 integration into detailed subtasks covering: 1) Auth0 tenant configuration and API setup, 2) Frontend authentication flows and protected routes, 3) Backend JWT validation and session management, and 4) Role-based access control implementation.",
+        "expansionPrompt": "Break down invite analytics into: 1) per-event generated/redeemed/pending metrics API, 2) host invites UI summary, 3) optional expiry without breaking one-time redeem, and 4) e2e for conversion rate.",
         "updatedAt": "2026-09-23T22:00:50.106Z"
       },
       {
@@ -401,14 +401,14 @@
       {
         "id": "11",
         "title": "Identity verification",
-        "description": "Persona/Onfido integration for verified attendees.",
-        "details": "Deferred — see .taskmaster/docs/backlog-2026.txt. No implementation until vendor + legal sign-off.",
-        "testStrategy": "N/A",
+        "description": "Persona integration for verified attendees.",
+        "details": "Implemented under feature-persona-idv: backend-created/resumable inquiries, signed/idempotent webhooks, ticket-only event gate, embedded UI, admin status, export, and redaction. Real Persona sandbox acceptance remains credential/legal/dashboard-dependent.",
+        "testStrategy": "Automated provider stub, signed webhook e2e, full regression, and SQLite/Postgres migrations passed. Run real sandbox inquiry/webhook/redaction when credentials are configured.",
         "priority": "low",
         "dependencies": [
           "10"
         ],
-        "status": "deferred",
+        "status": "done",
         "subtasks": [],
         "complexity": 7,
         "recommendedSubtasks": 3,
@@ -417,8 +417,8 @@
       {
         "id": "12",
         "title": "Future product epics",
-        "description": "Chat, feedback/reputation, admin console, PWA, analytics dashboards.",
-        "details": "Deferred — see .taskmaster/docs/backlog-2026.txt. Split into new tags/PRDs when prioritised (not master sprint).",
+        "description": "Remaining infrastructure epics after shipped chat, feedback, admin, PWA, and analytics.",
+        "details": "Redis adapter/caching remains deferred; see .taskmaster/docs/backlog-2026.txt.",
         "testStrategy": "N/A",
         "priority": "low",
         "dependencies": [
@@ -433,12 +433,452 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-09-25T02:50:00.000Z",
+      "lastModified": "2026-09-28T06:22:00.000Z",
       "taskCount": 12,
-      "completedCount": 10,
+      "completedCount": 11,
       "tags": [
         "master"
       ]
+    }
+  },
+  "feature-waitlist": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Add waitlist and decision data model",
+        "description": "Persist waitlist status, FIFO rank, decision metadata, and one application per attendee/event.",
+        "details": "See .taskmaster/docs/waitlist-prd.txt. Add migration 1738000000004 without editing shipped migrations.",
+        "testStrategy": "Fresh migration plus duplicate application e2e.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "2",
+        "title": "Implement transactional decisions and FIFO promotion",
+        "description": "Serialize capacity checks and enforce host-triggered FIFO promotion.",
+        "details": "Persist host reason/timestamps; reject non-first promotion and full-capacity promotion.",
+        "testStrategy": "Capacity and FIFO e2e scenarios.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "3",
+        "title": "Add waitlist host and attendee UX",
+        "description": "Expose queue state, reasons, filters, waitlist action, promotion, and revocation.",
+        "details": "Extend existing application pages and CTA components.",
+        "testStrategy": "Frontend typecheck/build plus manual host/attendee walkthrough.",
+        "priority": "high",
+        "dependencies": [
+          "2"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "4",
+        "title": "Verify migration and regression coverage",
+        "description": "Run backend and frontend validation and document remaining manual checks.",
+        "details": "Do not mark complete until all automated checks pass.",
+        "testStrategy": "Backend e2e/lint/build; frontend lint/typecheck/build; fresh migration smoke.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2",
+          "3"
+        ],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-09-26T01:06:00.000Z",
+      "taskCount": 4,
+      "completedCount": 4,
+      "description": "Waitlist and application decision integrity"
+    }
+  },
+  "feature-host-analytics": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Add privacy-safe analytics API",
+        "description": "Aggregate event funnel, revenue, and attendance with host ownership checks.",
+        "details": "See .taskmaster/docs/host-analytics-prd.txt. Do not return attendee identifiers.",
+        "testStrategy": "Ownership and aggregate e2e coverage.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "2",
+        "title": "Build host analytics UI",
+        "description": "Add host summary cards and a per-event analytics dashboard.",
+        "details": "Extend HostEventNav and host events page; create event analytics route.",
+        "testStrategy": "Frontend lint/typecheck/build and manual visual review.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "3",
+        "title": "Verify host analytics",
+        "description": "Run backend and frontend regression checks.",
+        "details": "No migration is required for this aggregate-only slice.",
+        "testStrategy": "Backend lint/build/e2e; frontend lint/typecheck/build.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-09-26T01:10:00.000Z",
+      "taskCount": 3,
+      "completedCount": 3,
+      "description": "Privacy-safe host analytics dashboards"
+    }
+  },
+  "feature-admin-console": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Add live role and suspension enforcement",
+        "description": "Reload database roles/status for authenticated requests and block suspended users.",
+        "details": "See .taskmaster/docs/admin-console-prd.txt.",
+        "testStrategy": "Existing JWT reflects role/status changes in admin e2e.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "2",
+        "title": "Add audited moderation APIs",
+        "description": "User roles/suspension, event cancellation, report review, and immutable audit records.",
+        "details": "No endpoint may return password hashes or allow self-demotion.",
+        "testStrategy": "Admin e2e covers authorization and all mutation types.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "3",
+        "title": "Build role-gated admin console",
+        "description": "Overview, users, events, reports, and audit pages.",
+        "details": "Registration remains unable to request admin.",
+        "testStrategy": "Frontend lint/typecheck/build and manual admin walkthrough.",
+        "priority": "high",
+        "dependencies": [
+          "2"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "4",
+        "title": "Verify admin migration and regressions",
+        "description": "Run automated checks and SQLite/Postgres migration round-trips.",
+        "details": "Do not complete until both database drivers pass.",
+        "testStrategy": "Backend/frontend checks plus migrations.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2",
+          "3"
+        ],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-09-26T01:59:00.000Z",
+      "taskCount": 4,
+      "completedCount": 4,
+      "description": "Audited platform administration and moderation"
+    }
+  },
+  "feature-pwa-offline-qr": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Configure production PWA shell",
+        "description": "Add Serwist, offline fallback, install metadata, and safe runtime caching.",
+        "details": "See .taskmaster/docs/pwa-offline-qr-prd.txt. Auth/admin/host routes remain network-only.",
+        "testStrategy": "Production build generates service worker and all routes.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "2",
+        "title": "Cache attendee QR in IndexedDB",
+        "description": "Store expiring ticket copies and clear them on logout or attendee request.",
+        "details": "No host check-in mutation may work offline.",
+        "testStrategy": "Manual online-to-offline ticket reload and logout cleanup.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "3",
+        "title": "Verify PWA and dependency security",
+        "description": "Run frontend checks and inspect production dependency advisories.",
+        "details": "Do not apply forced audit fixes automatically.",
+        "testStrategy": "Lint, typecheck, build, service-worker output, npm audit review.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-09-26T04:40:00.000Z",
+      "taskCount": 3,
+      "completedCount": 3,
+      "description": "Installable PWA with offline attendee QR"
+    }
+  },
+  "feature-photo-checkin": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Add private photo storage and retention",
+        "description": "S3-compatible presigned upload/read, metadata verification, and cleanup.",
+        "details": "See .taskmaster/docs/photo-checkin-prd.txt. No face recognition.",
+        "testStrategy": "Storage stub e2e plus real sandbox acceptance when credentials exist.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "2",
+        "title": "Gate opted-in event check-in on host photo confirmation",
+        "description": "Add event opt-in, attendee upload, host preview, and explicit confirmation.",
+        "details": "Signed host reads expire after five minutes.",
+        "testStrategy": "Required event e2e rejects missing/unconfirmed photos.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "3",
+        "title": "Integrate privacy export and deletion",
+        "description": "Export metadata only and remove storage objects with account deletion.",
+        "details": "Default retention is seven days after event date.",
+        "testStrategy": "Trust regression tests and cleanup service coverage.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "4",
+        "title": "Verify photo check-in",
+        "description": "Run backend/frontend checks, audits, and both migration drivers.",
+        "details": "Automated checks and both database drivers passed. Real S3 sandbox upload/read/delete remains an environment acceptance check because credentials were not provided.",
+        "testStrategy": "Lint/build/e2e/audit plus SQLite/Postgres apply/revert.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2",
+          "3"
+        ],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-09-27T15:58:00.000Z",
+      "taskCount": 4,
+      "completedCount": 4,
+      "description": "Private manual photo confirmation at check-in"
+    }
+  },
+  "feature-comms-feedback": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Add persisted access-controlled event chat",
+        "description": "REST history plus authenticated Socket.IO event rooms and rate limits.",
+        "details": "See .taskmaster/docs/comms-feedback-prd.txt. Persist before broadcast.",
+        "testStrategy": "REST and real WebSocket e2e coverage.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "2",
+        "title": "Add chat moderation and reporting",
+        "description": "Host soft-delete plus attendee trust reports for messages.",
+        "details": "Single-instance rooms only until Redis adapter is configured.",
+        "testStrategy": "Non-owner moderation denied; replacement broadcast tested.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "3",
+        "title": "Add post-event attendee feedback",
+        "description": "One optional-anonymous response and aggregate host view.",
+        "details": "Feedback opens after event start; no reputation score.",
+        "testStrategy": "Timing, uniqueness, anonymity, and host summary e2e.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "4",
+        "title": "Integrate privacy export/deletion and UI",
+        "description": "Attendee chat/feedback pages, host views, export, and deletion.",
+        "details": "No attachment or direct-message support.",
+        "testStrategy": "Frontend lint/typecheck/build and trust regressions.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "3"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "5",
+        "title": "Verify chat and feedback",
+        "description": "Run automated checks, audits, and both migration drivers.",
+        "details": "Document Redis as required before multi-instance deployment.",
+        "testStrategy": "Full regression plus SQLite/Postgres apply/revert.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-09-28T05:36:00.000Z",
+      "taskCount": 5,
+      "completedCount": 5,
+      "description": "Event chat, moderation, and post-event feedback"
+    }
+  },
+  "feature-persona-idv": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Add Persona inquiry and webhook integration",
+        "description": "Precreate/resume inquiries and process signed idempotent decisions.",
+        "details": "See .taskmaster/docs/persona-idv-prd.txt. Store no identity documents.",
+        "testStrategy": "Signed webhook e2e including invalid and duplicate delivery.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "2",
+        "title": "Gate opted-in event tickets on approval",
+        "description": "Add host event setting and enforce Persona approval before QR issuance.",
+        "details": "Applications remain available before verification.",
+        "testStrategy": "Ticket denied before approval and issued after webhook.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "3",
+        "title": "Build embedded Persona and admin status UI",
+        "description": "Attendee start/resume/status page and admin visibility.",
+        "details": "Use backend inquiry ID/session token; never expose API key.",
+        "testStrategy": "Frontend lint/typecheck/build; sandbox UI remains credential-gated.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "4",
+        "title": "Integrate privacy export and Persona redaction",
+        "description": "Export status metadata and redact vendor inquiry before account deletion.",
+        "details": "Deletion fails safely if configured Persona redaction fails.",
+        "testStrategy": "Test-mode deletion and trust regressions.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "5",
+        "title": "Verify Persona IDV",
+        "description": "Run checks, audits, migrations, and document sandbox acceptance.",
+        "details": "Automated checks and both database drivers passed. Real Persona sandbox inquiry/webhook/redaction remains an environment acceptance check because credentials were not provided.",
+        "testStrategy": "Full regression plus SQLite/Postgres apply/revert.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "status": "done",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-09-28T06:22:00.000Z",
+      "taskCount": 5,
+      "completedCount": 5,
+      "description": "Persona identity verification before ticket issuance"
     }
   },
   "legacy-prd-2025": {
@@ -446,9 +886,9 @@
       {
         "id": "1",
         "title": "Setup Project Infrastructure",
-        "description": "Local NestJS + Next.js + Docker Compose are on main. Remaining: small GitHub Actions that use AUTH0_ISSUER, app-focused .env.example, port/CORS alignment. AWS EKS is deferred. Do not merge velvetrope PR #1.",
-        "details": "Shipped on main (https://github.com/Robo-romeski/velvetrope): Next.js 15 frontend, NestJS 11 backend, Docker Compose, Dockerfiles, GET /healthz.\n\nThis is not FastAPI. AWS EKS/S3/CloudFront and Grafana/Loki/OTel are deferred.\n\nRemaining:\n- Close Automaton PR https://github.com/Robo-romeski/velvetrope/pull/1 without merging (duplicates scaffold, red CI, wrong env names, fake prod compose).\n- Add a small GitHub Actions workflow: backend unit + e2e with AUTH0_ISSUER set, frontend lint/build. Do not copy PR #1 GHCR deploy or docker-compose.prod.yml.\n- Replace root .env.example (Taskmaster AI keys) with Auth0/Stripe vars using AUTH0_ISSUER and NEXT_PUBLIC_API_BASE_URL.\n- Unify PORT defaults (3000 vs 3001 vs 3010) and CORS.\n",
-        "testStrategy": "CI on GitHub runs backend e2e with AUTH0_ISSUER and frontend build. docker-compose up still works. PR #1 is closed unmerged.",
+        "description": "ARCHIVED 2025 plan. Local NestJS + Next.js + Docker Compose shipped. CI uses AUTH_SECRET (not Auth0). AWS EKS is deferred. Do not merge velvetrope PR #1.",
+        "details": "Shipped on main (https://github.com/Robo-romeski/velvetrope): Next.js 15 frontend, NestJS 11 backend, Docker Compose, Dockerfiles, GET /healthz, local email/password JWT.\n\nThis is not FastAPI and not Auth0. AWS EKS/S3/CloudFront and Grafana/Loki/OTel are deferred.\n\nHistorical notes:\n- Close Automaton PR https://github.com/Robo-romeski/velvetrope/pull/1 without merging (duplicates scaffold, red CI, Auth0-era env names, fake prod compose).\n- CI: backend unit + e2e with AUTH_SECRET, frontend lint/build. Do not copy PR #1 GHCR deploy or docker-compose.prod.yml.\n- Root .env.example uses AUTH_SECRET and NEXT_PUBLIC_API_BASE_URL (not Auth0).\n- Unify PORT defaults (3010 to match Compose) and CORS.\n",
+        "testStrategy": "CI on GitHub runs backend e2e with AUTH_SECRET and frontend build. docker-compose up still works. PR #1 is closed unmerged.",
         "priority": "high",
         "dependencies": [],
         "status": "in-progress",
@@ -488,7 +928,7 @@
             "title": "Set Up AWS Infrastructure",
             "description": "Configure AWS EKS cluster, S3 buckets, and CloudFront distribution",
             "dependencies": [],
-            "details": "Create AWS EKS cluster with appropriate node groups, set up S3 buckets for static assets and user uploads, configure CloudFront distribution for content delivery, implement IAM roles and policies, set up VPC and networking components, and create Terraform or CloudFormation templates for infrastructure as code\n<info added on 2026-09-03T11:08:48Z>\nDeferred 3 Sep 2026 after velvetrope PR #1 review: do not provision AWS EKS/S3/CloudFront until the local MVP is honest (task 26: event ownership, Stripe bound to Auth0 sub, attendee tickets). PR #1 did not implement AWS and must not be merged as a substitute.\n</info>",
+            "details": "Create AWS EKS cluster with appropriate node groups, set up S3 buckets for static assets and user uploads, configure CloudFront distribution for content delivery, implement IAM roles and policies, set up VPC and networking components, and create Terraform or CloudFormation templates for infrastructure as code\n<info added on 2026-09-03T11:08:48Z>\nDeferred 3 Sep 2026 after velvetrope PR #1 review: do not provision AWS EKS/S3/CloudFront until the local MVP is honest (task 26: event ownership, Stripe bound to authenticated user id, attendee tickets). PR #1 did not implement AWS and must not be merged as a substitute.\n</info>",
             "status": "deferred",
             "testStrategy": "Verify that all AWS resources are properly provisioned, ensure that the infrastructure can be deployed with automation scripts, and validate that security best practices are followed",
             "parentId": "undefined"
@@ -496,9 +936,9 @@
           {
             "id": 5,
             "title": "GitHub Actions CI (match NestJS env)",
-            "description": "Add a small CI workflow using AUTH0_ISSUER (not AUTH0_DOMAIN) and existing backend e2e + frontend lint/build. Close PR #1 instead of merging it.",
+            "description": "Add a small CI workflow using AUTH_SECRET and existing backend e2e + frontend lint/build. Close PR #1 instead of merging it.",
             "dependencies": [],
-            "details": "Configure GitHub Actions or similar CI/CD tool, implement automated testing in the pipeline, set up deployment workflows for different environments, configure Grafana for metrics visualization, implement Loki for log aggregation, set up OpenTelemetry for distributed tracing, and create Docker containers for local development and deployment\n<info added on 2026-09-03T11:08:48Z>\n## Revised plan (3 Sep 2026, velvetrope PR #1)\n\nDo NOT merge https://github.com/Robo-romeski/velvetrope/pull/1. It re-scaffolds work already on main, sets AUTH0_DOMAIN instead of AUTH0_ISSUER (e2e 47/47 failed), docker-compose.prod.yml uses a nonexistent Docker `production` target, scripts/*.sh are Node files, docs/INFRASTRUCTURE.md is a JS stub.\n\nImplement instead:\n1. Close PR #1.\n2. One workflow: backend `npm test` + `npm run test:e2e` with NODE_ENV=test, AUTH0_ISSUER, AUTH0_AUDIENCE; frontend lint + build with dummy Auth0 secrets matching the Next Auth0 SDK.\n3. No GHCR deploy-on-push until tests are green and we have a real host.\n4. Either fix or temporarily scope existing ESLint unsafe-any so lint is not red on day one.\n\nObservability (Grafana/Loki/OTel) stays out of this subtask.\n</info>",
+            "details": "Configure GitHub Actions or similar CI/CD tool, implement automated testing in the pipeline, set up deployment workflows for different environments, configure Grafana for metrics visualization, implement Loki for log aggregation, set up OpenTelemetry for distributed tracing, and create Docker containers for local development and deployment\n<info added on 2026-09-03T11:08:48Z>\n## Revised plan (3 Sep 2026, velvetrope PR #1)\n\nDo NOT merge https://github.com/Robo-romeski/velvetrope/pull/1. Historical: that PR still used Auth0 env names (AUTH0_DOMAIN vs AUTH0_ISSUER) and e2e 47/47 failed. docker-compose.prod.yml uses a nonexistent Docker `production` target, scripts/*.sh are Node files, docs/INFRASTRUCTURE.md is a JS stub.\n\nImplemented instead:\n1. Close PR #1.\n2. One workflow: backend `npm test` + `npm run test:e2e` with NODE_ENV=test and AUTH_SECRET; frontend lint + build with dummy AUTH_SECRET for local JWT auth. Auth0 is not used.\n3. No GHCR deploy-on-push until tests are green and we have a real host.\n4. Either fix or temporarily scope existing ESLint unsafe-any so lint is not red on day one.\n\nObservability (Grafana/Loki/OTel) stays out of this subtask.\n</info>",
             "status": "done",
             "testStrategy": "Verify that CI/CD pipelines successfully build and deploy the application, ensure that observability tools are correctly configured and receiving telemetry data, and validate that Docker containers work properly in local development",
             "updatedAt": "2026-09-03T22:57:03.735Z",
@@ -507,9 +947,9 @@
           {
             "id": 6,
             "title": "App env template and port alignment",
-            "description": "Replace root .env.example with Auth0/Stripe vars and unify PORT / NEXT_PUBLIC_API_BASE_URL / CORS.",
+            "description": "Replace root .env.example with AUTH_SECRET/Stripe vars and unify PORT / NEXT_PUBLIC_API_BASE_URL / CORS.",
             "dependencies": [],
-            "details": "Root .env.example is Taskmaster AI keys. Backend AUTH0_ISSUER, PORT default 3000; frontend/lib/api.ts falls back to localhost:3001; Docker uses 3010. CORS allows only localhost:3000. README mentions missing .env.docker. Prefer one local default (3010 to match Compose). Commit an app .env.example using AUTH0_ISSUER and NEXT_PUBLIC_API_BASE_URL.",
+            "details": "Root .env.example must be app secrets, not Taskmaster AI keys. Use AUTH_SECRET (32+ chars), PORT 3010 to match Compose, NEXT_PUBLIC_API_BASE_URL, Stripe optional. Auth0 vars are not used.",
             "status": "done",
             "testStrategy": "Fresh clone: copy .env.example; frontend reaches backend without port mismatch.",
             "parentId": "undefined",
@@ -525,7 +965,7 @@
         "id": "2",
         "title": "Database Schema Design",
         "description": "TypeORM + SQLite already has Event, Application, ApplicationForm, Invite, CheckinTicket, StripeAccount. Remaining: hostId (task 26), Postgres migrations (task 25). Not Alembic/SQLAlchemy.",
-        "details": "Current: SQLite + TypeORM synchronize:true. Tables: events, applications, application_forms, invites, checkin_tickets, stripe_accounts. No User table; Auth0 sub stored as text. Events have no hostId.\n\nDo not implement Alembic or SQLAlchemy.\n\nSplit:\n- Task 26: hostId and ownership FKs for an honest MVP\n- Task 25: Postgres + turn synchronize off\n- Later PRD tables (Users, Feedback, Reports) stay with those feature tasks\nRedis is not required for the local MVP.",
+        "details": "Current (at archive time): SQLite + TypeORM. Tables include users plus events, applications, application_forms, invites, checkin_tickets, stripe_accounts. User id (JWT sub) is the local user primary key, not an Auth0 subject.\n\nDo not implement Alembic or SQLAlchemy.\n\nSplit:\n- Task 26: hostId and ownership FKs for an honest MVP\n- Task 25: Postgres + turn synchronize off\n- Later PRD tables (Feedback, Reports) stay with those feature tasks\nRedis is not required for the local MVP.",
         "testStrategy": "Write unit tests for database models and migrations. Verify that all relationships between tables work correctly. Test database performance with sample data sets.",
         "priority": "high",
         "dependencies": [
@@ -602,8 +1042,8 @@
       {
         "id": "3",
         "title": "Authentication System Integration",
-        "description": "Auth0 login (Next.js SDK v4), JWT verification on Nest via jose JWKS, host/attendee roles. API RBAC shipped. Frontend /host pages are not route-guarded.",
-        "details": "1. Set up Auth0 tenant and configure application settings\n2. Implement login, signup, and logout flows in Next.js frontend\n3. Create protected routes and authentication middleware in FastAPI\n4. Implement JWT validation and user session management\n5. Set up role-based access control (host vs. attendee)\n6. Configure secure cookie handling and CSRF protection\n7. Implement password reset and email verification flows",
+        "description": "ARCHIVED 2025 wording. Implemented as local email/password + JWT (AUTH_SECRET / HS256), host/attendee roles on UserEntity. Auth0 was not used.",
+        "details": "1. User entity with email/password (scrypt) and roles\n2. Login, register, logout, and session cookie in Next.js\n3. JwtAuthGuard on Nest using AUTH_SECRET (not Auth0 JWKS)\n4. Role-based access control (host vs attendee)\n5. Password reset is a first-party Nest flow (see master task 6), not Auth0 hosted email",
         "testStrategy": "Test authentication flows with mock users. Verify that protected routes require authentication. Test role-based access control to ensure hosts and attendees have appropriate permissions.",
         "priority": "high",
         "dependencies": [
@@ -614,12 +1054,12 @@
         "subtasks": [
           {
             "id": 1,
-            "title": "Auth0 Configuration and Setup",
-            "description": "Set up Auth0 tenant and configure application settings for both frontend and backend integration",
+            "title": "Local auth configuration",
+            "description": "AUTH_SECRET, JWT issuer/audience, User entity for frontend and backend",
             "dependencies": [],
-            "details": "Create Auth0 tenant, register the application, configure callback URLs, logout URLs, and allowed web origins. Set up the necessary Auth0 rules, actions, and APIs. Generate and securely store client credentials for both development and production environments.",
+            "details": "Use AUTH_SECRET (32+ chars) to sign HS256 JWTs. No Auth0 tenant, callbacks, or JWKS. Store credentials in .env examples only.",
             "status": "done",
-            "testStrategy": "Verify Auth0 dashboard configuration is complete. Test connection to Auth0 from both frontend and backend environments using test credentials.",
+            "testStrategy": "Register and login e2e; invalid token is 401. Confirm Auth0 packages are not in package.json.",
             "parentId": "undefined"
           },
           {
@@ -629,7 +1069,7 @@
             "dependencies": [
               "3.1"
             ],
-            "details": "Integrate Auth0 SDK with Next.js. Create authentication context provider for global state management. Implement login, signup, and logout UI components. Add social login options. Create protected route wrappers that redirect unauthenticated users.",
+            "details": "Local login/register pages and session cookie (frontend/lib/auth.tsx). No Auth0 SDK. Protected route wrappers redirect unauthenticated users.",
             "status": "done",
             "testStrategy": "Test all authentication flows (login, signup, logout) with mock users. Verify protected routes redirect unauthenticated users. Test social login integrations.",
             "parentId": "undefined"
@@ -637,11 +1077,11 @@
           {
             "id": 3,
             "title": "Backend Authentication Middleware",
-            "description": "Create protected routes and authentication middleware in FastAPI backend",
+            "description": "Create protected routes and JWT guard in the NestJS backend",
             "dependencies": [
               "3.1"
             ],
-            "details": "Implement JWT validation middleware in FastAPI. Create authentication dependency for protected routes. Set up user session management. Configure secure cookie handling and CSRF protection. Implement token refresh mechanism.",
+            "details": "JwtAuthGuard verifies AUTH_SECRET HS256 tokens. Attach user id and roles from UserEntity. No FastAPI and no Auth0 JWKS.",
             "status": "done",
             "testStrategy": "Test middleware with valid and invalid tokens. Verify protected endpoints reject unauthenticated requests. Test token refresh flow and session timeout behavior.",
             "parentId": "undefined"
@@ -654,7 +1094,7 @@
               "3.2",
               "3.3"
             ],
-            "details": "Configure Auth0 roles and permissions. Implement role assignment during user registration. Create role-based middleware for frontend and backend. Implement UI conditional rendering based on user roles. Add role management in user settings.",
+            "details": "JwtAuthGuard verifies HS256 JWTs with AUTH_SECRET. Roles live on UserEntity, not a third-party IdP. Frontend and backend both gate host vs attendee.",
             "status": "done",
             "testStrategy": "Test access control with different user roles. Verify hosts can access host-only features and attendees are restricted appropriately. Test role assignment and changes.",
             "parentId": "undefined"
@@ -662,13 +1102,13 @@
           {
             "id": 5,
             "title": "Password Reset and Email Verification",
-            "description": "Implement password reset and email verification flows using Auth0 capabilities",
+            "description": "Password reset and email verification as first-party Nest/Next flows (not Auth0)",
             "dependencies": [
               "3.1",
               "3.2",
               "3.3"
             ],
-            "details": "Configure Auth0 email templates for verification and password reset. Implement password reset request UI and flow. Create email verification UI components. Add email verification status check. Implement re-send verification email functionality.\n<info added on 2026-09-03T11:08:48Z>\nCancelled: Auth0 hosted password reset and email verification; not a custom Nest feature.\n</info>",
+            "details": "Auth0-hosted password reset was cancelled. Local forgot-password / reset-password shipped later under master auth security. Email verification remains optional.\n<info added on 2026-09-03T11:08:48Z>\nCancelled as an Auth0 feature. Do not add Auth0 email templates.\n</info>",
             "status": "cancelled",
             "testStrategy": "Test password reset flow end-to-end. Verify email verification process works correctly. Test re-sending verification emails. Verify appropriate access restrictions for unverified accounts.",
             "parentId": "undefined"
@@ -676,7 +1116,7 @@
         ],
         "complexity": 7,
         "recommendedSubtasks": 4,
-        "expansionPrompt": "Break down the Auth0 integration into detailed subtasks covering: 1) Auth0 tenant configuration and API setup, 2) Frontend authentication flows and protected routes, 3) Backend JWT validation and session management, and 4) Role-based access control implementation."
+        "expansionPrompt": "Break down local authentication into: 1) AUTH_SECRET and User entity, 2) frontend login/register/session, 3) Nest JWT guard, and 4) host vs attendee RBAC. Do not use Auth0."
       },
       {
         "id": "4",
@@ -760,7 +1200,7 @@
         "id": "5",
         "title": "User Onboarding Flow",
         "description": "Implement the complete user onboarding flow including signup, ID verification, consent preferences, and invite code validation.",
-        "details": "1. Design and implement multi-step onboarding UI in Next.js\n2. Create form components for collecting user information\n3. Implement consent preferences selection with clear explanations\n4. Create invite code validation logic\n5. Integrate with Auth0 and ID verification services\n6. Implement progress tracking and ability to resume onboarding\n7. Create backend API endpoints for storing onboarding data\n8. Implement email notifications for onboarding status updates",
+        "details": "1. Design and implement multi-step onboarding UI in Next.js\n2. Create form components for collecting user information\n3. Implement consent preferences selection with clear explanations\n4. Create invite code validation logic\n5. Integrate with local auth (JWT) and ID verification services (Persona)\n6. Implement progress tracking and ability to resume onboarding\n7. Create backend API endpoints for storing onboarding data\n8. Implement email notifications for onboarding status updates",
         "testStrategy": "Test the complete onboarding flow with various user inputs. Verify that all steps are completed correctly and data is stored properly. Test invite code validation with valid and invalid codes.",
         "priority": "high",
         "dependencies": [
@@ -781,12 +1221,12 @@
           },
           {
             "id": 2,
-            "title": "Auth0 and ID Verification Integration",
-            "description": "Integrate Auth0 for authentication and Persona/Onfido for ID verification within the onboarding flow",
+            "title": "Local auth and ID verification integration",
+            "description": "Use existing email/password JWT for signup; Persona for ID verification in onboarding",
             "dependencies": [
               "5.1"
             ],
-            "details": "Configure Auth0 for user signup and authentication. Implement the ID verification flow using Persona/Onfido API, including capturing user documents, performing verification checks, and handling verification results. Create the necessary frontend components and backend endpoints to support the verification process.",
+            "details": "Do not add Auth0. Login/register already exist. Wire Persona/Onfido IDV into onboarding after the user has a local session.",
             "status": "pending",
             "testStrategy": "Test authentication flows with test credentials, verify ID verification process works with test documents, and ensure verification status is correctly stored and retrieved.",
             "parentId": "undefined"
@@ -2044,7 +2484,7 @@
             ],
             "details": "Create API endpoints for code validation. Integrate validation into the registration flow. Implement error handling for invalid or expired codes. Add security measures to prevent brute force attacks on code validation.",
             "status": "done",
-            "testStrategy": "Test validation with valid, invalid, expired, and already-used codes. Verify proper error messages are displayed. Test integration with Auth0 registration flow.",
+            "testStrategy": "Test validation with valid, invalid, expired, and already-used codes. Verify proper error messages are displayed. Test integration with local registration/login, not Auth0.",
             "parentId": "undefined"
           },
           {
@@ -2539,7 +2979,7 @@
         "id": "26",
         "title": "Honest local MVP hardening",
         "description": "Security and correctness gaps that block treating the current event loop as a real MVP. Do this before AWS, guest payments, or Automaton infra PRs.",
-        "details": "From the Sep 2026 repo investigation and velvetrope PR #1 review.\n\nPriority order:\n1. Add hostId (Auth0 sub) to EventEntity; enforce ownership on every host mutation.\n2. Bind Stripe Connect accounts to the authenticated host; drop host-dev-123.\n3. Let approved attendees fetch their own check-in token; stop calling host-only issue from the ticket page.\n4. Generate invite codes and check-in tokens with crypto.randomBytes.\n5. Stripe webhook must not return HTTP 200 when signature verification fails.\n\nOut of scope: merge PR #1, AWS EKS, Grafana, guest Checkout (still 9.3).",
+        "details": "From the Sep 2026 repo investigation and velvetrope PR #1 review.\n\nPriority order:\n1. Add hostId (authenticated user id) to EventEntity; enforce ownership on every host mutation.\n2. Bind Stripe Connect accounts to the authenticated host; drop host-dev-123.\n3. Let approved attendees fetch their own check-in token; stop calling host-only issue from the ticket page.\n4. Generate invite codes and check-in tokens with crypto.randomBytes.\n5. Stripe webhook must not return HTTP 200 when signature verification fails.\n\nOut of scope: merge PR #1, AWS EKS, Grafana, guest Checkout (still 9.3), Auth0.",
         "testStrategy": "e2e: host A cannot PATCH host B's event. Stripe onboarding uses JWT sub. Approved attendee gets a token from a non-host endpoint. Tokens come from crypto. Webhook returns 4xx on a bad signature.",
         "priority": "high",
         "dependencies": [
@@ -2552,7 +2992,7 @@
             "title": "Event ownership (hostId)",
             "description": "Add hostId to events and enforce it on all host mutations.",
             "dependencies": [],
-            "details": "EventEntity has no hostId. Any host can mutate any event. Store Auth0 sub on create; ownership check on PATCH/DELETE/publish/cancel, application review, invite generate, check-in issue.",
+            "details": "EventEntity has no hostId. Any host can mutate any event. Store authenticated user id on create; ownership check on PATCH/DELETE/publish/cancel, application review, invite generate, check-in issue.",
             "status": "done",
             "testStrategy": "e2e: second host receives 403 on first host's event.",
             "parentId": "undefined",
@@ -2560,7 +3000,7 @@
           },
           {
             "id": 2,
-            "title": "Bind Stripe Connect to Auth0 sub",
+            "title": "Bind Stripe Connect to authenticated user id",
             "description": "Stop using URL hostId / host-dev-123.",
             "dependencies": [
               "26.1"
@@ -2620,7 +3060,7 @@
       "tags": [
         "legacy-prd-2025"
       ],
-      "description": "Archived 2025 PRD task list (Auth0/FastAPI references). Superseded by master v2 Mar 2026."
+      "description": "Archived 2025 PRD task list. Original plan used Auth0/FastAPI. Current product uses local JWT (AUTH_SECRET) + NestJS. Do not implement from this tag."
     }
   }
 }

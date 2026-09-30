@@ -26,4 +26,10 @@ export class EventEntity {
   /** 0 = free ticket (default). */
   @Column({ type: 'integer', default: 0 })
   ticketPriceCents!: number;
+
+  @Column({ type: 'boolean', default: false })
+  requirePhotoCheckin!: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  requireIdentityVerification!: boolean;
 }

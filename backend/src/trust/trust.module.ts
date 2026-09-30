@@ -9,6 +9,11 @@ import { EventEntity } from '../events/event.entity';
 import { CheckinTicketEntity } from '../checkin/checkin-ticket.entity';
 import { EventPaymentEntity } from '../stripe/event-payment.entity';
 import { StripeAccountEntity } from '../stripe/stripe-account.entity';
+import { AdminAuditEntity } from '../admin/admin-audit.entity';
+import { CheckinModule } from '../checkin/checkin.module';
+import { ChatMessageEntity } from '../chat/chat-message.entity';
+import { EventFeedbackEntity } from '../feedback/event-feedback.entity';
+import { IdentityModule } from '../identity/identity.module';
 
 @Module({
   imports: [
@@ -20,7 +25,12 @@ import { StripeAccountEntity } from '../stripe/stripe-account.entity';
       CheckinTicketEntity,
       EventPaymentEntity,
       StripeAccountEntity,
+      AdminAuditEntity,
+      ChatMessageEntity,
+      EventFeedbackEntity,
     ]),
+    CheckinModule,
+    IdentityModule,
   ],
   controllers: [TrustController],
   providers: [TrustService],

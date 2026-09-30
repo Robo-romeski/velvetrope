@@ -5,6 +5,7 @@ import {
   Index,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { dateTimeColumnType } from '../database/column-types';
 
 @Entity({ name: 'invites' })
 export class InviteEntity {
@@ -21,12 +22,12 @@ export class InviteEntity {
   @Column({ type: 'text', nullable: true })
   usedBy?: string | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: dateTimeColumnType(), nullable: true })
   usedAt?: Date | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: dateTimeColumnType(), nullable: true })
   expiresAt?: Date | null;
 
-  @CreateDateColumn({ type: 'datetime' })
+  @CreateDateColumn()
   createdAt!: Date;
 }

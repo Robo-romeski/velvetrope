@@ -26,12 +26,16 @@ export default function QrCamera({ onCode }: { onCode: (value: string) => void }
   const onCodeRef = useRef(onCode);
   const [active, setActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  onCodeRef.current = onCode;
+
+  useEffect(() => {
+    onCodeRef.current = onCode;
+  }, [onCode]);
 
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
     let timer: number | undefined;
+    const videoElement = videoRef.current;
 
     (async () => {
       const detector = getBarcodeDetector();
@@ -50,15 +54,14 @@ export default function QrCamera({ onCode }: { onCode: (value: string) => void }
           return;
         }
         streamRef.current = stream;
-        const video = videoRef.current;
-        if (!video) return;
-        video.srcObject = stream;
-        await video.play();
+        if (!videoElement) return;
+        videoElement.srcObject = stream;
+        await videoElement.play();
 
         const scan = async () => {
-          if (cancelled || !videoRef.current) return;
+          if (cancelled || !videoElement) return;
           try {
-            const codes = await detector.detect(videoRef.current);
+            const codes = await detector.detect(videoElement);
             const value = codes[0]?.rawValue?.trim();
             if (value) {
               onCodeRef.current(value);
@@ -84,7 +87,7 @@ export default function QrCamera({ onCode }: { onCode: (value: string) => void }
       if (timer) window.clearTimeout(timer);
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
-      if (videoRef.current) videoRef.current.srcObject = null;
+      if (videoElement) videoElement.srcObject = null;
     };
   }, [active]);
 

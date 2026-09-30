@@ -12,8 +12,11 @@ type MyApplication = {
   eventId: string;
   eventTitle: string;
   eventStatus: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'waitlisted' | 'approved' | 'rejected';
   createdAt: string;
+  decisionReason?: string | null;
+  decidedAt?: string | null;
+  waitlistPosition?: number | null;
 };
 
 function statusLabel(status: MyApplication['status']) {
@@ -22,6 +25,8 @@ function statusLabel(status: MyApplication['status']) {
       return 'Approved';
     case 'rejected':
       return 'Rejected';
+    case 'waitlisted':
+      return 'Waitlisted';
     default:
       return 'Pending review';
   }
@@ -85,9 +90,18 @@ export default function MyApplicationsPage() {
             </Link>
             <div className="text-sm text-gray-600 dark:text-gray-400">
               {statusLabel(app.status)}
+              {app.status === 'waitlisted' && app.waitlistPosition
+                ? ` #${app.waitlistPosition}`
+                : ''}
               {' · '}
               Applied {new Date(app.createdAt).toLocaleString()}
             </div>
+            {app.decisionReason && (
+              <div className="text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Host note:</span>{' '}
+                {app.decisionReason}
+              </div>
+            )}
             <EventCtaLinks
               eventId={app.eventId}
               applicationStatus={app.status}

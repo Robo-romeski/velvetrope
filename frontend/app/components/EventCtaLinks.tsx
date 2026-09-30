@@ -53,6 +53,18 @@ export function EventCtaLinks({
     );
   }
 
+  if (applicationStatus === 'waitlisted') {
+    return (
+      <div className="flex flex-wrap gap-3 text-sm items-center">
+        {detail}
+        <span className="text-amber-700 dark:text-amber-400">Waitlisted</span>
+        <Link className="text-blue-600 underline" href="/applications">
+          My applications
+        </Link>
+      </div>
+    );
+  }
+
   if (applicationStatus === 'rejected') {
     return (
       <div className="flex flex-wrap gap-3 text-sm items-center">

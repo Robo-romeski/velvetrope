@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TrustReportEntity, ReportCategory } from './report.entity';
+import {
+  TrustReportEntity,
+  ReportCategory,
+  ReportStatus,
+} from './report.entity';
 import { codeOfConductSummary } from './code-of-conduct';
 import { EmailService } from '../email/email.service';
 import { UserEntity } from '../auth/user.entity';
@@ -15,6 +19,11 @@ import { CheckinTicketEntity } from '../checkin/checkin-ticket.entity';
 import { EventPaymentEntity } from '../stripe/event-payment.entity';
 import { StripeAccountEntity } from '../stripe/stripe-account.entity';
 import { verifyPassword } from '../auth/password';
+import { AdminAuditEntity } from '../admin/admin-audit.entity';
+import { PhotoCheckinService } from '../checkin/photo-checkin.service';
+import { ChatMessageEntity } from '../chat/chat-message.entity';
+import { EventFeedbackEntity } from '../feedback/event-feedback.entity';
+import { PersonaService } from '../identity/persona.service';
 
 const REPORT_CATEGORIES: ReportCategory[] = [
   'harassment',
@@ -40,6 +49,14 @@ export class TrustService {
     private readonly payments: Repository<EventPaymentEntity>,
     @InjectRepository(StripeAccountEntity)
     private readonly stripeAccounts: Repository<StripeAccountEntity>,
+    @InjectRepository(AdminAuditEntity)
+    private readonly audit: Repository<AdminAuditEntity>,
+    @InjectRepository(ChatMessageEntity)
+    private readonly chatMessages: Repository<ChatMessageEntity>,
+    @InjectRepository(EventFeedbackEntity)
+    private readonly feedback: Repository<EventFeedbackEntity>,
+    private readonly photoCheckin: PhotoCheckinService,
+    private readonly persona: PersonaService,
     private readonly email: EmailService,
   ) {}
 
@@ -49,7 +66,7 @@ export class TrustService {
 
   async createReport(input: {
     reporterSub: string;
-    subjectType: 'event' | 'user';
+    subjectType: 'event' | 'user' | 'message';
     subjectId: string;
     category: string;
     details: string;
@@ -91,16 +108,69 @@ export class TrustService {
     });
   }
 
-  async resolveReport(id: string): Promise<TrustReportEntity> {
+  async reviewReport(
+    id: string,
+    actorSub: string,
+    input: {
+      assignedToAdminId?: string | null;
+      adminNotes?: string | null;
+      status?: ReportStatus;
+    },
+  ): Promise<TrustReportEntity> {
     const report = await this.reports.findOne({ where: { id } });
     if (!report) throw new NotFoundException('Report not found');
-    report.status = 'resolved';
-    return await this.reports.save(report);
+    if (input.status && !['open', 'resolved'].includes(input.status)) {
+      throw new BadRequestException('Invalid report status');
+    }
+    if (input.assignedToAdminId !== undefined) {
+      report.assignedToAdminId = input.assignedToAdminId?.trim() || null;
+    }
+    if (input.adminNotes !== undefined) {
+      const notes = input.adminNotes?.trim() || null;
+      if (notes && notes.length > 5000) {
+        throw new BadRequestException(
+          'Admin notes must be 5000 characters or fewer',
+        );
+      }
+      report.adminNotes = notes;
+    }
+    if (input.status) {
+      report.status = input.status;
+      report.resolvedAt = input.status === 'resolved' ? new Date() : null;
+    }
+    const saved = await this.reports.save(report);
+    await this.audit.save(
+      this.audit.create({
+        actorSub,
+        action: 'trust-report.reviewed',
+        targetType: 'trust-report',
+        targetId: saved.id,
+        metadata: JSON.stringify({
+          assignedToAdminId: saved.assignedToAdminId ?? null,
+          status: saved.status,
+          hasAdminNotes: !!saved.adminNotes,
+        }),
+      }),
+    );
+    return saved;
+  }
+
+  async resolveReport(
+    id: string,
+    actorSub: string,
+  ): Promise<TrustReportEntity> {
+    return await this.reviewReport(id, actorSub, { status: 'resolved' });
   }
 
   async exportUserData(userId: string): Promise<{
     exportedAt: string;
-    user: { id: string; email: string; name: string | null; roles: string[] };
+    user: {
+      id: string;
+      email: string;
+      name: string | null;
+      roles: string[];
+      accountStatus: string;
+    };
     applications: Array<{
       id: string;
       eventId: string;
@@ -108,6 +178,32 @@ export class TrustService {
       createdAt: string;
       codeOfConductAcceptedAt: string | null;
     }>;
+    checkinPhotos: Array<{
+      eventId: string;
+      uploadedAt: string | null;
+      verifiedAt: string | null;
+      expiresAt: string;
+    }>;
+    chatMessages: Array<{
+      id: string;
+      eventId: string;
+      body: string;
+      createdAt: string;
+      deletedAt: string | null;
+    }>;
+    feedback: Array<{
+      eventId: string;
+      rating: number;
+      comment: string | null;
+      anonymous: boolean;
+      createdAt: string;
+    }>;
+    identityVerification: {
+      provider: string;
+      status: string;
+      verifiedAt: string | null;
+      updatedAt: string;
+    } | null;
   }> {
     const user = await this.users.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
@@ -116,6 +212,18 @@ export class TrustService {
       where: { applicantSub: userId },
       order: { createdAt: 'DESC' },
     });
+    const photos = await this.photoCheckin.listForUser(userId);
+    const [chatMessages, feedback] = await Promise.all([
+      this.chatMessages.find({
+        where: { authorSub: userId },
+        order: { createdAt: 'DESC' },
+      }),
+      this.feedback.find({
+        where: { userSub: userId },
+        order: { createdAt: 'DESC' },
+      }),
+    ]);
+    const identity = await this.persona.listForUser(userId);
 
     return {
       exportedAt: new Date().toISOString(),
@@ -124,6 +232,7 @@ export class TrustService {
         email: user.email,
         name: user.name ?? null,
         roles: user.roles,
+        accountStatus: user.accountStatus,
       },
       applications: apps.map((app) => ({
         id: app.id,
@@ -134,6 +243,34 @@ export class TrustService {
           ? app.codeOfConductAcceptedAt.toISOString()
           : null,
       })),
+      checkinPhotos: photos.map((photo) => ({
+        eventId: photo.eventId,
+        uploadedAt: photo.uploadedAt?.toISOString() ?? null,
+        verifiedAt: photo.verifiedAt?.toISOString() ?? null,
+        expiresAt: photo.expiresAt.toISOString(),
+      })),
+      chatMessages: chatMessages.map((message) => ({
+        id: message.id,
+        eventId: message.eventId,
+        body: message.body,
+        createdAt: message.createdAt.toISOString(),
+        deletedAt: message.deletedAt?.toISOString() ?? null,
+      })),
+      feedback: feedback.map((item) => ({
+        eventId: item.eventId,
+        rating: item.rating,
+        comment: item.comment ?? null,
+        anonymous: item.anonymous,
+        createdAt: item.createdAt.toISOString(),
+      })),
+      identityVerification: identity
+        ? {
+            provider: identity.provider,
+            status: identity.status,
+            verifiedAt: identity.verifiedAt?.toISOString() ?? null,
+            updatedAt: identity.updatedAt.toISOString(),
+          }
+        : null,
     };
   }
 
@@ -151,9 +288,13 @@ export class TrustService {
       );
     }
 
+    await this.persona.redactAndDeleteForUser(userId);
     await this.applications.delete({ applicantSub: userId });
     await this.tickets.delete({ userSub: userId });
     await this.payments.delete({ userSub: userId });
+    await this.photoCheckin.deleteForUser(userId);
+    await this.chatMessages.delete({ authorSub: userId });
+    await this.feedback.delete({ userSub: userId });
     await this.reports.delete({ reporterSub: userId });
     await this.stripeAccounts.delete({ hostId: userId });
     await this.users.delete({ id: userId });

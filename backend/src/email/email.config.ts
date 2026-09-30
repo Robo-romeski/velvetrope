@@ -10,8 +10,7 @@ export function resolveEmailFrom(): string {
 }
 
 export function resolveAppBaseUrl(): string {
-  const base =
-    process.env.APP_BASE_URL?.trim() || 'http://localhost:3000';
+  const base = process.env.APP_BASE_URL?.trim() || 'http://localhost:3000';
   return base.replace(/\/$/, '');
 }
 

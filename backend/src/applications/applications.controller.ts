@@ -26,7 +26,7 @@ interface SubmitDto {
 }
 
 interface DecisionDto {
-  status: 'approved' | 'rejected';
+  status: 'approved' | 'waitlisted' | 'rejected';
   reason?: string;
 }
 
@@ -63,7 +63,8 @@ export class ApplicationsController {
     @Req() req: Request,
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
-    @Query('status') status?: 'pending' | 'approved' | 'rejected' | 'all',
+    @Query('status')
+    status?: 'pending' | 'waitlisted' | 'approved' | 'rejected' | 'all',
   ) {
     const { sub } = getAuthUser(req);
     await this.events.requireHost(eventId, sub);
@@ -85,7 +86,17 @@ export class ApplicationsController {
     const { sub } = getAuthUser(req);
     const application = await this.apps.get(id);
     await this.events.requireHost(application.eventId, sub);
-    return await this.apps.decide(id, dto);
+    return await this.apps.decide(id, dto, sub);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('host')
+  @Post(':id/promote')
+  async promote(@Param('id') id: string, @Req() req: Request) {
+    const { sub } = getAuthUser(req);
+    const application = await this.apps.get(id);
+    await this.events.requireHost(application.eventId, sub);
+    return await this.apps.promote(id, sub);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

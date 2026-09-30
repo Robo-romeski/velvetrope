@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   ForbiddenException,
@@ -29,8 +30,8 @@ export class StripeController {
   @Roles('host')
   @Get('onboarding')
   async onboarding(@Req() req: Request) {
-    const { sub } = getAuthUser(req);
-    return await this.stripe.getOnboardingLink(sub);
+    const { sub, email } = getAuthUser(req);
+    return await this.stripe.getOnboardingLink(sub, email);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -57,6 +58,26 @@ export class StripeController {
       throw new ForbiddenException('No approved application for this event');
     }
     return await this.payments.createCheckoutSession(eventId, sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('checkout/:eventId/confirm')
+  async confirmCheckout(
+    @Param('eventId') eventId: string,
+    @Req() req: Request,
+    @Body() body: { sessionId?: string },
+  ) {
+    const { sub } = getAuthUser(req);
+    const sessionId = (body.sessionId ?? '').trim();
+    if (!sessionId) {
+      throw new BadRequestException('sessionId required');
+    }
+    const approved = await this.applications.findApproved(eventId, sub);
+    if (!approved) {
+      throw new ForbiddenException('No approved application for this event');
+    }
+    await this.payments.confirmCheckoutSession(eventId, sub, sessionId);
+    return { ok: true };
   }
 
   /** Test-only: simulate Stripe checkout completion without dashboard keys. */

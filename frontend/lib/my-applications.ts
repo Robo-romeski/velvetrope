@@ -4,7 +4,11 @@ import { useEffect, useState } from 'react';
 import { apiGetAuth } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
-export type ApplicationStatus = 'pending' | 'approved' | 'rejected';
+export type ApplicationStatus =
+  | 'pending'
+  | 'waitlisted'
+  | 'approved'
+  | 'rejected';
 
 export function useMyApplicationByEvent() {
   const { user, loading: authLoading } = useAuth();

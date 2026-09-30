@@ -17,6 +17,17 @@ type HostEvent = {
   pendingCount: number;
 };
 
+type HostSummary = {
+  events: number;
+  publishedEvents: number;
+  applications: number;
+  approved: number;
+  waitlisted: number;
+  grossRevenueCents: number;
+  ticketsIssued: number;
+  checkedIn: number;
+};
+
 export default function HostEventsPage() {
   const { user, loading: authLoading } = useAuth();
   const [events, setEvents] = useState<HostEvent[]>([]);
@@ -24,14 +35,19 @@ export default function HostEventsPage() {
   const [error, setError] = useState<string | null>(null);
   const [unauthorized, setUnauthorized] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | HostEvent['status']>('all');
+  const [summary, setSummary] = useState<HostSummary | null>(null);
 
   const load = async () => {
     setLoading(true);
     setError(null);
     setUnauthorized(false);
     try {
-      const data = await apiGetAuth('/events/mine');
-      setEvents(Array.isArray(data) ? data : []);
+      const [eventsData, summaryData] = await Promise.all([
+        apiGetAuth('/events/mine'),
+        apiGetAuth('/analytics/host/summary'),
+      ]);
+      setEvents(Array.isArray(eventsData) ? eventsData : []);
+      setSummary(summaryData as HostSummary);
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Load failed';
       if (isUnauthorized(e)) {
@@ -53,7 +69,6 @@ export default function HostEventsPage() {
       return;
     }
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user]);
 
   const setStatus = async (id: string, action: 'publish' | 'cancel') => {
@@ -102,6 +117,31 @@ export default function HostEventsPage() {
       </div>
       {loading && <div className="text-sm">Loading…</div>}
       {error && <div className="text-sm text-red-600">{error}</div>}
+      {summary && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+          <div className="border rounded p-3">
+            <div className="text-xs text-gray-500">Events</div>
+            <div className="text-lg font-semibold">{summary.events}</div>
+          </div>
+          <div className="border rounded p-3">
+            <div className="text-xs text-gray-500">Applications</div>
+            <div className="text-lg font-semibold">{summary.applications}</div>
+          </div>
+          <div className="border rounded p-3">
+            <div className="text-xs text-gray-500">Waitlisted</div>
+            <div className="text-lg font-semibold">{summary.waitlisted}</div>
+          </div>
+          <div className="border rounded p-3">
+            <div className="text-xs text-gray-500">Gross revenue</div>
+            <div className="text-lg font-semibold">
+              {(summary.grossRevenueCents / 100).toLocaleString(undefined, {
+                style: 'currency',
+                currency: 'USD',
+              })}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex items-center gap-2 text-sm">
         <span>Status</span>
         <select
@@ -157,6 +197,12 @@ export default function HostEventsPage() {
               </Link>
               <Link className="text-blue-600 underline" href={`/host/events/${event.id}/scan`}>
                 Check-in
+              </Link>
+              <Link
+                className="text-blue-600 underline"
+                href={`/host/events/${event.id}/analytics`}
+              >
+                Analytics
               </Link>
             </div>
           </div>

@@ -1,14 +1,16 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { ApplicationEntity, ApplicationStatus } from './application.entity';
 import { ApplicationFormEntity } from './application-form.entity';
 import { InvitesService } from '../invites/invites.service';
 import { EventsService } from '../events/events.service';
+import { EventEntity } from '../events/event.entity';
 import { UserEntity } from '../auth/user.entity';
 import { EmailService } from '../email/email.service';
 
@@ -20,7 +22,7 @@ export interface CreateApplicationDto {
 }
 
 export interface DecisionDto {
-  status: Extract<ApplicationStatus, 'approved' | 'rejected'>;
+  status: Extract<ApplicationStatus, 'approved' | 'waitlisted' | 'rejected'>;
   reason?: string;
 }
 
@@ -36,6 +38,7 @@ export class ApplicationsService {
     @InjectRepository(UserEntity)
     private readonly users: Repository<UserEntity>,
     private readonly email: EmailService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async listForApplicant(applicantSub: string): Promise<{
@@ -46,6 +49,9 @@ export class ApplicationsService {
       eventStatus: string;
       status: ApplicationStatus;
       createdAt: string;
+      decisionReason: string | null;
+      decidedAt: string | null;
+      waitlistPosition: number | null;
     }>;
   }> {
     const applications = await this.repo.find({
@@ -63,6 +69,25 @@ export class ApplicationsService {
     const eventById = new Map(
       events.filter(Boolean).map((event) => [event!.id, event!]),
     );
+    const waitlisted = await this.repo.find({
+      where: {
+        eventId: In(eventIds),
+        status: 'waitlisted',
+      },
+      order: {
+        waitlistRank: 'ASC',
+        waitlistedAt: 'ASC',
+        createdAt: 'ASC',
+        id: 'ASC',
+      },
+    });
+    const waitlistPositions = new Map<string, number>();
+    const nextPositionByEvent = new Map<string, number>();
+    for (const application of waitlisted) {
+      const position = (nextPositionByEvent.get(application.eventId) ?? 0) + 1;
+      nextPositionByEvent.set(application.eventId, position);
+      waitlistPositions.set(application.id, position);
+    }
 
     const items = applications.map((app) => {
       const event = eventById.get(app.eventId);
@@ -73,6 +98,9 @@ export class ApplicationsService {
         eventStatus: event?.status ?? 'unknown',
         status: app.status,
         createdAt: app.createdAt.toISOString(),
+        decisionReason: app.decisionReason ?? null,
+        decidedAt: app.decidedAt?.toISOString() ?? null,
+        waitlistPosition: waitlistPositions.get(app.id) ?? null,
       };
     });
 
@@ -103,7 +131,15 @@ export class ApplicationsService {
       where,
       skip: (page - 1) * pageSize,
       take: pageSize,
-      order: { createdAt: 'DESC' },
+      order:
+        opts?.status === 'waitlisted'
+          ? {
+              waitlistRank: 'ASC',
+              waitlistedAt: 'ASC',
+              createdAt: 'ASC',
+              id: 'ASC',
+            }
+          : { createdAt: 'DESC' },
     });
     return { items, total, page, pageSize };
   }
@@ -144,6 +180,16 @@ export class ApplicationsService {
 
     if (dto.acceptedCodeOfConduct !== true) {
       throw new BadRequestException('Code of conduct acceptance required');
+    }
+
+    const existing = await this.repo.findOne({
+      where: {
+        eventId: dto.eventId,
+        applicantSub: dto.applicantSub,
+      },
+    });
+    if (existing) {
+      throw new ConflictException('You already applied to this event');
     }
 
     // Require a valid invite code and redeem it prior to saving
@@ -189,26 +235,136 @@ export class ApplicationsService {
     });
   }
 
-  async decide(id: string, decision: DecisionDto): Promise<ApplicationEntity> {
-    const app = await this.get(id);
-    const previousStatus = app.status;
-    if (decision.status === 'approved' && app.status !== 'approved') {
-      const event = await this.events.get(app.eventId);
-      const approved = await this.repo.count({
-        where: { eventId: app.eventId, status: 'approved' },
-      });
-      if (approved >= event.capacity) {
-        throw new BadRequestException('Event is at capacity');
-      }
+  async decide(
+    id: string,
+    decision: DecisionDto,
+    decidedByHostId: string,
+  ): Promise<ApplicationEntity> {
+    if (!['approved', 'waitlisted', 'rejected'].includes(decision.status)) {
+      throw new BadRequestException('Invalid application decision');
     }
-    app.status = decision.status;
-    const saved = await this.repo.save(app);
-    if (
-      previousStatus !== decision.status &&
-      (decision.status === 'approved' || decision.status === 'rejected')
-    ) {
-      await this.notifyApplicantDecision(saved, decision);
-    }
+    const reason = this.normalizeReason(decision.reason);
+    const saved = await this.dataSource.transaction(
+      'SERIALIZABLE',
+      async (manager) => {
+        const applications = manager.getRepository(ApplicationEntity);
+        const app = await applications.findOne({ where: { id } });
+        if (!app) throw new NotFoundException('Application not found');
+
+        if (app.status === 'waitlisted' && decision.status === 'approved') {
+          throw new BadRequestException(
+            'Use waitlist promotion to approve a waitlisted attendee',
+          );
+        }
+        if (
+          app.status !== 'pending' &&
+          !(
+            (app.status === 'waitlisted' || app.status === 'approved') &&
+            decision.status === 'rejected'
+          )
+        ) {
+          throw new BadRequestException(
+            `Cannot change an application from ${app.status} to ${decision.status}`,
+          );
+        }
+
+        if (decision.status === 'approved') {
+          const event = await manager
+            .getRepository(EventEntity)
+            .findOne({ where: { id: app.eventId } });
+          if (!event) throw new NotFoundException('Event not found');
+          const approved = await applications.count({
+            where: { eventId: app.eventId, status: 'approved' },
+          });
+          if (approved >= event.capacity) {
+            throw new BadRequestException(
+              'Event is at capacity; add the application to the waitlist',
+            );
+          }
+        }
+
+        const now = new Date();
+        app.status = decision.status;
+        app.decisionReason = reason;
+        app.decidedAt = now;
+        app.decidedByHostId = decidedByHostId;
+        if (decision.status === 'waitlisted') {
+          const maxRank = await applications
+            .createQueryBuilder('application')
+            .select('MAX(application.waitlistRank)', 'max')
+            .where('application.eventId = :eventId', {
+              eventId: app.eventId,
+            })
+            .getRawOne<{ max: number | string | null }>();
+          app.waitlistedAt = now;
+          app.waitlistRank = Number(maxRank?.max ?? 0) + 1;
+        } else {
+          app.waitlistedAt = null;
+        }
+        return await applications.save(app);
+      },
+    );
+
+    await this.notifyApplicantDecision(saved, {
+      status: saved.status as DecisionDto['status'],
+      reason: saved.decisionReason ?? undefined,
+    });
+    return saved;
+  }
+
+  async promote(
+    id: string,
+    decidedByHostId: string,
+  ): Promise<ApplicationEntity> {
+    const saved = await this.dataSource.transaction(
+      'SERIALIZABLE',
+      async (manager) => {
+        const applications = manager.getRepository(ApplicationEntity);
+        const app = await applications.findOne({ where: { id } });
+        if (!app) throw new NotFoundException('Application not found');
+        if (app.status !== 'waitlisted') {
+          throw new BadRequestException('Application is not waitlisted');
+        }
+
+        const first = await applications.findOne({
+          where: { eventId: app.eventId, status: 'waitlisted' },
+          order: {
+            waitlistRank: 'ASC',
+            waitlistedAt: 'ASC',
+            createdAt: 'ASC',
+            id: 'ASC',
+          },
+        });
+        if (!first || first.id !== app.id) {
+          throw new BadRequestException(
+            'Only the first attendee in the waitlist can be promoted',
+          );
+        }
+
+        const event = await manager
+          .getRepository(EventEntity)
+          .findOne({ where: { id: app.eventId } });
+        if (!event) throw new NotFoundException('Event not found');
+        const approved = await applications.count({
+          where: { eventId: app.eventId, status: 'approved' },
+        });
+        if (approved >= event.capacity) {
+          throw new BadRequestException('Event is at capacity');
+        }
+
+        const now = new Date();
+        app.status = 'approved';
+        app.decidedAt = now;
+        app.decidedByHostId = decidedByHostId;
+        app.promotedAt = now;
+        return await applications.save(app);
+      },
+    );
+
+    await this.notifyApplicantDecision(saved, {
+      status: 'approved',
+      reason: saved.decisionReason ?? undefined,
+    });
     return saved;
   }
 
@@ -240,6 +396,17 @@ export class ApplicationsService {
     } catch {
       // Decision is already persisted; do not fail the host action.
     }
+  }
+
+  private normalizeReason(reason?: string): string | null {
+    const normalized = reason?.trim();
+    if (!normalized) return null;
+    if (normalized.length > 1000) {
+      throw new BadRequestException(
+        'Decision reason must be 1000 characters or fewer',
+      );
+    }
+    return normalized;
   }
 
   async setFormSchema(

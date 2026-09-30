@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { apiGetAuth, apiPostAuth } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
 export default function DataExportPage() {
   const { user, loading, logout } = useAuth();
+  const router = useRouter();
   const [json, setJson] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fetching, setFetching] = useState(false);
@@ -98,7 +100,8 @@ export default function DataExportPage() {
           try {
             await apiPostAuth('/trust/delete-account', { password: deletePassword });
             await logout();
-            window.location.href = '/';
+            router.push('/');
+            router.refresh();
           } catch (e) {
             setDeleteMessage(e instanceof Error ? e.message : 'Delete failed');
           } finally {

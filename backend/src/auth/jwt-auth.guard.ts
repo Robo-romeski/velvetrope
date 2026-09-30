@@ -9,10 +9,14 @@ import {
   AUTH_ISSUER,
   resolveAuthSecret,
 } from './auth.constants';
+import { DataSource } from 'typeorm';
+import { UserEntity } from './user.entity';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   private joseModule: typeof import('jose') | null = null;
+
+  constructor(private readonly dataSource: DataSource) {}
 
   private async getJose() {
     if (!this.joseModule) {
@@ -61,17 +65,19 @@ export class JwtAuthGuard implements CanActivate {
         },
       );
       const claims = result.payload;
-      const roles = Array.isArray(claims.roles)
-        ? claims.roles.filter(
-            (role): role is string => typeof role === 'string',
-          )
-        : [];
+      const sub = String(claims.sub ?? '');
+      if (!sub) throw new UnauthorizedException();
+      const user = await this.dataSource
+        .getRepository(UserEntity)
+        .findOne({ where: { id: sub } });
+      if (!user || user.accountStatus === 'suspended') {
+        throw new UnauthorizedException();
+      }
       req.user = {
-        sub: String(claims.sub ?? ''),
-        roles,
-        email: typeof claims.email === 'string' ? claims.email : undefined,
+        sub: user.id,
+        roles: user.roles,
+        email: user.email,
       };
-      if (!req.user.sub) throw new UnauthorizedException();
       return true;
     } catch {
       throw new UnauthorizedException();

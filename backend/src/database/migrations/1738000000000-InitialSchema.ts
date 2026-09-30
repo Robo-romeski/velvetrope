@@ -1,9 +1,12 @@
 import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
+import { migrationDateTimeType } from '../migration-column-types';
 
 export class Initial1738000000000 implements MigrationInterface {
   name = 'Initial1738000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    const dateTime = migrationDateTimeType(queryRunner);
+
     await queryRunner.createTable(
       new Table({
         name: 'users',
@@ -19,7 +22,11 @@ export class Initial1738000000000 implements MigrationInterface {
     );
     await queryRunner.createIndex(
       'users',
-      new TableIndex({ name: 'IDX_users_email', columnNames: ['email'], isUnique: true }),
+      new TableIndex({
+        name: 'IDX_users_email',
+        columnNames: ['email'],
+        isUnique: true,
+      }),
     );
 
     await queryRunner.createTable(
@@ -32,7 +39,12 @@ export class Initial1738000000000 implements MigrationInterface {
           { name: 'description', type: 'text', isNullable: true },
           { name: 'date', type: 'text', isNullable: false },
           { name: 'capacity', type: 'integer', isNullable: false },
-          { name: 'status', type: 'text', isNullable: false, default: "'draft'" },
+          {
+            name: 'status',
+            type: 'text',
+            isNullable: false,
+            default: "'draft'",
+          },
         ],
       }),
       true,
@@ -45,7 +57,7 @@ export class Initial1738000000000 implements MigrationInterface {
           { name: 'id', type: 'varchar', isPrimary: true },
           { name: 'eventId', type: 'text', isNullable: false },
           { name: 'schema', type: 'text', isNullable: false },
-          { name: 'updatedAt', type: 'datetime', isNullable: false },
+          { name: 'updatedAt', type: dateTime, isNullable: false },
         ],
       }),
       true,
@@ -67,8 +79,13 @@ export class Initial1738000000000 implements MigrationInterface {
           { name: 'eventId', type: 'text', isNullable: false },
           { name: 'applicantSub', type: 'text', isNullable: false },
           { name: 'answers', type: 'text', isNullable: true },
-          { name: 'status', type: 'text', isNullable: false, default: "'pending'" },
-          { name: 'createdAt', type: 'datetime', isNullable: false },
+          {
+            name: 'status',
+            type: 'text',
+            isNullable: false,
+            default: "'pending'",
+          },
+          { name: 'createdAt', type: dateTime, isNullable: false },
         ],
       }),
       true,
@@ -82,16 +99,20 @@ export class Initial1738000000000 implements MigrationInterface {
           { name: 'code', type: 'text', isNullable: false },
           { name: 'eventId', type: 'text', isNullable: false },
           { name: 'usedBy', type: 'text', isNullable: true },
-          { name: 'usedAt', type: 'datetime', isNullable: true },
-          { name: 'expiresAt', type: 'datetime', isNullable: true },
-          { name: 'createdAt', type: 'datetime', isNullable: false },
+          { name: 'usedAt', type: dateTime, isNullable: true },
+          { name: 'expiresAt', type: dateTime, isNullable: true },
+          { name: 'createdAt', type: dateTime, isNullable: false },
         ],
       }),
       true,
     );
     await queryRunner.createIndex(
       'invites',
-      new TableIndex({ name: 'IDX_invites_code', columnNames: ['code'], isUnique: true }),
+      new TableIndex({
+        name: 'IDX_invites_code',
+        columnNames: ['code'],
+        isUnique: true,
+      }),
     );
 
     await queryRunner.createTable(
@@ -102,8 +123,8 @@ export class Initial1738000000000 implements MigrationInterface {
           { name: 'token', type: 'text', isNullable: false },
           { name: 'eventId', type: 'text', isNullable: false },
           { name: 'userSub', type: 'text', isNullable: false },
-          { name: 'issuedAt', type: 'datetime', isNullable: false },
-          { name: 'usedAt', type: 'datetime', isNullable: true },
+          { name: 'issuedAt', type: dateTime, isNullable: false },
+          { name: 'usedAt', type: dateTime, isNullable: true },
         ],
       }),
       true,
@@ -124,8 +145,8 @@ export class Initial1738000000000 implements MigrationInterface {
           { name: 'id', type: 'varchar', isPrimary: true },
           { name: 'hostId', type: 'text', isNullable: false },
           { name: 'accountId', type: 'text', isNullable: false },
-          { name: 'createdAt', type: 'datetime', isNullable: false },
-          { name: 'updatedAt', type: 'datetime', isNullable: false },
+          { name: 'createdAt', type: dateTime, isNullable: false },
+          { name: 'updatedAt', type: dateTime, isNullable: false },
         ],
       }),
       true,

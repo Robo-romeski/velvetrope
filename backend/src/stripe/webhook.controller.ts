@@ -26,7 +26,7 @@ export class StripeWebhookController {
   ) {
     const key = this.config.get<string>('STRIPE_SECRET_KEY');
     if (key && process.env.NODE_ENV !== 'test') {
-      this.stripe = new Stripe(key, { apiVersion: '2024-06-20' } as any);
+      this.stripe = new Stripe(key);
     }
   }
 
@@ -63,9 +63,7 @@ export class StripeWebhookController {
     }
 
     if (event.type === 'checkout.session.completed') {
-      await this.payments.handleCheckoutSessionCompleted(
-        event.data.object as Stripe.Checkout.Session,
-      );
+      await this.payments.handleCheckoutSessionCompleted(event.data.object);
     }
 
     return { ok: true };

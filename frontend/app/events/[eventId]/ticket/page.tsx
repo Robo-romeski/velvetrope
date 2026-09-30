@@ -6,11 +6,25 @@ import { useParams } from 'next/navigation';
 import { apiGet, apiGetAuth, apiPostAuth, isUnauthorized } from '@/lib/api';
 import { EventPageNav } from '@/app/components/EventPageNav';
 import QRCode from 'react-qr-code';
+import {
+  deleteOfflineTicket,
+  getOfflineTicket,
+  saveOfflineTicket,
+} from '@/lib/offline-ticket';
+
+type PhotoStatus = {
+  required: boolean;
+  configured: boolean;
+  uploaded: boolean;
+  verifiedAt: string | null;
+  expiresAt: string | null;
+};
 
 export default function EventTicketPage() {
   const params = useParams();
   const eventId = useMemo(() => String(params?.eventId ?? ''), [params]);
   const [title, setTitle] = useState<string | null>(null);
+  const [eventDate, setEventDate] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [paying, setPaying] = useState(false);
@@ -18,18 +32,69 @@ export default function EventTicketPage() {
   const [unauthorized, setUnauthorized] = useState(false);
   const [paymentRequired, setPaymentRequired] = useState(false);
   const [paymentAmountCents, setPaymentAmountCents] = useState(0);
+  const [isOnline, setIsOnline] = useState(true);
+  const [usingOfflineCopy, setUsingOfflineCopy] = useState(false);
+  const [availableOffline, setAvailableOffline] = useState(false);
+  const [photoStatus, setPhotoStatus] = useState<PhotoStatus | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [identityRequired, setIdentityRequired] = useState(false);
+  const [identityConfigured, setIdentityConfigured] = useState(true);
+  const [identityStatus, setIdentityStatus] = useState('not_started');
 
   const loadTicket = async () => {
     if (!eventId) return;
     setLoading(true);
     setError(null);
+    const cached = await getOfflineTicket(eventId).catch(() => null);
+    if (cached) setAvailableOffline(true);
+    if (typeof navigator !== 'undefined' && !navigator.onLine && cached) {
+      setTitle(cached.eventTitle);
+      setEventDate(cached.eventDate);
+      setToken(cached.token);
+      setUsingOfflineCopy(true);
+      setLoading(false);
+      return;
+    }
     try {
+      let resolvedTitle = cached?.eventTitle ?? null;
+      let resolvedEventDate = cached?.eventDate ?? null;
+      let requiresIdentity = false;
       try {
         const ev = await apiGet(`/events/${encodeURIComponent(eventId)}`);
-        setTitle(ev?.title ?? null);
+        resolvedTitle = ev?.title ?? null;
+        resolvedEventDate = ev?.date ?? null;
+        setTitle(resolvedTitle);
+        setEventDate(resolvedEventDate);
+        requiresIdentity = ev?.requireIdentityVerification === true;
         if (ev?.status && ev.status !== 'published') return;
       } catch {
         // Ticket fetch still tries; event title is optional.
+      }
+
+      if (requiresIdentity) {
+        const identity = await apiGetAuth('/identity/status');
+        setIdentityConfigured(identity.configured !== false);
+        setIdentityStatus(identity.status ?? 'not_started');
+        if (identity.status !== 'approved') {
+          setIdentityRequired(true);
+          setToken(null);
+          return;
+        }
+      }
+      setIdentityRequired(false);
+
+      if (typeof window !== 'undefined') {
+        const returnUrl = new URL(window.location.href);
+        const sessionId = returnUrl.searchParams.get('session_id');
+        if (returnUrl.searchParams.get('paid') === '1' && sessionId) {
+          await apiPostAuth(
+            `/stripe/checkout/${encodeURIComponent(eventId)}/confirm`,
+            { sessionId },
+          );
+          returnUrl.searchParams.delete('paid');
+          returnUrl.searchParams.delete('session_id');
+          window.history.replaceState(null, '', returnUrl);
+        }
       }
 
       const payment = await apiGetAuth(
@@ -44,8 +109,32 @@ export default function EventTicketPage() {
       setPaymentRequired(false);
 
       const res = await apiPostAuth(`/checkin/mine/${encodeURIComponent(eventId)}`, {});
-      setToken(res?.token ?? null);
+      const nextToken = res?.token ?? null;
+      setToken(nextToken);
+      setUsingOfflineCopy(false);
+      const photo = await apiGetAuth(
+        `/checkin/photo/mine/${encodeURIComponent(eventId)}`,
+      ).catch(() => null);
+      if (photo) setPhotoStatus(photo as PhotoStatus);
+      if (nextToken) {
+        await saveOfflineTicket({
+          eventId,
+          eventTitle: resolvedTitle,
+          eventDate: resolvedEventDate,
+          token: nextToken,
+        });
+        setAvailableOffline(true);
+      }
     } catch (e) {
+      if (cached) {
+        setTitle(cached.eventTitle);
+        setEventDate(cached.eventDate);
+        setToken(cached.token);
+        setUsingOfflineCopy(true);
+        setPaymentRequired(false);
+        setError(null);
+        return;
+      }
       if (isUnauthorized(e)) {
         setUnauthorized(true);
       } else {
@@ -75,6 +164,17 @@ export default function EventTicketPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
+  useEffect(() => {
+    const update = () => setIsOnline(navigator.onLine);
+    update();
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+    };
+  }, []);
+
   const startCheckout = async () => {
     setPaying(true);
     setError(null);
@@ -94,6 +194,40 @@ export default function EventTicketPage() {
       setError(e instanceof Error ? e.message : 'Could not start checkout');
     } finally {
       setPaying(false);
+    }
+  };
+
+  const uploadPhoto = async (file: File) => {
+    setPhotoUploading(true);
+    setError(null);
+    try {
+      const upload = await apiPostAuth(
+        `/checkin/photo/mine/${encodeURIComponent(eventId)}/upload`,
+        {
+          contentType: file.type,
+          sizeBytes: file.size,
+        },
+      );
+      const response = await fetch(upload.uploadUrl as string, {
+        method: 'PUT',
+        headers: upload.headers as Record<string, string>,
+        body: file,
+      });
+      if (!response.ok) {
+        throw new Error(`Photo upload failed: ${response.status}`);
+      }
+      await apiPostAuth(
+        `/checkin/photo/mine/${encodeURIComponent(eventId)}/complete`,
+        { photoId: upload.photoId },
+      );
+      const photo = await apiGetAuth(
+        `/checkin/photo/mine/${encodeURIComponent(eventId)}`,
+      );
+      setPhotoStatus(photo as PhotoStatus);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not upload photo');
+    } finally {
+      setPhotoUploading(false);
     }
   };
 
@@ -134,9 +268,19 @@ export default function EventTicketPage() {
     <div className="max-w-xl mx-auto p-6 space-y-4">
       <EventPageNav eventId={eventId} title={title} />
       <h1 className="text-2xl font-semibold">{title ?? 'Your ticket'}</h1>
+      {eventDate && (
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {new Date(eventDate).toLocaleString()}
+        </p>
+      )}
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Show this QR at the door. Hosts can also paste the token if the camera cannot read it.
       </p>
+      {(!isOnline || usingOfflineCopy) && token && (
+        <div className="text-sm border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 rounded p-3">
+          Offline copy — host verification still requires their device to be online.
+        </div>
+      )}
       {loading && <div>Loading…</div>}
       {paymentRequired && !token && (
         <div className="text-sm space-y-3 border rounded p-4">
@@ -156,6 +300,29 @@ export default function EventTicketPage() {
           >
             {paying ? 'Redirecting…' : 'Pay with Stripe'}
           </button>
+        </div>
+      )}
+      {identityRequired && !token && (
+        <div className="text-sm space-y-3 border rounded p-4">
+          <p>
+            This event requires approved Persona identity verification before
+            your QR ticket can be issued.
+          </p>
+          <p className="text-gray-600 dark:text-gray-400 capitalize">
+            Current status: {identityStatus.replaceAll('_', ' ')}
+          </p>
+          {identityConfigured ? (
+            <Link
+              href="/identity/verify"
+              className="inline-block px-4 py-2 bg-blue-600 text-white rounded"
+            >
+              Verify identity
+            </Link>
+          ) : (
+            <p className="text-amber-700 dark:text-amber-400">
+              Persona is not configured on this deployment. Contact the host.
+            </p>
+          )}
         </div>
       )}
       {error && (
@@ -178,6 +345,42 @@ export default function EventTicketPage() {
           )}
         </div>
       )}
+      {photoStatus?.required && (
+        <div className="border rounded p-4 text-sm space-y-3">
+          <h2 className="font-semibold">Check-in reference photo</h2>
+          {!photoStatus.configured ? (
+            <p className="text-amber-700 dark:text-amber-400">
+              The host enabled photo check-in, but private photo storage is not
+              configured. Contact the host before the event.
+            </p>
+          ) : photoStatus.uploaded ? (
+            <p className="text-green-700 dark:text-green-400">
+              Photo uploaded. The host will compare it visually at check-in.
+            </p>
+          ) : (
+            <>
+              <p className="text-gray-600 dark:text-gray-400">
+                Upload a clear photo of yourself. It is private, available only
+                to the event host, and deleted seven days after the event.
+              </p>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                capture="user"
+                disabled={photoUploading}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void uploadPhoto(file);
+                }}
+              />
+              <p className="text-xs text-gray-500">
+                JPEG, PNG, or WebP; maximum 5 MB.
+              </p>
+            </>
+          )}
+          {photoUploading && <p>Uploading…</p>}
+        </div>
+      )}
       {token && (
         <div className="space-y-3">
           <div id="ticket-qr-wrap" className="p-4 bg-white rounded shadow inline-block">
@@ -187,6 +390,21 @@ export default function EventTicketPage() {
           <button onClick={download} className="px-4 py-2 border rounded text-sm">
             Download QR
           </button>
+          {availableOffline && (
+            <div className="text-xs text-gray-500 space-y-1">
+              <div>Available offline on this device until one day after the event.</div>
+              <button
+                type="button"
+                onClick={async () => {
+                  await deleteOfflineTicket(eventId);
+                  setAvailableOffline(false);
+                }}
+                className="text-red-600 underline"
+              >
+                Remove offline copy
+              </button>
+            </div>
+          )}
           <Link href="/applications" className="block text-sm text-blue-600 underline">
             My applications
           </Link>

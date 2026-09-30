@@ -22,6 +22,8 @@ interface CreateEventDto {
   date: string;
   capacity: number;
   ticketPriceCents?: number;
+  requirePhotoCheckin?: boolean;
+  requireIdentityVerification?: boolean;
 }
 
 @Controller('events')

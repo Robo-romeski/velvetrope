@@ -46,9 +46,7 @@ export class AuthController {
 
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('reset-password')
-  async resetPassword(
-    @Body() body: { token?: string; password?: string },
-  ) {
+  async resetPassword(@Body() body: { token?: string; password?: string }) {
     return await this.auth.resetPassword({
       token: body.token ?? '',
       password: body.password ?? '',

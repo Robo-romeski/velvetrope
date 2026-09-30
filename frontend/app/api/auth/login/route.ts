@@ -1,10 +1,10 @@
 import { cookies } from 'next/headers';
-import { API_BASE } from '@/lib/api';
+import { API_SERVER_BASE } from '@/lib/server-api';
 import { ACCESS_TOKEN_COOKIE, sessionCookieOptions } from '@/lib/session';
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const res = await fetch(`${API_BASE}/auth/login`, {
+  const res = await fetch(`${API_SERVER_BASE}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

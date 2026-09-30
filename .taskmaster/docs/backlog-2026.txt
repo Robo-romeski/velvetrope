@@ -1,18 +1,24 @@
-VelvetKey — post-MVP backlog (tasks 11–12)
-============================================
+VelvetKey — remaining post-MVP backlog
+=======================================
 
 Master roadmap tasks 1–10 are implemented on main. Do not reopen unless product owner requests.
 
-TASK 11 — Identity verification (defer)
-- Persona or Onfido (or similar) for verified attendees
-- Webhooks, verification status on user, optional gate on apply/ticket
-- Requires vendor account, legal review, and UX for failed/pending states
-
 TASK 12 — Future epics (separate PRDs / tags)
-- Event chat and post-event feedback / reputation
-- Full admin console (moderation beyond trust reports)
-- Host analytics dashboard (conversion, revenue — partial invite stats exist)
-- PWA / offline QR, Redis caching
-- Waitlist, photo verification at check-in
+- Redis caching
 
 Account deletion and JSON export ship under task 10 (trust module).
+FIFO waitlist and persisted application decisions ship under the
+feature-waitlist tag.
+Privacy-safe funnel, revenue, and attendance analytics ship under the
+feature-host-analytics tag.
+Audited user, event, and report moderation ships under the
+feature-admin-console tag.
+Installable PWA and offline attendee QR ship under the
+feature-pwa-offline-qr tag; host scanning remains online-only.
+Private, manually confirmed photo check-in ships under the
+feature-photo-checkin tag; real S3 sandbox acceptance requires credentials.
+Bounded real-time event chat and post-event feedback ship under the
+feature-comms-feedback tag; add Redis before horizontal backend scaling.
+Persona IDV with ticket-only event gating ships under the feature-persona-idv
+tag; real sandbox inquiry/webhook/redaction requires credentials and legal
+sign-off.

@@ -25,6 +25,9 @@ export default function EditHostEventPage() {
   const [date, setDate] = useState('');
   const [capacity, setCapacity] = useState(20);
   const [ticketPriceUsd, setTicketPriceUsd] = useState('0');
+  const [requirePhotoCheckin, setRequirePhotoCheckin] = useState(false);
+  const [requireIdentityVerification, setRequireIdentityVerification] =
+    useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +45,10 @@ export default function EditHostEventPage() {
         setCapacity(event.capacity ?? 20);
         const cents = Number(event.ticketPriceCents ?? 0);
         setTicketPriceUsd(Number.isFinite(cents) ? (cents / 100).toFixed(2) : '0');
+        setRequirePhotoCheckin(event.requirePhotoCheckin === true);
+        setRequireIdentityVerification(
+          event.requireIdentityVerification === true,
+        );
       } catch (e) {
         if (!mounted) return;
         setError(e instanceof Error ? e.message : 'Could not load event');
@@ -80,6 +87,8 @@ export default function EditHostEventPage() {
           0,
           Math.round(Number.parseFloat(ticketPriceUsd || '0') * 100),
         ),
+        requirePhotoCheckin,
+        requireIdentityVerification,
       });
       router.push('/host/events');
     } catch (e) {
@@ -159,6 +168,38 @@ export default function EditHostEventPage() {
               className="w-full border rounded px-3 py-2 bg-transparent"
             />
             <span className="text-xs text-gray-500">0 = free. Requires Stripe Connect for paid tickets.</span>
+          </label>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={requirePhotoCheckin}
+              onChange={(event) => setRequirePhotoCheckin(event.target.checked)}
+              className="mt-1"
+            />
+            <span>
+              Require an attendee reference photo at check-in
+              <span className="block text-xs text-gray-500">
+                Hosts manually compare the attendee to a private photo. Photos
+                expire seven days after the event.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={requireIdentityVerification}
+              onChange={(event) =>
+                setRequireIdentityVerification(event.target.checked)
+              }
+              className="mt-1"
+            />
+            <span>
+              Require Persona identity verification before ticket issuance
+              <span className="block text-xs text-gray-500">
+                Attendees may apply first, but must be approved by Persona
+                before receiving their QR ticket.
+              </span>
+            </span>
           </label>
           {error && <div className="text-sm text-red-600">{error}</div>}
           <div className="flex items-center gap-3">

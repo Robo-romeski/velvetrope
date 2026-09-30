@@ -18,6 +18,6 @@ export class ApplicationFormEntity {
   @Column({ type: 'text' })
   schema!: string; // JSON string
 
-  @UpdateDateColumn({ type: 'datetime' })
+  @UpdateDateColumn()
   updatedAt!: Date;
 }

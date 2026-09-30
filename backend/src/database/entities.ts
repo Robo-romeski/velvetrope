@@ -7,6 +7,11 @@ import { StripeAccountEntity } from '../stripe/stripe-account.entity';
 import { EventPaymentEntity } from '../stripe/event-payment.entity';
 import { UserEntity } from '../auth/user.entity';
 import { TrustReportEntity } from '../trust/report.entity';
+import { AdminAuditEntity } from '../admin/admin-audit.entity';
+import { CheckinPhotoEntity } from '../checkin/checkin-photo.entity';
+import { ChatMessageEntity } from '../chat/chat-message.entity';
+import { EventFeedbackEntity } from '../feedback/event-feedback.entity';
+import { IdentityVerificationEntity } from '../identity/identity-verification.entity';
 
 export const entities = [
   EventEntity,
@@ -18,4 +23,9 @@ export const entities = [
   EventPaymentEntity,
   UserEntity,
   TrustReportEntity,
+  AdminAuditEntity,
+  CheckinPhotoEntity,
+  ChatMessageEntity,
+  EventFeedbackEntity,
+  IdentityVerificationEntity,
 ];

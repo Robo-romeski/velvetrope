@@ -1,0 +1,47 @@
+VelvetKey — Admin Console MVP
+=============================
+
+Goal
+----
+Provide a small, auditable platform moderation surface without exposing
+password hashes or creating a public path to administrator privileges.
+
+Requirements
+------------
+1. All admin endpoints require the current database role `admin`.
+2. Authentication reloads current roles and account status from the database
+   so suspension and role changes invalidate existing session permissions.
+3. Paginated user search returns only safe profile/moderation fields.
+4. Admins can grant/revoke attendee, host, and admin roles.
+5. Admins cannot suspend themselves, change their own roles, or remove the
+   last active admin.
+6. Suspension requires a reason; suspended users cannot login or use an
+   existing JWT.
+7. Admins can search all events and cancel an event with a recorded reason.
+8. Trust reports support assignment, private notes, resolve, and reopen.
+9. Every user, event, and report mutation writes an immutable audit row.
+10. Admin bootstrap remains an explicit database operation documented in the
+    README; registration can never request admin.
+
+Data migration
+--------------
+- users: accountStatus, suspendedAt, suspensionReason.
+- trust_reports: assignedToAdminId, adminNotes, resolvedAt.
+- admin_audit_log: actor, action, target, safe JSON metadata, timestamp.
+
+Verification
+------------
+- Non-admin receives 403.
+- Role change affects an existing JWT immediately.
+- Suspension blocks an existing JWT; reactivation restores it.
+- Self-demotion/self-suspension is rejected.
+- Event cancellation, report review, and audit records are covered by e2e.
+- SQLite and Postgres migration apply/revert.
+- Backend lint/build/e2e and frontend lint/typecheck/build.
+
+Out of scope
+------------
+- Admin impersonation.
+- Bulk moderation.
+- Automatic content classification.
+- Public administrator bootstrap or password reset bypass.

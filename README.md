@@ -140,16 +140,29 @@ npm run dev
 - `POST /trust/reports` - File a safety report (auth required)
 - `GET /trust/reports` - List reports (`admin` role)
 - `PATCH /trust/reports/:id/resolve` - Resolve a report (`admin` role)
+- `PATCH /trust/reports/:id/review` - Assign, annotate, resolve, or reopen a report (`admin` role)
 - `GET /trust/export` - Download JSON export of profile + applications (auth required)
 - `POST /trust/delete-account` - Delete account after password confirm (blocked if user hosts events)
 
-Application submit requires `acceptedCodeOfConduct: true`. Assign the `admin` role on a user (database) for report review; set `TRUST_REPORT_NOTIFY_EMAIL` for new-report alerts.
+Application submit requires `acceptedCodeOfConduct: true`; set `TRUST_REPORT_NOTIFY_EMAIL` for new-report alerts.
+
+### Admin
+- `GET /admin/summary` - Platform moderation counts
+- `GET /admin/users`, `PATCH /admin/users/:id` - Search users and change roles/status
+- `GET /admin/events` - Search all events
+- `POST /admin/events/:id/cancel` - Administratively cancel an event
+- `GET /admin/audit` - Immutable moderation audit log
+
+Admin registration is intentionally unavailable. Bootstrap the first admin by
+adding `"admin"` to an existing user's `roles` JSON directly in the database.
+Subsequent role changes are available at `/admin/users`.
 
 ### Applications
 - `GET /applications/mine` - List the authenticated user's applications (auth required)
 - `POST /applications` - Submit application (auth required)
 - `GET /applications/event/:eventId` - List applications (host only)
-- `PATCH /applications/:id/decision` - Approve/reject (host only)
+- `PATCH /applications/:id/decision` - Approve/waitlist/reject with optional host note (host only)
+- `POST /applications/:id/promote` - Promote the first FIFO waitlisted attendee when capacity is available (host only)
 - `PUT /applications/event/:eventId/form` - Set form schema (host only)
 - `GET /applications/event/:eventId/form` - Get form schema (public)
 
@@ -164,7 +177,11 @@ Application submit requires `acceptedCodeOfConduct: true`. Assign the `admin` ro
 - `POST /checkin/issue/:eventId` - Issue ticket for a user (event host only)
 - `POST /checkin/mine/:eventId` - Issue/return ticket for the authenticated attendee (approved applications only)
 - `GET /checkin/event/:eventId` - List issued tickets without raw tokens (event host only)
-- `POST /checkin/verify/:token` - Verify ticket (event host only)
+- `GET /checkin/photo/mine/:eventId` - Attendee photo requirement/status
+- `POST /checkin/photo/mine/:eventId/upload` - Request private signed photo upload
+- `POST /checkin/photo/mine/:eventId/complete` - Verify uploaded object metadata
+- `GET /checkin/photo/ticket/:token` - Five-minute signed photo read (event host only)
+- `POST /checkin/verify/:token` - Verify ticket; opted-in events require explicit host photo confirmation
 
 ### Stripe
 - `GET /stripe/onboarding` - Get onboarding link for the authenticated host
@@ -172,6 +189,29 @@ Application submit requires `acceptedCodeOfConduct: true`. Assign the `admin` ro
 - `GET /stripe/payment/:eventId` - Ticket payment status for the authenticated attendee
 - `POST /stripe/checkout/:eventId` - Start Checkout for an approved application (paid events)
 - `POST /stripe/webhook` - Stripe webhook handler (fails closed on bad/missing signature; handles `checkout.session.completed`)
+
+### Analytics
+- `GET /analytics/event/:eventId` - Aggregate funnel, revenue, and attendance (event host only)
+- `GET /analytics/host/summary` - Aggregate metrics across the authenticated host's events
+
+### Chat and feedback
+- `GET/POST /chat/event/:eventId` - Approved-attendee/host chat history and HTTP fallback
+- Socket.IO namespace `/chat` - Authenticated event rooms and live message broadcasts
+- `DELETE /chat/messages/:id` - Soft-delete a message (event host only)
+- `POST /feedback/event/:eventId` - Submit one post-event response
+- `GET /feedback/mine/:eventId` - Attendee submission status
+- `GET /feedback/event/:eventId` - Aggregate host feedback
+
+Socket.IO uses in-process rooms. Configure a Redis adapter before running more
+than one backend instance.
+
+### Identity verification
+- `GET /identity/status` - Current Persona configuration/decision status
+- `POST /identity/session` - Precreate or resume an embedded Persona inquiry
+- `POST /identity/persona/webhook` - Raw-body signed Persona decision webhook
+
+Events may require Persona approval before ticket issuance while still
+allowing attendees to apply first.
 
 ## Testing
 
@@ -202,8 +242,15 @@ See `.env.example` (root), `backend/.env.example`, and `frontend/.env.example`.
 - `RESEND_API_KEY` (optional; sends mail via Resend when set)
 - `EMAIL_FROM` (sender address for Resend; default Resend sandbox from)
 - `APP_BASE_URL` (links in password reset and application emails)
+- `S3_PHOTO_BUCKET`, `S3_REGION` (private attendee reference photos)
+- `S3_ENDPOINT`, `S3_FORCE_PATH_STYLE` (optional S3-compatible provider)
+- `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` (optional with workload identity)
+- `PERSONA_API_KEY`, `PERSONA_TEMPLATE_ID`, `PERSONA_ENVIRONMENT_ID`
+- `PERSONA_WEBHOOK_SECRET` (signature verification)
 
 Without `RESEND_API_KEY`, the backend captures outbound mail in memory (e2e) and logs in development.
+The private photo bucket must permit browser PUT requests from `APP_BASE_URL`;
+objects are never public and host reads use five-minute signed URLs.
 
 ### Database migrations
 
@@ -227,18 +274,39 @@ If local SQLite fails after upgrading from auto-sync, delete `backend/data/dev.s
 - `APP_BASE_URL` (default `http://localhost:3000`)
 - `NEXT_PUBLIC_API_BASE_URL` (default `http://localhost:3010`)
 
+### PWA / offline ticket
+
+Production builds generate a Serwist service worker. An approved attendee
+ticket that has been opened online is stored in IndexedDB and can be shown
+offline until one day after the event. Logout clears cached tickets. Host
+check-in and all authenticated mutations remain online-only.
+
 ### Stripe
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 
 ## Roadmap status
 
-**Shipped on `main` (refined PRD tasks 1–10):** local auth, attendee/host flows, Postgres migrations, email, security baseline, Stripe Checkout for paid events, trust (CoC, reports, export, account deletion).
+**Shipped:** refined PRD tasks 1–10 plus FIFO waitlist and persisted
+application decisions, privacy-safe host analytics, and an audited admin
+console. The Next 16 PWA keeps approved attendee QR tickets available offline;
+host verification remains online. Opted-in events can require private,
+host-confirmed reference photos with seven-day retention. Approved attendees
+and hosts have bounded real-time event chat plus optional-anonymous post-event
+feedback. Opted-in events can gate QR ticket issuance on Persona approval.
 
-**Deferred (see `.taskmaster/docs/backlog-2026.txt`):**
+Real sandbox inquiry/webhook/redaction requires vendor credentials and legal
+sign-off.
 
-- Identity verification (Persona/Onfido) — when product requires verified attendees
-- Chat, full admin console, host analytics dashboard, PWA/offline QR, waitlist, photo check-in
+Real S3 upload/read/delete remains an environment acceptance check because
+sandbox credentials were not provided.
+
+**Deferred:** Redis caching and Socket.IO adapter before horizontal backend
+scaling.
+
+`npm audit --omit=dev` reports zero production vulnerabilities. Serwist's
+build-time dependency tree currently reports two `browserslist` advisories;
+npm offers only a forced Serwist downgrade, so no forced audit fix is applied.
 
 ## License
 

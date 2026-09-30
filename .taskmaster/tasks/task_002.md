@@ -12,7 +12,7 @@
 
 **Details:**
 
-Current: SQLite + TypeORM synchronize:true. Tables: events, applications, application_forms, invites, checkin_tickets, stripe_accounts. No User table; Auth0 sub stored as text. Events have no hostId.
+Current: SQLite + TypeORM. Tables include users plus events, applications, application_forms, invites, checkin_tickets, stripe_accounts. User id (JWT sub) is the local user primary key, not an Auth0 subject. Events have hostId on the current main branch.
 
 Do not implement Alembic or SQLAlchemy.
 

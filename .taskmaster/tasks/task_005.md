@@ -16,7 +16,7 @@
 2. Create form components for collecting user information
 3. Implement consent preferences selection with clear explanations
 4. Create invite code validation logic
-5. Integrate with Auth0 and ID verification services
+5. Integrate with local auth (JWT) and ID verification services (Persona)
 6. Implement progress tracking and ability to resume onboarding
 7. Create backend API endpoints for storing onboarding data
 8. Implement email notifications for onboarding status updates
@@ -38,16 +38,16 @@ Design and implement the multi-step onboarding UI components in Next.js with pro
 
 Create a responsive multi-step form interface with progress indicators, form validation, and the ability to save progress and resume later. Implement UI components for each step of the onboarding flow including signup, ID verification, consent preferences, and invite code validation screens.
 
-### 5.2. Auth0 and ID Verification Integration
+### 5.2. Local auth and ID verification integration
 
 **Status:** pending  
 **Dependencies:** 5.1  
 
-Integrate Auth0 for authentication and Persona/Onfido for ID verification within the onboarding flow
+Use existing email/password JWT for signup; Persona for ID verification in onboarding
 
 **Details:**
 
-Configure Auth0 for user signup and authentication. Implement the ID verification flow using Persona/Onfido API, including capturing user documents, performing verification checks, and handling verification results. Create the necessary frontend components and backend endpoints to support the verification process.
+Do not add Auth0. Login/register already exist. Wire Persona/Onfido IDV into onboarding after the user has a local session.
 
 ### 5.3. Consent Management and Preferences
 

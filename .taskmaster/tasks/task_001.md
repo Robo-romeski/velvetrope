@@ -8,23 +8,23 @@
 
 **Priority:** high
 
-**Description:** Local NestJS + Next.js + Docker Compose are on main. Remaining: small GitHub Actions that use AUTH0_ISSUER, app-focused .env.example, port/CORS alignment. AWS EKS is deferred. Do not merge velvetrope PR #1.
+**Description:** ARCHIVED 2025 plan snapshot. Local NestJS + Next.js + Docker Compose shipped. CI uses AUTH_SECRET (not Auth0). AWS EKS is deferred. Do not merge velvetrope PR #1.
 
 **Details:**
 
-Shipped on main (https://github.com/Robo-romeski/velvetrope): Next.js 15 frontend, NestJS 11 backend, Docker Compose, Dockerfiles, GET /healthz.
+Shipped on main (https://github.com/Robo-romeski/velvetrope): Next.js 15 frontend, NestJS 11 backend, Docker Compose, Dockerfiles, GET /healthz, local email/password JWT.
 
-This is not FastAPI. AWS EKS/S3/CloudFront and Grafana/Loki/OTel are deferred.
+This is not FastAPI and not Auth0. AWS EKS/S3/CloudFront and Grafana/Loki/OTel are deferred.
 
-Remaining:
-- Close Automaton PR https://github.com/Robo-romeski/velvetrope/pull/1 without merging (duplicates scaffold, red CI, wrong env names, fake prod compose).
-- Add a small GitHub Actions workflow: backend unit + e2e with AUTH0_ISSUER set, frontend lint/build. Do not copy PR #1 GHCR deploy or docker-compose.prod.yml.
-- Replace root .env.example (Taskmaster AI keys) with Auth0/Stripe vars using AUTH0_ISSUER and NEXT_PUBLIC_API_BASE_URL.
-- Unify PORT defaults (3000 vs 3001 vs 3010) and CORS.
+Historical notes:
+- Close Automaton PR https://github.com/Robo-romeski/velvetrope/pull/1 without merging (duplicates scaffold, red CI, Auth0-era env names, fake prod compose).
+- CI: backend unit + e2e with AUTH_SECRET, frontend lint/build. Do not copy PR #1 GHCR deploy or docker-compose.prod.yml.
+- Root .env.example uses AUTH_SECRET and NEXT_PUBLIC_API_BASE_URL (not Auth0).
+- Unify PORT defaults (3010 to match Compose) and CORS.
 
 **Test Strategy:**
 
-CI on GitHub runs backend e2e with AUTH0_ISSUER and frontend build. docker-compose up still works. PR #1 is closed unmerged.
+CI on GitHub runs backend e2e with AUTH_SECRET and frontend build. docker-compose up still works. PR #1 is closed unmerged.
 
 ## Subtasks
 
@@ -146,7 +146,7 @@ Configure AWS EKS cluster, S3 buckets, and CloudFront distribution
 
 Create AWS EKS cluster with appropriate node groups, set up S3 buckets for static assets and user uploads, configure CloudFront distribution for content delivery, implement IAM roles and policies, set up VPC and networking components, and create Terraform or CloudFormation templates for infrastructure as code
 <info added on 2026-09-03T11:08:48Z>
-Deferred 3 Sep 2026 after velvetrope PR #1 review: do not provision AWS EKS/S3/CloudFront until the local MVP is honest (task 26: event ownership, Stripe bound to Auth0 sub, attendee tickets). PR #1 did not implement AWS and must not be merged as a substitute.
+Deferred 3 Sep 2026 after velvetrope PR #1 review: do not provision AWS EKS/S3/CloudFront until the local MVP is honest (task 26: event ownership, Stripe bound to authenticated user id, attendee tickets). PR #1 did not implement AWS and must not be merged as a substitute.
 </info>
 
 ### 1.5. GitHub Actions CI (match NestJS env)
@@ -154,7 +154,7 @@ Deferred 3 Sep 2026 after velvetrope PR #1 review: do not provision AWS EKS/S3/C
 **Status:** pending  
 **Dependencies:** None  
 
-Add a small CI workflow using AUTH0_ISSUER (not AUTH0_DOMAIN) and existing backend e2e + frontend lint/build. Close PR #1 instead of merging it.
+Add a small CI workflow using AUTH_SECRET and existing backend e2e + frontend lint/build. Close PR #1 instead of merging it.
 
 **Details:**
 
@@ -162,11 +162,11 @@ Configure GitHub Actions or similar CI/CD tool, implement automated testing in t
 <info added on 2026-09-03T11:08:48Z>
 ## Revised plan (3 Sep 2026, velvetrope PR #1)
 
-Do NOT merge https://github.com/Robo-romeski/velvetrope/pull/1. It re-scaffolds work already on main, sets AUTH0_DOMAIN instead of AUTH0_ISSUER (e2e 47/47 failed), docker-compose.prod.yml uses a nonexistent Docker `production` target, scripts/*.sh are Node files, docs/INFRASTRUCTURE.md is a JS stub.
+Do NOT merge https://github.com/Robo-romeski/velvetrope/pull/1. Historical: that PR still used Auth0 env names (AUTH0_DOMAIN vs AUTH0_ISSUER) and e2e 47/47 failed. docker-compose.prod.yml uses a nonexistent Docker `production` target, scripts/*.sh are Node files, docs/INFRASTRUCTURE.md is a JS stub.
 
-Implement instead:
+Implemented instead:
 1. Close PR #1.
-2. One workflow: backend `npm test` + `npm run test:e2e` with NODE_ENV=test, AUTH0_ISSUER, AUTH0_AUDIENCE; frontend lint + build with dummy Auth0 secrets matching the Next Auth0 SDK.
+2. One workflow: backend `npm test` + `npm run test:e2e` with NODE_ENV=test and AUTH_SECRET; frontend lint + build with dummy AUTH_SECRET for local JWT auth. Auth0 is not used.
 3. No GHCR deploy-on-push until tests are green and we have a real host.
 4. Either fix or temporarily scope existing ESLint unsafe-any so lint is not red on day one.
 
@@ -178,8 +178,8 @@ Observability (Grafana/Loki/OTel) stays out of this subtask.
 **Status:** pending  
 **Dependencies:** None  
 
-Replace root .env.example with Auth0/Stripe vars and unify PORT / NEXT_PUBLIC_API_BASE_URL / CORS.
+Replace root .env.example with AUTH_SECRET/Stripe vars and unify PORT / NEXT_PUBLIC_API_BASE_URL / CORS.
 
 **Details:**
 
-Root .env.example is Taskmaster AI keys. Backend AUTH0_ISSUER, PORT default 3000; frontend/lib/api.ts falls back to localhost:3001; Docker uses 3010. CORS allows only localhost:3000. README mentions missing .env.docker. Prefer one local default (3010 to match Compose). Commit an app .env.example using AUTH0_ISSUER and NEXT_PUBLIC_API_BASE_URL.
+Root .env.example must be app secrets, not Taskmaster AI keys. Use AUTH_SECRET (32+ chars), PORT 3010 to match Compose, NEXT_PUBLIC_API_BASE_URL, Stripe optional. Auth0 vars are not used.

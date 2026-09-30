@@ -77,9 +77,7 @@ export class InvitesService {
     throw new BadRequestException('Failed to generate unique code');
   }
 
-  async validate(
-    code: string,
-  ): Promise<{
+  async validate(code: string): Promise<{
     valid: boolean;
     eventId?: string;
     used?: boolean;

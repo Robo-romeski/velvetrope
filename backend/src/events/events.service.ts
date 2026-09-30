@@ -18,6 +18,7 @@ export interface EventItem {
   status: EventEntity['status'];
   ticketPriceCents: number;
   requirePhotoCheckin: boolean;
+  requireIdentityVerification: boolean;
 }
 
 export type HostEventItem = EventItem & {
@@ -90,11 +91,16 @@ export class EventsService {
   async create(
     data: Omit<
       EventItem,
-      'id' | 'status' | 'ticketPriceCents' | 'requirePhotoCheckin'
+      | 'id'
+      | 'status'
+      | 'ticketPriceCents'
+      | 'requirePhotoCheckin'
+      | 'requireIdentityVerification'
     > & {
       status?: EventItem['status'];
       ticketPriceCents?: number;
       requirePhotoCheckin?: boolean;
+      requireIdentityVerification?: boolean;
     },
   ): Promise<EventItem> {
     const ticketPriceCents = Math.max(
@@ -105,6 +111,7 @@ export class EventsService {
       ...data,
       ticketPriceCents,
       requirePhotoCheckin: data.requirePhotoCheckin ?? false,
+      requireIdentityVerification: data.requireIdentityVerification ?? false,
       status: data.status ?? 'draft',
     } as Partial<EventEntity>);
     const saved = await this.repo.save(entity);

@@ -13,6 +13,7 @@ import { AdminAuditEntity } from '../admin/admin-audit.entity';
 import { CheckinModule } from '../checkin/checkin.module';
 import { ChatMessageEntity } from '../chat/chat-message.entity';
 import { EventFeedbackEntity } from '../feedback/event-feedback.entity';
+import { IdentityModule } from '../identity/identity.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { EventFeedbackEntity } from '../feedback/event-feedback.entity';
       EventFeedbackEntity,
     ]),
     CheckinModule,
+    IdentityModule,
   ],
   controllers: [TrustController],
   providers: [TrustService],

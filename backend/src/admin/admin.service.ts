@@ -4,11 +4,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { AdminAuditEntity } from './admin-audit.entity';
 import { UserEntity, AccountStatus } from '../auth/user.entity';
 import { EventEntity } from '../events/event.entity';
 import { TrustReportEntity } from '../trust/report.entity';
+import {
+  IdentityVerificationEntity,
+  IdentityVerificationStatus,
+} from '../identity/identity-verification.entity';
 
 const ALLOWED_ROLES = new Set(['attendee', 'host', 'admin']);
 
@@ -23,6 +27,8 @@ export class AdminService {
     private readonly reports: Repository<TrustReportEntity>,
     @InjectRepository(AdminAuditEntity)
     private readonly audit: Repository<AdminAuditEntity>,
+    @InjectRepository(IdentityVerificationEntity)
+    private readonly identity: Repository<IdentityVerificationEntity>,
   ) {}
 
   async summary(): Promise<{
@@ -57,6 +63,7 @@ export class AdminService {
       accountStatus: AccountStatus;
       suspendedAt: string | null;
       suspensionReason: string | null;
+      identityStatus: IdentityVerificationStatus;
     }>;
     total: number;
     page: number;
@@ -83,6 +90,15 @@ export class AdminService {
       .skip((page - 1) * pageSize)
       .take(pageSize)
       .getManyAndCount();
+    const identityRows =
+      users.length === 0
+        ? []
+        : await this.identity.find({
+            where: { userSub: In(users.map((user) => user.id)) },
+          });
+    const identityByUser = new Map(
+      identityRows.map((item) => [item.userSub, item.status]),
+    );
 
     return {
       items: users.map((user) => ({
@@ -93,6 +109,7 @@ export class AdminService {
         accountStatus: user.accountStatus,
         suspendedAt: user.suspendedAt?.toISOString() ?? null,
         suspensionReason: user.suspensionReason ?? null,
+        identityStatus: identityByUser.get(user.id) ?? 'not_started',
       })),
       total,
       page,

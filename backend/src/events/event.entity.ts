@@ -29,4 +29,7 @@ export class EventEntity {
 
   @Column({ type: 'boolean', default: false })
   requirePhotoCheckin!: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  requireIdentityVerification!: boolean;
 }

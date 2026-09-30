@@ -19,6 +19,7 @@ import { ApplicationsService } from '../applications/applications.service';
 import { getAuthUser } from '../auth/request-user';
 import { StripePaymentsService } from '../stripe/stripe-payments.service';
 import { PhotoCheckinService } from './photo-checkin.service';
+import { PersonaService } from '../identity/persona.service';
 
 @Controller('checkin')
 export class CheckinController {
@@ -28,6 +29,7 @@ export class CheckinController {
     private readonly apps: ApplicationsService,
     private readonly payments: StripePaymentsService,
     private readonly photos: PhotoCheckinService,
+    private readonly persona: PersonaService,
   ) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -52,6 +54,10 @@ export class CheckinController {
     if (!approved)
       throw new ForbiddenException('No approved application for this event');
     await this.payments.assertPaidIfRequired(eventId, sub);
+    const event = await this.events.get(eventId);
+    if (event.requireIdentityVerification) {
+      await this.persona.assertApproved(sub);
+    }
     return await this.svc.issue(eventId, sub);
   }
 

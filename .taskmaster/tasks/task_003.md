@@ -8,17 +8,15 @@
 
 **Priority:** high
 
-**Description:** Auth0 login (Next.js SDK v4), JWT verification on Nest via jose JWKS, host/attendee roles. API RBAC shipped. Frontend /host pages are not route-guarded.
+**Description:** ARCHIVED 2025 wording. Implemented as local email/password + JWT (AUTH_SECRET / HS256), host/attendee roles on UserEntity. Auth0 was not used.
 
 **Details:**
 
-1. Set up Auth0 tenant and configure application settings
-2. Implement login, signup, and logout flows in Next.js frontend
-3. Create protected routes and authentication middleware in FastAPI
-4. Implement JWT validation and user session management
-5. Set up role-based access control (host vs. attendee)
-6. Configure secure cookie handling and CSRF protection
-7. Implement password reset and email verification flows
+1. User entity with email/password (scrypt) and roles
+2. Login, register, logout, and session cookie in Next.js
+3. JwtAuthGuard on Nest using AUTH_SECRET (not Auth0 JWKS)
+4. Role-based access control (host vs attendee)
+5. Password reset is a first-party Nest flow (see master task 6), not Auth0 hosted email
 
 **Test Strategy:**
 
@@ -26,16 +24,16 @@ Test authentication flows with mock users. Verify that protected routes require 
 
 ## Subtasks
 
-### 3.1. Auth0 Configuration and Setup
+### 3.1. Local auth configuration
 
 **Status:** done  
 **Dependencies:** None  
 
-Set up Auth0 tenant and configure application settings for both frontend and backend integration
+AUTH_SECRET, JWT issuer/audience, User entity for frontend and backend
 
 **Details:**
 
-Create Auth0 tenant, register the application, configure callback URLs, logout URLs, and allowed web origins. Set up the necessary Auth0 rules, actions, and APIs. Generate and securely store client credentials for both development and production environments.
+Use AUTH_SECRET (32+ chars) to sign HS256 JWTs. No Auth0 tenant, callbacks, or JWKS. Store credentials in .env examples only.
 
 ### 3.2. Frontend Authentication Implementation
 
@@ -46,18 +44,18 @@ Implement login, signup, and logout flows in the Next.js frontend application
 
 **Details:**
 
-Integrate Auth0 SDK with Next.js. Create authentication context provider for global state management. Implement login, signup, and logout UI components. Add social login options. Create protected route wrappers that redirect unauthenticated users.
+Local login/register pages and session cookie (frontend/lib/auth.tsx). No Auth0 SDK. Protected route wrappers redirect unauthenticated users.
 
 ### 3.3. Backend Authentication Middleware
 
 **Status:** done  
 **Dependencies:** 3.1  
 
-Create protected routes and authentication middleware in FastAPI backend
+Create protected routes and JWT guard in the NestJS backend
 
 **Details:**
 
-Implement JWT validation middleware in FastAPI. Create authentication dependency for protected routes. Set up user session management. Configure secure cookie handling and CSRF protection. Implement token refresh mechanism.
+JwtAuthGuard verifies AUTH_SECRET HS256 tokens. Attach user id and roles from UserEntity. No FastAPI and no Auth0 JWKS.
 
 ### 3.4. Role-Based Access Control
 
@@ -68,18 +66,18 @@ Implement role-based access control system for different user types (host vs. at
 
 **Details:**
 
-Configure Auth0 roles and permissions. Implement role assignment during user registration. Create role-based middleware for frontend and backend. Implement UI conditional rendering based on user roles. Add role management in user settings.
+JwtAuthGuard verifies HS256 JWTs with AUTH_SECRET. Roles live on UserEntity, not a third-party IdP. Frontend and backend both gate host vs attendee.
 
 ### 3.5. Password Reset and Email Verification
 
 **Status:** cancelled  
 **Dependencies:** 3.1, 3.2, 3.3  
 
-Implement password reset and email verification flows using Auth0 capabilities
+Password reset and email verification as first-party Nest/Next flows (not Auth0)
 
 **Details:**
 
-Configure Auth0 email templates for verification and password reset. Implement password reset request UI and flow. Create email verification UI components. Add email verification status check. Implement re-send verification email functionality.
+Auth0-hosted password reset was cancelled. Local forgot-password / reset-password shipped later under master auth security. Email verification remains optional.
 <info added on 2026-09-03T11:08:48Z>
-Cancelled: Auth0 hosted password reset and email verification; not a custom Nest feature.
+Cancelled as an Auth0 feature. Do not add Auth0 email templates.
 </info>

@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { API_BASE } from '@/lib/api';
+import { API_SERVER_BASE } from '@/lib/server-api';
 
 async function loadCodeOfConduct() {
-  const res = await fetch(`${API_BASE}/trust/code-of-conduct`, {
+  const res = await fetch(`${API_SERVER_BASE}/trust/code-of-conduct`, {
     cache: 'no-store',
   });
   if (!res.ok) {

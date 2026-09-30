@@ -1,0 +1,51 @@
+VelvetKey — Persona Identity Verification
+=========================================
+
+Goal
+----
+Allow hosts to require a Persona-approved identity before an already-approved
+attendee receives a QR ticket. Applications remain open before verification.
+
+Requirements
+------------
+1. Backend pre-creates Persona inquiries with user ID as reference ID; API key
+   never reaches the browser.
+2. Reuse pending inquiries through `/inquiries/:id/resume` and return only the
+   inquiry ID, short-lived session token, and environment ID.
+3. Frontend embeds the official Persona SDK with the server-provided inquiry
+   and session token.
+4. Store only inquiry ID, provider status, and decision timestamps—never
+   identity documents or Persona fields.
+5. Verify `Persona-Signature` with HMAC-SHA256 over `timestamp.rawBody`,
+   support rotating signatures, and reject timestamps outside five minutes.
+6. Process webhook event IDs idempotently and ignore older updates.
+7. Per-event opt-in gates ticket issuance only; application submission remains
+   unchanged.
+8. Admin user search shows verification status.
+9. Privacy export includes status metadata; account deletion redacts the
+   Persona inquiry before deleting local metadata.
+10. Missing provider configuration returns a clear unavailable state.
+
+Configuration
+-------------
+- PERSONA_API_KEY
+- PERSONA_TEMPLATE_ID
+- PERSONA_ENVIRONMENT_ID
+- PERSONA_WEBHOOK_SECRET
+
+Verification
+------------
+- E2E uses test inquiry/session tokens and signed webhook payloads.
+- Ticket issuance fails before approval and succeeds after an idempotent
+  `inquiry.approved` webhook.
+- Invalid/stale signatures fail closed.
+- Backend/frontend lint, typecheck, builds, and production audits.
+- SQLite/Postgres migration apply/revert.
+- Real Persona sandbox inquiry/webhook/redaction remains an environment
+  acceptance check until credentials and dashboard webhook are configured.
+
+Out of scope
+------------
+- Blocking application submission.
+- Storing Persona documents, extracted PII, or biometric data.
+- Supporting multiple IDV vendors in this slice.

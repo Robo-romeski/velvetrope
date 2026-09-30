@@ -25,6 +25,7 @@ export function AppNav() {
         {!loading && user && <Link href="/applications">My applications</Link>}
         <Link href="/trust/code-of-conduct">Conduct</Link>
         {!loading && user && <Link href="/trust/report">Report</Link>}
+        {!loading && user && <Link href="/identity/verify">Verify</Link>}
         {!loading && user?.roles?.includes('admin') && (
           <Link href="/admin">Admin</Link>
         )}

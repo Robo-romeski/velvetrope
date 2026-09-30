@@ -1,8 +1,8 @@
-import { API_BASE } from '@/lib/api';
+import { API_SERVER_BASE } from '@/lib/server-api';
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const res = await fetch(`${API_BASE}/auth/reset-password`, {
+  const res = await fetch(`${API_SERVER_BASE}/auth/reset-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

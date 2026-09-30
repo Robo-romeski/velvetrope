@@ -23,6 +23,7 @@ interface CreateEventDto {
   capacity: number;
   ticketPriceCents?: number;
   requirePhotoCheckin?: boolean;
+  requireIdentityVerification?: boolean;
 }
 
 @Controller('events')

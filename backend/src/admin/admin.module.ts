@@ -6,6 +6,7 @@ import { AdminService } from './admin.service';
 import { UserEntity } from '../auth/user.entity';
 import { EventEntity } from '../events/event.entity';
 import { TrustReportEntity } from '../trust/report.entity';
+import { IdentityVerificationEntity } from '../identity/identity-verification.entity';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { TrustReportEntity } from '../trust/report.entity';
       EventEntity,
       TrustReportEntity,
       AdminAuditEntity,
+      IdentityVerificationEntity,
     ]),
   ],
   controllers: [AdminController],

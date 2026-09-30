@@ -23,6 +23,7 @@ import { AdminAuditEntity } from '../admin/admin-audit.entity';
 import { PhotoCheckinService } from '../checkin/photo-checkin.service';
 import { ChatMessageEntity } from '../chat/chat-message.entity';
 import { EventFeedbackEntity } from '../feedback/event-feedback.entity';
+import { PersonaService } from '../identity/persona.service';
 
 const REPORT_CATEGORIES: ReportCategory[] = [
   'harassment',
@@ -55,6 +56,7 @@ export class TrustService {
     @InjectRepository(EventFeedbackEntity)
     private readonly feedback: Repository<EventFeedbackEntity>,
     private readonly photoCheckin: PhotoCheckinService,
+    private readonly persona: PersonaService,
     private readonly email: EmailService,
   ) {}
 
@@ -196,6 +198,12 @@ export class TrustService {
       anonymous: boolean;
       createdAt: string;
     }>;
+    identityVerification: {
+      provider: string;
+      status: string;
+      verifiedAt: string | null;
+      updatedAt: string;
+    } | null;
   }> {
     const user = await this.users.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
@@ -215,6 +223,7 @@ export class TrustService {
         order: { createdAt: 'DESC' },
       }),
     ]);
+    const identity = await this.persona.listForUser(userId);
 
     return {
       exportedAt: new Date().toISOString(),
@@ -254,6 +263,14 @@ export class TrustService {
         anonymous: item.anonymous,
         createdAt: item.createdAt.toISOString(),
       })),
+      identityVerification: identity
+        ? {
+            provider: identity.provider,
+            status: identity.status,
+            verifiedAt: identity.verifiedAt?.toISOString() ?? null,
+            updatedAt: identity.updatedAt.toISOString(),
+          }
+        : null,
     };
   }
 
@@ -271,6 +288,7 @@ export class TrustService {
       );
     }
 
+    await this.persona.redactAndDeleteForUser(userId);
     await this.applications.delete({ applicantSub: userId });
     await this.tickets.delete({ userSub: userId });
     await this.payments.delete({ userSub: userId });

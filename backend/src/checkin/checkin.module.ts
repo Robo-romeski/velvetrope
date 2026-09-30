@@ -9,6 +9,7 @@ import { StripeModule } from '../stripe/stripe.module';
 import { CheckinPhotoEntity } from './checkin-photo.entity';
 import { PhotoCheckinService } from './photo-checkin.service';
 import { PhotoStorageService } from './photo-storage.service';
+import { IdentityModule } from '../identity/identity.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { PhotoStorageService } from './photo-storage.service';
     EventsModule,
     ApplicationsModule,
     StripeModule,
+    IdentityModule,
   ],
   controllers: [CheckinController],
   providers: [CheckinService, PhotoCheckinService, PhotoStorageService],

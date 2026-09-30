@@ -30,8 +30,8 @@
 			"taskTitle": "Authentication System Integration",
 			"complexityScore": 7,
 			"recommendedSubtasks": 4,
-			"expansionPrompt": "Break down the Auth0 integration into detailed subtasks covering: 1) Auth0 tenant configuration and API setup, 2) Frontend authentication flows and protected routes, 3) Backend JWT validation and session management, and 4) Role-based access control implementation.",
-			"reasoning": "Authentication is a critical security component requiring careful implementation. The task involves third-party integration with Auth0, secure token handling, and implementing proper authorization across both frontend and backend. Security best practices must be followed throughout."
+			"expansionPrompt": "Break down local authentication into detailed subtasks covering: 1) email/password register and login, 2) frontend session cookie and protected routes, 3) backend JWT validation with AUTH_SECRET, and 4) role-based access control (host vs attendee). Do not use Auth0.",
+			"reasoning": "Authentication is a critical security component. The product uses first-party email/password and HS256 JWTs signed with AUTH_SECRET, plus RBAC across frontend and backend. Auth0 is out of scope."
 		},
 		{
 			"taskId": 4,

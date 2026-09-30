@@ -60,7 +60,7 @@ describe('Stripe (e2e)', () => {
       .expect(400);
   });
 
-  it('paid event requires checkout before ticket; fulfill is idempotent', async () => {
+  it('paid event requires checkout before ticket; confirmation is idempotent', async () => {
     await request(app.getHttpServer())
       .get('/stripe/onboarding')
       .set(hostAuth('host-paid'))
@@ -119,12 +119,20 @@ describe('Stripe (e2e)', () => {
     expect(sessionId).toMatch(/^cs_test_/);
 
     await request(app.getHttpServer())
-      .post('/stripe/test/fulfill-checkout')
+      .post(`/stripe/checkout/${event.id}/confirm`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ sessionId: 'cs_test_unknown' })
+      .expect(403);
+
+    await request(app.getHttpServer())
+      .post(`/stripe/checkout/${event.id}/confirm`)
+      .set('Authorization', `Bearer ${token}`)
       .send({ sessionId })
       .expect(201);
 
     await request(app.getHttpServer())
-      .post('/stripe/test/fulfill-checkout')
+      .post(`/stripe/checkout/${event.id}/confirm`)
+      .set('Authorization', `Bearer ${token}`)
       .send({ sessionId })
       .expect(201);
 

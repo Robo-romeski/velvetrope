@@ -23,6 +23,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { AdminModule } from './admin/admin.module';
 import { ChatModule } from './chat/chat.module';
 import { FeedbackModule } from './feedback/feedback.module';
+import { IdentityModule } from './identity/identity.module';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -61,6 +62,7 @@ const isTest = process.env.NODE_ENV === 'test';
     AdminModule,
     ChatModule,
     FeedbackModule,
+    IdentityModule,
   ],
   controllers: [AppController, HealthController, HostController],
   providers: [AppService, RolesGuard],

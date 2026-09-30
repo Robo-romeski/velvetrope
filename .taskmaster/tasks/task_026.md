@@ -15,13 +15,13 @@
 From the Sep 2026 repo investigation and velvetrope PR #1 review.
 
 Priority order:
-1. Add hostId (Auth0 sub) to EventEntity; enforce ownership on every host mutation.
+1. Add hostId (authenticated user id) to EventEntity; enforce ownership on every host mutation.
 2. Bind Stripe Connect accounts to the authenticated host; drop host-dev-123.
 3. Let approved attendees fetch their own check-in token; stop calling host-only issue from the ticket page.
 4. Generate invite codes and check-in tokens with crypto.randomBytes.
 5. Stripe webhook must not return HTTP 200 when signature verification fails.
 
-Out of scope: merge PR #1, AWS EKS, Grafana, guest Checkout (still 9.3).
+Out of scope: merge PR #1, AWS EKS, Grafana, guest Checkout (still 9.3), Auth0.
 
 **Test Strategy:**
 
@@ -38,9 +38,9 @@ Add hostId to events and enforce it on all host mutations.
 
 **Details:**
 
-EventEntity has no hostId. Any host can mutate any event. Store Auth0 sub on create; ownership check on PATCH/DELETE/publish/cancel, application review, invite generate, check-in issue.
+EventEntity has no hostId. Any host can mutate any event. Store authenticated user id on create; ownership check on PATCH/DELETE/publish/cancel, application review, invite generate, check-in issue.
 
-### 26.2. Bind Stripe Connect to Auth0 sub
+### 26.2. Bind Stripe Connect to authenticated user id
 
 **Status:** pending  
 **Dependencies:** 26.1  

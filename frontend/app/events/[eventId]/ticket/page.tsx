@@ -37,6 +37,9 @@ export default function EventTicketPage() {
   const [availableOffline, setAvailableOffline] = useState(false);
   const [photoStatus, setPhotoStatus] = useState<PhotoStatus | null>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [identityRequired, setIdentityRequired] = useState(false);
+  const [identityConfigured, setIdentityConfigured] = useState(true);
+  const [identityStatus, setIdentityStatus] = useState('not_started');
 
   const loadTicket = async () => {
     if (!eventId) return;
@@ -55,15 +58,43 @@ export default function EventTicketPage() {
     try {
       let resolvedTitle = cached?.eventTitle ?? null;
       let resolvedEventDate = cached?.eventDate ?? null;
+      let requiresIdentity = false;
       try {
         const ev = await apiGet(`/events/${encodeURIComponent(eventId)}`);
         resolvedTitle = ev?.title ?? null;
         resolvedEventDate = ev?.date ?? null;
         setTitle(resolvedTitle);
         setEventDate(resolvedEventDate);
+        requiresIdentity = ev?.requireIdentityVerification === true;
         if (ev?.status && ev.status !== 'published') return;
       } catch {
         // Ticket fetch still tries; event title is optional.
+      }
+
+      if (requiresIdentity) {
+        const identity = await apiGetAuth('/identity/status');
+        setIdentityConfigured(identity.configured !== false);
+        setIdentityStatus(identity.status ?? 'not_started');
+        if (identity.status !== 'approved') {
+          setIdentityRequired(true);
+          setToken(null);
+          return;
+        }
+      }
+      setIdentityRequired(false);
+
+      if (typeof window !== 'undefined') {
+        const returnUrl = new URL(window.location.href);
+        const sessionId = returnUrl.searchParams.get('session_id');
+        if (returnUrl.searchParams.get('paid') === '1' && sessionId) {
+          await apiPostAuth(
+            `/stripe/checkout/${encodeURIComponent(eventId)}/confirm`,
+            { sessionId },
+          );
+          returnUrl.searchParams.delete('paid');
+          returnUrl.searchParams.delete('session_id');
+          window.history.replaceState(null, '', returnUrl);
+        }
       }
 
       const payment = await apiGetAuth(
@@ -269,6 +300,29 @@ export default function EventTicketPage() {
           >
             {paying ? 'Redirecting…' : 'Pay with Stripe'}
           </button>
+        </div>
+      )}
+      {identityRequired && !token && (
+        <div className="text-sm space-y-3 border rounded p-4">
+          <p>
+            This event requires approved Persona identity verification before
+            your QR ticket can be issued.
+          </p>
+          <p className="text-gray-600 dark:text-gray-400 capitalize">
+            Current status: {identityStatus.replaceAll('_', ' ')}
+          </p>
+          {identityConfigured ? (
+            <Link
+              href="/identity/verify"
+              className="inline-block px-4 py-2 bg-blue-600 text-white rounded"
+            >
+              Verify identity
+            </Link>
+          ) : (
+            <p className="text-amber-700 dark:text-amber-400">
+              Persona is not configured on this deployment. Contact the host.
+            </p>
+          )}
         </div>
       )}
       {error && (

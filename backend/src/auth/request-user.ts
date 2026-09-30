@@ -3,6 +3,7 @@ import { UnauthorizedException } from '@nestjs/common';
 export type AuthUser = {
   sub: string;
   roles: string[];
+  email?: string;
 };
 
 export function getAuthUser(req: unknown): AuthUser {
@@ -11,5 +12,5 @@ export function getAuthUser(req: unknown): AuthUser {
   if (!sub) {
     throw new UnauthorizedException();
   }
-  return { sub, roles: user?.roles ?? [] };
+  return { sub, roles: user?.roles ?? [], email: user?.email };
 }

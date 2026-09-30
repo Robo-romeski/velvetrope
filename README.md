@@ -205,6 +205,14 @@ Subsequent role changes are available at `/admin/users`.
 Socket.IO uses in-process rooms. Configure a Redis adapter before running more
 than one backend instance.
 
+### Identity verification
+- `GET /identity/status` - Current Persona configuration/decision status
+- `POST /identity/session` - Precreate or resume an embedded Persona inquiry
+- `POST /identity/persona/webhook` - Raw-body signed Persona decision webhook
+
+Events may require Persona approval before ticket issuance while still
+allowing attendees to apply first.
+
 ## Testing
 
 ### Backend E2E Tests
@@ -237,6 +245,8 @@ See `.env.example` (root), `backend/.env.example`, and `frontend/.env.example`.
 - `S3_PHOTO_BUCKET`, `S3_REGION` (private attendee reference photos)
 - `S3_ENDPOINT`, `S3_FORCE_PATH_STYLE` (optional S3-compatible provider)
 - `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` (optional with workload identity)
+- `PERSONA_API_KEY`, `PERSONA_TEMPLATE_ID`, `PERSONA_ENVIRONMENT_ID`
+- `PERSONA_WEBHOOK_SECRET` (signature verification)
 
 Without `RESEND_API_KEY`, the backend captures outbound mail in memory (e2e) and logs in development.
 The private photo bucket must permit browser PUT requests from `APP_BASE_URL`;
@@ -283,14 +293,16 @@ console. The Next 16 PWA keeps approved attendee QR tickets available offline;
 host verification remains online. Opted-in events can require private,
 host-confirmed reference photos with seven-day retention. Approved attendees
 and hosts have bounded real-time event chat plus optional-anonymous post-event
-feedback.
+feedback. Opted-in events can gate QR ticket issuance on Persona approval.
 
-**Deferred (see `.taskmaster/docs/backlog-2026.txt`):**
-
-- Identity verification (Persona) — requires vendor credentials and legal sign-off
+Real sandbox inquiry/webhook/redaction requires vendor credentials and legal
+sign-off.
 
 Real S3 upload/read/delete remains an environment acceptance check because
 sandbox credentials were not provided.
+
+**Deferred:** Redis caching and Socket.IO adapter before horizontal backend
+scaling.
 
 `npm audit --omit=dev` reports zero production vulnerabilities. Serwist's
 build-time dependency tree currently reports two `browserslist` advisories;

@@ -18,4 +18,8 @@ export function configureHttpApp(app: INestApplication): void {
     ],
   });
   app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
+  app.use(
+    '/identity/persona/webhook',
+    express.raw({ type: 'application/json' }),
+  );
 }

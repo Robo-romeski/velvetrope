@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { API_BASE } from '@/lib/api';
+import { API_SERVER_BASE } from '@/lib/server-api';
 import { ACCESS_TOKEN_COOKIE } from '@/lib/session';
 
 export async function GET() {
@@ -8,7 +8,7 @@ export async function GET() {
   if (!token) {
     return new Response('Unauthorized', { status: 401 });
   }
-  const res = await fetch(`${API_BASE}/auth/me`, {
+  const res = await fetch(`${API_SERVER_BASE}/auth/me`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });

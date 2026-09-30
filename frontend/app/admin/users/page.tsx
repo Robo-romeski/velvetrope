@@ -11,6 +11,13 @@ type AdminUser = {
   accountStatus: 'active' | 'suspended';
   suspendedAt: string | null;
   suspensionReason: string | null;
+  identityStatus:
+    | 'not_started'
+    | 'pending'
+    | 'needs_review'
+    | 'approved'
+    | 'failed'
+    | 'expired';
 };
 
 type UserPage = {
@@ -112,6 +119,9 @@ export default function AdminUsersPage() {
                 <div className="font-medium">{user.email}</div>
                 <div className="text-xs text-gray-500">
                   {user.name || 'No name'} · {user.roles.join(', ')}
+                </div>
+                <div className="text-xs text-gray-500">
+                  Identity: {user.identityStatus.replaceAll('_', ' ')}
                 </div>
               </div>
               <span

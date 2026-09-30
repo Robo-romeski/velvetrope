@@ -39,7 +39,7 @@ PHASE 1 — Complete the local MVP loop (priority: high, no external vendors req
 
 4. Taskmaster & docs hygiene
    - README and .env examples stay aligned with AUTH_SECRET and local auth
-   - Remove or archive stale Auth0/FastAPI references in docs
+   - Done 28 Sep 2026: 2025 PRD archived; Taskmaster Auth0 copy rewritten to local JWT. Auth0 remains out of scope for primary login.
 
 ================================================================================
 PHASE 2 — Production readiness (priority: high before public deploy)

@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { apiGetAuth } from '@/lib/api';
-import Link from 'next/link';
+import {
+  Alert,
+  ButtonLink,
+  Card,
+  LoadingState,
+  PageHeader,
+  PageShell,
+} from '@/app/components/ui';
 
 export default function StripeReturnPage() {
   const [status, setStatus] = useState<{ connected: boolean; accountId?: string } | null>(null);
@@ -25,19 +32,29 @@ export default function StripeReturnPage() {
   }, []);
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Stripe Onboarding Return</h1>
+    <PageShell size="narrow" className="space-y-7">
+      <PageHeader
+        eyebrow="Host payments"
+        title="Stripe account status"
+        description="We are checking the latest connection status from Stripe."
+      />
+      <Card className="space-y-5">
       {loading ? (
-        <div className="text-sm text-gray-600">Checking status…</div>
+          <LoadingState label="Checking Stripe status…" />
       ) : (
-        <div className="text-sm">
-          Status: {status?.connected ? 'Connected' : 'Not connected'}
-          {status?.accountId ? ` (acct: ${status.accountId})` : ''}
-        </div>
+          <Alert
+            tone={status?.connected ? 'success' : 'warning'}
+            title={status?.connected ? 'Stripe connected' : 'Setup incomplete'}
+          >
+            {status?.accountId
+              ? `Account ${status.accountId}`
+              : 'Return to payment settings to continue onboarding.'}
+          </Alert>
       )}
-      <Link className="text-blue-600 underline" href="/host/stripe">
-        Back to Stripe settings
-      </Link>
-    </div>
+        <ButtonLink href="/host/stripe" variant="secondary">
+          Back to payment settings
+        </ButtonLink>
+      </Card>
+    </PageShell>
   );
 }

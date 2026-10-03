@@ -2,10 +2,21 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { apiPostAuth } from '@/lib/api';
+import { apiPostAuth, isUnauthorized } from '@/lib/api';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { useAuth } from '@/lib/auth';
+import {
+  Alert,
+  Button,
+  ButtonLink,
+  Card,
+  FormField,
+  Input,
+  LoadingState,
+  PageHeader,
+  PageShell,
+  Textarea,
+} from '@/app/components/ui';
 
 export default function NewHostEventPage() {
   const { user, loading: authLoading } = useAuth();
@@ -32,7 +43,7 @@ export default function NewHostEventPage() {
       return created;
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Create failed';
-      if (message.includes('401') || message === 'Unauthorized') {
+      if (isUnauthorized(e)) {
         setError('Log in as a host to create events.');
       } else {
         setError(message);
@@ -44,9 +55,9 @@ export default function NewHostEventPage() {
 
   if (authLoading) {
     return (
-      <div className="max-w-xl mx-auto p-6">
-        <div className="text-sm">Loading…</div>
-      </div>
+      <PageShell size="narrow">
+        <LoadingState />
+      </PageShell>
     );
   }
 
@@ -55,62 +66,69 @@ export default function NewHostEventPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">New event</h1>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <label className="block text-sm space-y-1">
-          <span>Title</span>
-          <input
-            required
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full border rounded px-3 py-2 bg-transparent"
-          />
-        </label>
-        <label className="block text-sm space-y-1">
-          <span>Description</span>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full border rounded px-3 py-2 bg-transparent"
-            rows={3}
-          />
-        </label>
-        <label className="block text-sm space-y-1">
-          <span>Date</span>
-          <input
-            required
-            type="datetime-local"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full border rounded px-3 py-2 bg-transparent"
-          />
-        </label>
-        <label className="block text-sm space-y-1">
-          <span>Capacity</span>
-          <input
-            required
-            type="number"
-            min={1}
-            value={capacity}
-            onChange={(e) => setCapacity(Number(e.target.value))}
-            className="w-full border rounded px-3 py-2 bg-transparent"
-          />
-        </label>
-        {error && <div className="text-sm text-red-600">{error}</div>}
-        <div className="flex items-center gap-3">
-          <button
+    <PageShell size="narrow" className="space-y-7">
+      <PageHeader
+        eyebrow="Host workspace"
+        title="Create an event"
+        description="Start with the essentials. You can refine the guest form, invites, and ticket settings next."
+      />
+      <Card className="p-6 sm:p-8">
+        <form onSubmit={onSubmit} className="space-y-5">
+          <FormField label="Title" htmlFor="new-event-title">
+            <Input
+              id="new-event-title"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </FormField>
+          <FormField label="Description" htmlFor="new-event-description">
+            <Textarea
+              id="new-event-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+            />
+          </FormField>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <FormField label="Date and time" htmlFor="new-event-date">
+              <Input
+                id="new-event-date"
+                required
+                type="datetime-local"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </FormField>
+            <FormField label="Capacity" htmlFor="new-event-capacity">
+              <Input
+                id="new-event-capacity"
+                required
+                type="number"
+                min={1}
+                value={capacity}
+                onChange={(e) => setCapacity(Number(e.target.value))}
+              />
+            </FormField>
+          </div>
+          {error && (
+            <Alert tone="danger" role="alert">
+              {error}
+            </Alert>
+          )}
+          <div className="flex flex-col-reverse gap-3 sm:flex-row">
+            <ButtonLink href="/host/events" variant="secondary">
+              Cancel
+            </ButtonLink>
+            <Button
             type="submit"
             disabled={saving}
-            className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-          >
-            {saving ? 'Saving…' : 'Create draft'}
-          </button>
-          <Link href="/host/events" className="text-sm underline">
-            Cancel
-          </Link>
-        </div>
-      </form>
-    </div>
+            >
+              {saving ? 'Saving…' : 'Create draft'}
+            </Button>
+          </div>
+        </form>
+      </Card>
+    </PageShell>
   );
 }

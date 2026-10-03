@@ -1,9 +1,18 @@
 'use client';
 
 import { FormEvent, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import {
+  Alert,
+  Button,
+  Card,
+  FormField,
+  Input,
+  PageHeader,
+  PageShell,
+  TextLink,
+} from '@/app/components/ui';
 
 function apiError(data: unknown, fallback: string) {
   if (data && typeof data === 'object' && 'message' in data) {
@@ -16,7 +25,7 @@ function apiError(data: unknown, fallback: string) {
 
 function safeNext(value: string | null) {
   if (!value || !value.startsWith('/') || value.startsWith('//')) {
-    return '/host/events';
+    return '/';
   }
   return value;
 }
@@ -29,7 +38,7 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [host, setHost] = useState(true);
+  const [host, setHost] = useState(searchParams?.get('host') === '1');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -59,61 +68,81 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Create account</h1>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <label className="block text-sm space-y-1">
-          <span>Name</span>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full border rounded px-3 py-2 bg-transparent"
-          />
-        </label>
-        <label className="block text-sm space-y-1">
-          <span>Email</span>
-          <input
-            required
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border rounded px-3 py-2 bg-transparent"
-          />
-        </label>
-        <label className="block text-sm space-y-1">
-          <span>Password</span>
-          <input
-            required
-            type="password"
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border rounded px-3 py-2 bg-transparent"
-          />
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={host}
-            onChange={(e) => setHost(e.target.checked)}
-          />
-          <span>I host events</span>
-        </label>
-        {error && <div className="text-sm text-red-600">{error}</div>}
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-        >
-          {saving ? 'Creating…' : 'Create account'}
-        </button>
-      </form>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Already have an account?{' '}
-        <Link className="text-blue-600 underline" href={`/auth/login?next=${encodeURIComponent(next)}`}>
-          Log in
-        </Link>
-      </p>
-    </div>
+    <PageShell size="narrow" className="space-y-7">
+      <PageHeader
+        eyebrow={host ? 'Host membership' : 'Member access'}
+        title="Create your account"
+        description={
+          host
+            ? 'Set up your host profile and start creating considered gatherings.'
+            : 'Apply to gatherings, keep tickets close, and stay connected.'
+        }
+      />
+      <Card className="p-6 sm:p-8">
+        <form onSubmit={onSubmit} className="space-y-5">
+          <FormField label="Name" htmlFor="register-name">
+            <Input
+              id="register-name"
+              autoComplete="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </FormField>
+          <FormField label="Email" htmlFor="register-email">
+            <Input
+              id="register-email"
+              required
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </FormField>
+          <FormField
+            label="Password"
+            htmlFor="register-password"
+            hint="Use at least eight characters."
+          >
+            <Input
+              id="register-password"
+              required
+              type="password"
+              minLength={8}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </FormField>
+          <label className="flex items-start gap-3 rounded-xl border border-border bg-surface-subtle p-4 text-sm">
+            <input
+              type="checkbox"
+              checked={host}
+              onChange={(e) => setHost(e.target.checked)}
+              className="mt-0.5 size-4 accent-accent"
+            />
+            <span>
+              <span className="block font-medium">I host events</span>
+              <span className="mt-0.5 block text-xs leading-5 text-muted">
+                Adds host tools for publishing events and managing guests.
+              </span>
+            </span>
+          </label>
+          {error && (
+            <Alert tone="danger" role="alert">
+              {error}
+            </Alert>
+          )}
+          <Button type="submit" disabled={saving} className="w-full">
+            {saving ? 'Creating…' : 'Create account'}
+          </Button>
+        </form>
+        <p className="mt-6 border-t border-border pt-5 text-center text-sm text-muted">
+          Already have an account?{' '}
+          <TextLink href={`/auth/login?next=${encodeURIComponent(next)}`}>
+            Log in
+          </TextLink>
+        </p>
+      </Card>
+    </PageShell>
   );
 }

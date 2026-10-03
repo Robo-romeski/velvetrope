@@ -6,6 +6,15 @@ import { apiGetAuth, isUnauthorized } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { HostEventNav } from '@/app/components/HostEventNav';
+import {
+  Alert,
+  Badge,
+  LoadingState,
+  MetricTile,
+  PageHeader,
+  PageShell,
+  Section,
+} from '@/app/components/ui';
 
 type EventAnalytics = {
   event: {
@@ -60,26 +69,6 @@ function money(cents: number): string {
   });
 }
 
-function Metric({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: string | number;
-  detail?: string;
-}) {
-  return (
-    <div className="border rounded p-3 space-y-1">
-      <div className="text-xs text-gray-500">{label}</div>
-      <div className="text-xl font-semibold">{value}</div>
-      {detail && (
-        <div className="text-xs text-gray-500">{detail}</div>
-      )}
-    </div>
-  );
-}
-
 export default function EventAnalyticsPage() {
   const { user, loading: authLoading } = useAuth();
   const params = useParams();
@@ -120,7 +109,11 @@ export default function EventAnalyticsPage() {
   }, [authLoading, eventId, user]);
 
   if (authLoading) {
-    return <div className="max-w-4xl mx-auto p-6 text-sm">Loading…</div>;
+    return (
+      <PageShell>
+        <LoadingState />
+      </PageShell>
+    );
   }
 
   if (!user || unauthorized) {
@@ -128,72 +121,83 @@ export default function EventAnalyticsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-5">
+    <PageShell size="wide" className="space-y-8">
       <HostEventNav eventId={eventId} />
-      <div>
-        <h1 className="text-2xl font-semibold">
-          {analytics?.event.title ?? 'Event analytics'}
-        </h1>
-        {analytics && (
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {new Date(analytics.event.date).toLocaleString()} ·{' '}
-            {analytics.event.status}
-          </p>
-        )}
-      </div>
+      <PageHeader
+        eyebrow="Performance"
+        title={analytics?.event.title ?? 'Event analytics'}
+        description={
+          analytics
+            ? new Date(analytics.event.date).toLocaleString()
+            : 'Understand the path from invite to attendance.'
+        }
+        actions={
+          analytics ? (
+            <Badge
+              tone={analytics.event.status === 'published' ? 'success' : 'neutral'}
+            >
+              {analytics.event.status}
+            </Badge>
+          ) : undefined
+        }
+      />
 
-      {loading && <div className="text-sm">Loading…</div>}
-      {error && <div className="text-sm text-red-600">{error}</div>}
+      {loading && <LoadingState label="Calculating event metrics…" />}
+      {error && (
+        <Alert tone="danger" role="alert">
+          {error}
+        </Alert>
+      )}
 
       {analytics && (
         <>
-          <section className="space-y-2">
-            <h2 className="font-semibold">Funnel</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Metric label="Invites" value={analytics.invites.total} />
-              <Metric
+          <Section
+            title="Guest funnel"
+            description="Conversion from invite through arrival."
+          >
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <MetricTile label="Invites" value={analytics.invites.total} />
+              <MetricTile
                 label="Applications"
                 value={analytics.applications.total}
                 detail={`${percentage(analytics.funnel.inviteToApplicationRate)} of invites`}
               />
-              <Metric
+              <MetricTile
                 label="Approved"
                 value={analytics.applications.approved}
                 detail={`${percentage(analytics.funnel.approvalRate)} of applications`}
               />
-              <Metric
+              <MetricTile
                 label="Checked in"
                 value={analytics.checkin.checkedIn}
                 detail={`${percentage(analytics.funnel.attendanceRate)} of issued tickets`}
               />
             </div>
-          </section>
+          </Section>
 
-          <section className="space-y-2">
-            <h2 className="font-semibold">Applications</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Metric label="Pending" value={analytics.applications.pending} />
-              <Metric
+          <Section title="Applications">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <MetricTile label="Pending" value={analytics.applications.pending} />
+              <MetricTile
                 label="Waitlisted"
                 value={analytics.applications.waitlisted}
               />
-              <Metric label="Approved" value={analytics.applications.approved} />
-              <Metric label="Rejected" value={analytics.applications.rejected} />
+              <MetricTile label="Approved" value={analytics.applications.approved} />
+              <MetricTile label="Rejected" value={analytics.applications.rejected} />
             </div>
-          </section>
+          </Section>
 
-          <section className="space-y-2">
-            <h2 className="font-semibold">Attendance and revenue</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Metric
+          <Section title="Attendance and revenue">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <MetricTile
                 label="Tickets issued"
                 value={analytics.checkin.ticketsIssued}
               />
-              <Metric
+              <MetricTile
                 label="Checked in"
                 value={analytics.checkin.checkedIn}
               />
-              <Metric
+              <MetricTile
                 label="Gross revenue"
                 value={money(analytics.payments.grossRevenueCents)}
                 detail={
@@ -202,14 +206,14 @@ export default function EventAnalyticsPage() {
                     : 'Free event'
                 }
               />
-              <Metric
+              <MetricTile
                 label="Capacity"
                 value={`${analytics.applications.approved}/${analytics.event.capacity}`}
               />
             </div>
-          </section>
+          </Section>
         </>
       )}
-    </div>
+    </PageShell>
   );
 }

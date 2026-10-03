@@ -1,8 +1,17 @@
 'use client';
 
 import { FormEvent, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import {
+  Alert,
+  Button,
+  Card,
+  FormField,
+  Input,
+  PageHeader,
+  PageShell,
+  TextLink,
+} from '@/app/components/ui';
 
 function apiError(data: unknown, fallback: string) {
   if (data && typeof data === 'object' && 'message' in data) {
@@ -54,42 +63,52 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Reset password</h1>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <label className="block text-sm space-y-1">
-          <span>Reset token</span>
-          <input
-            required
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            className="w-full border rounded px-3 py-2 bg-transparent font-mono text-xs"
-          />
-        </label>
-        <label className="block text-sm space-y-1">
-          <span>New password</span>
-          <input
-            required
-            type="password"
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border rounded px-3 py-2 bg-transparent"
-          />
-        </label>
-        {error && <div className="text-sm text-red-600">{error}</div>}
-        {message && <div className="text-sm text-green-700 dark:text-green-400">{message}</div>}
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-        >
-          {saving ? 'Saving…' : 'Update password'}
-        </button>
-      </form>
-      <Link href="/auth/login" className="text-sm text-blue-600 underline">
-        Back to login
-      </Link>
-    </div>
+    <PageShell size="narrow" className="space-y-7">
+      <PageHeader
+        eyebrow="Account recovery"
+        title="Choose a new password"
+        description="Use a password with at least eight characters."
+      />
+      <Card className="p-6 sm:p-8">
+        <form onSubmit={onSubmit} className="space-y-5">
+          <FormField
+            label="Reset token"
+            htmlFor="reset-token"
+            hint="This is filled automatically when you follow a reset link."
+          >
+            <Input
+              id="reset-token"
+              required
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              className="font-mono text-xs"
+            />
+          </FormField>
+          <FormField label="New password" htmlFor="new-password">
+            <Input
+              id="new-password"
+              required
+              type="password"
+              minLength={8}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </FormField>
+          {error && (
+            <Alert tone="danger" role="alert">
+              {error}
+            </Alert>
+          )}
+          {message && <Alert tone="success">{message}</Alert>}
+          <Button type="submit" disabled={saving} className="w-full">
+            {saving ? 'Saving…' : 'Update password'}
+          </Button>
+        </form>
+        <div className="mt-6 border-t border-border pt-5 text-center text-sm">
+          <TextLink href="/auth/login">Back to login</TextLink>
+        </div>
+      </Card>
+    </PageShell>
   );
 }

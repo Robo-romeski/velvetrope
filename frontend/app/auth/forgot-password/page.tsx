@@ -1,7 +1,16 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import Link from 'next/link';
+import {
+  Alert,
+  Button,
+  Card,
+  FormField,
+  Input,
+  PageHeader,
+  PageShell,
+  TextLink,
+} from '@/app/components/ui';
 
 function apiError(data: unknown, fallback: string) {
   if (data && typeof data === 'object' && 'message' in data) {
@@ -52,48 +61,51 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Forgot password</h1>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Enter your email and we will send reset instructions if an account exists.
-      </p>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <label className="block text-sm space-y-1">
-          <span>Email</span>
-          <input
-            required
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border rounded px-3 py-2 bg-transparent"
-          />
-        </label>
-        {error && <div className="text-sm text-red-600">{error}</div>}
-        {message && <div className="text-sm text-green-700 dark:text-green-400">{message}</div>}
-        {devToken && (
-          <div className="text-xs space-y-2 border rounded p-3">
-            <p className="text-gray-600 dark:text-gray-400">
+    <PageShell size="narrow" className="space-y-7">
+      <PageHeader
+        eyebrow="Account recovery"
+        title="Reset your password"
+        description="Enter your email and we will send reset instructions if an account exists."
+      />
+      <Card className="p-6 sm:p-8">
+        <form onSubmit={onSubmit} className="space-y-5">
+          <FormField label="Email" htmlFor="recovery-email">
+            <Input
+              id="recovery-email"
+              required
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </FormField>
+          {error && (
+            <Alert tone="danger" role="alert">
+              {error}
+            </Alert>
+          )}
+          {message && <Alert tone="success">{message}</Alert>}
+          {devToken && (
+            <Alert tone="info" title="Development reset link">
+              <p className="mb-2">
               Dev mode: API returned a reset token (EXPOSE_PASSWORD_RESET_TOKEN).
-            </p>
-            <Link
-              href={`/auth/reset-password?token=${encodeURIComponent(devToken)}`}
-              className="text-blue-600 underline break-all"
-            >
-              Reset password
-            </Link>
-          </div>
-        )}
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-        >
-          {saving ? 'Sending…' : 'Send reset link'}
-        </button>
-      </form>
-      <Link href="/auth/login" className="text-sm text-blue-600 underline">
-        Back to login
-      </Link>
-    </div>
+              </p>
+              <TextLink
+                href={`/auth/reset-password?token=${encodeURIComponent(devToken)}`}
+                className="break-all"
+              >
+                Reset password
+              </TextLink>
+            </Alert>
+          )}
+          <Button type="submit" disabled={saving} className="w-full">
+            {saving ? 'Sending…' : 'Send reset link'}
+          </Button>
+        </form>
+        <div className="mt-6 border-t border-border pt-5 text-center text-sm">
+          <TextLink href="/auth/login">Back to login</TextLink>
+        </div>
+      </Card>
+    </PageShell>
   );
 }

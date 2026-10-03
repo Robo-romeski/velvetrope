@@ -2,11 +2,20 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { apiGet, apiPatchAuth } from '@/lib/api';
+import { apiGet, apiPatchAuth, isUnauthorized } from '@/lib/api';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { HostEventNav } from '@/app/components/HostEventNav';
 import { useAuth } from '@/lib/auth';
+import {
+  Alert,
+  Button,
+  ButtonLink,
+  Card,
+  LoadingState,
+  PageHeader,
+  PageShell,
+  TextLink,
+} from '@/app/components/ui';
 
 function toLocalInput(iso: string) {
   const date = new Date(iso);
@@ -63,9 +72,9 @@ export default function EditHostEventPage() {
 
   if (authLoading) {
     return (
-      <div className="max-w-xl mx-auto p-6">
-        <div className="text-sm">Loading…</div>
-      </div>
+      <PageShell>
+        <LoadingState />
+      </PageShell>
     );
   }
 
@@ -93,7 +102,7 @@ export default function EditHostEventPage() {
       router.push('/host/events');
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Update failed';
-      if (message.includes('401') || message === 'Unauthorized') {
+      if (isUnauthorized(e)) {
         setError('Log in as a host to edit events.');
       } else {
         setError(message);
@@ -104,27 +113,32 @@ export default function EditHostEventPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-4">
+    <PageShell className="space-y-7">
       <HostEventNav eventId={eventId} />
-      <h1 className="text-2xl font-semibold">Edit event</h1>
-      {loading && <div className="text-sm">Loading…</div>}
+      <PageHeader
+        eyebrow="Event settings"
+        title="Edit event"
+        description="Keep the guest-facing details, ticket settings, and check-in requirements current."
+      />
+      {loading && <LoadingState label="Loading event settings…" />}
       {!loading && error && !title && (
-        <div className="space-y-3">
-          <div className="text-sm text-red-600">{error}</div>
-          <Link href="/host/events" className="text-sm underline">
+        <Alert tone="danger" role="alert">
+          <p>{error}</p>
+          <TextLink href="/host/events" className="mt-2 inline-block">
             Back to events
-          </Link>
-        </div>
+          </TextLink>
+        </Alert>
       )}
       {!loading && !(!title && error) && (
-        <form onSubmit={onSubmit} className="space-y-4">
+        <Card className="p-6 sm:p-8">
+        <form onSubmit={onSubmit} className="space-y-5">
           <label className="block text-sm space-y-1">
             <span>Title</span>
             <input
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full border rounded px-3 py-2 bg-transparent"
+              className="vk-field"
             />
           </label>
           <label className="block text-sm space-y-1">
@@ -132,7 +146,7 @@ export default function EditHostEventPage() {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full border rounded px-3 py-2 bg-transparent"
+              className="vk-field"
               rows={3}
             />
           </label>
@@ -143,7 +157,7 @@ export default function EditHostEventPage() {
               type="datetime-local"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full border rounded px-3 py-2 bg-transparent"
+              className="vk-field"
             />
           </label>
           <label className="block text-sm space-y-1">
@@ -154,7 +168,7 @@ export default function EditHostEventPage() {
               min={1}
               value={capacity}
               onChange={(e) => setCapacity(Number(e.target.value))}
-              className="w-full border rounded px-3 py-2 bg-transparent"
+              className="vk-field"
             />
           </label>
           <label className="block text-sm space-y-1">
@@ -165,57 +179,61 @@ export default function EditHostEventPage() {
               step="0.01"
               value={ticketPriceUsd}
               onChange={(e) => setTicketPriceUsd(e.target.value)}
-              className="w-full border rounded px-3 py-2 bg-transparent"
+              className="vk-field"
             />
-            <span className="text-xs text-gray-500">0 = free. Requires Stripe Connect for paid tickets.</span>
+            <span className="text-xs text-muted">0 = free. Requires Stripe Connect for paid tickets.</span>
           </label>
-          <label className="flex items-start gap-2 text-sm">
+          <label className="flex items-start gap-3 rounded-xl border border-border bg-surface-subtle p-4 text-sm">
             <input
               type="checkbox"
               checked={requirePhotoCheckin}
               onChange={(event) => setRequirePhotoCheckin(event.target.checked)}
-              className="mt-1"
+              className="mt-0.5 size-4 accent-accent"
             />
             <span>
               Require an attendee reference photo at check-in
-              <span className="block text-xs text-gray-500">
+              <span className="block text-xs text-muted">
                 Hosts manually compare the attendee to a private photo. Photos
                 expire seven days after the event.
               </span>
             </span>
           </label>
-          <label className="flex items-start gap-2 text-sm">
+          <label className="flex items-start gap-3 rounded-xl border border-border bg-surface-subtle p-4 text-sm">
             <input
               type="checkbox"
               checked={requireIdentityVerification}
               onChange={(event) =>
                 setRequireIdentityVerification(event.target.checked)
               }
-              className="mt-1"
+              className="mt-0.5 size-4 accent-accent"
             />
             <span>
               Require Persona identity verification before ticket issuance
-              <span className="block text-xs text-gray-500">
+              <span className="block text-xs text-muted">
                 Attendees may apply first, but must be approved by Persona
                 before receiving their QR ticket.
               </span>
             </span>
           </label>
-          {error && <div className="text-sm text-red-600">{error}</div>}
-          <div className="flex items-center gap-3">
-            <button
+          {error && (
+            <Alert tone="danger" role="alert">
+              {error}
+            </Alert>
+          )}
+          <div className="flex flex-col-reverse gap-3 sm:flex-row">
+            <ButtonLink href="/host/events" variant="secondary">
+              Cancel
+            </ButtonLink>
+            <Button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save'}
-            </button>
-            <Link href="/host/events" className="text-sm underline">
-              Cancel
-            </Link>
+            </Button>
           </div>
         </form>
+        </Card>
       )}
-    </div>
+    </PageShell>
   );
 }

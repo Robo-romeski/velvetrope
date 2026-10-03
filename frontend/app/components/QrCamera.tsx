@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Alert, Button } from '@/app/components/ui';
 
 type BarcodeDetectorLike = {
   detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string }>>;
@@ -92,21 +93,29 @@ export default function QrCamera({ onCode }: { onCode: (value: string) => void }
   }, [active]);
 
   return (
-    <div className="space-y-2">
-      <button
+    <div className="space-y-4">
+      <Button
         type="button"
         onClick={() => {
           setError(null);
           setActive((value) => !value);
         }}
-        className="px-4 py-2 border rounded text-sm"
+        variant="secondary"
       >
         {active ? 'Stop camera' : 'Scan with camera'}
-      </button>
-      {error && <div className="text-sm text-red-600">{error}</div>}
+      </Button>
+      {error && (
+        <Alert tone="danger" role="alert">
+          {error}
+        </Alert>
+      )}
       <video
         ref={videoRef}
-        className={active ? 'w-full max-w-sm rounded border bg-black' : 'hidden'}
+        className={
+          active
+            ? 'aspect-square w-full max-w-sm rounded-2xl border border-border bg-black object-cover'
+            : 'hidden'
+        }
         playsInline
         muted
       />

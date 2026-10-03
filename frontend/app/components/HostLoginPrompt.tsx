@@ -1,4 +1,12 @@
-import Link from 'next/link';
+'use client';
+
+import { usePathname } from 'next/navigation';
+import {
+  ButtonLink,
+  Card,
+  PageHeader,
+  PageShell,
+} from '@/app/components/ui';
 
 export default function HostLoginPrompt({
   title,
@@ -7,20 +15,32 @@ export default function HostLoginPrompt({
   title: string;
   message?: string;
 }) {
+  const pathname = usePathname();
+  const next = pathname?.startsWith('/') ? pathname : '/';
+  const isHostPage = next.startsWith('/host/');
+  const loginHref = `/auth/login?next=${encodeURIComponent(next)}`;
+  const registerHref = `/auth/register?next=${encodeURIComponent(next)}${
+    isHostPage ? '&host=1' : ''
+  }`;
+
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-3">
-      <h1 className="text-2xl font-semibold">{title}</h1>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        {message ?? 'Log in as a host to continue.'}
-      </p>
-      <div className="flex gap-3">
-        <Link href="/auth/login" className="inline-block px-4 py-2 bg-blue-600 text-white rounded">
-          Login
-        </Link>
-        <Link href="/auth/register" className="inline-block px-4 py-2 border rounded">
+    <PageShell size="narrow" className="space-y-6">
+      <PageHeader
+        eyebrow={isHostPage ? 'Host access' : 'Member access'}
+        title={title}
+        description={
+          message ??
+          (isHostPage
+            ? 'Log in with a host account to continue.'
+            : 'Log in to continue.')
+        }
+      />
+      <Card className="flex flex-col gap-3 sm:flex-row">
+        <ButtonLink href={loginHref}>Log in</ButtonLink>
+        <ButtonLink href={registerHref} variant="secondary">
           Sign up
-        </Link>
-      </div>
-    </div>
+        </ButtonLink>
+      </Card>
+    </PageShell>
   );
 }

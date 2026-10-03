@@ -8,18 +8,30 @@ export function EventPageNav({
   title?: string | null;
 }) {
   return (
-    <div className="text-sm space-y-1">
-      <Link href="/" className="text-blue-600 underline">
+    <nav
+      aria-label="Breadcrumb"
+      className="flex flex-wrap items-center gap-2 text-sm text-muted"
+    >
+      <Link
+        href="/"
+        className="font-medium transition-colors hover:text-foreground"
+      >
         Events
       </Link>
       {title && (
-        <div className="text-gray-600 dark:text-gray-400">
-          /{' '}
-          <Link href={`/events/${eventId}`} className="underline">
+        <>
+          <span aria-hidden="true" className="text-border-strong">
+            /
+          </span>
+          <Link
+            href={`/events/${eventId}`}
+            className="max-w-64 truncate font-medium text-foreground"
+            aria-current="page"
+          >
             {title}
           </Link>
-        </div>
+        </>
       )}
-    </div>
+    </nav>
   );
 }

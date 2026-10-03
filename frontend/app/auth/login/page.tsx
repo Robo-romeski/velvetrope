@@ -1,9 +1,18 @@
 'use client';
 
 import { FormEvent, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import {
+  Alert,
+  Button,
+  Card,
+  FormField,
+  Input,
+  PageHeader,
+  PageShell,
+  TextLink,
+} from '@/app/components/ui';
 
 function apiError(data: unknown, fallback: string) {
   if (data && typeof data === 'object' && 'message' in data) {
@@ -16,7 +25,7 @@ function apiError(data: unknown, fallback: string) {
 
 function safeNext(value: string | null) {
   if (!value || !value.startsWith('/') || value.startsWith('//')) {
-    return '/host/events';
+    return '/';
   }
   return value;
 }
@@ -57,49 +66,57 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Log in</h1>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <label className="block text-sm space-y-1">
-          <span>Email</span>
-          <input
-            required
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border rounded px-3 py-2 bg-transparent"
-          />
-        </label>
-        <label className="block text-sm space-y-1">
-          <span>Password</span>
-          <input
-            required
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border rounded px-3 py-2 bg-transparent"
-          />
-        </label>
-        {error && <div className="text-sm text-red-600">{error}</div>}
-        <p className="text-sm">
-          <Link className="text-blue-600 underline" href="/auth/forgot-password">
-            Forgot password?
-          </Link>
+    <PageShell size="narrow" className="space-y-7">
+      <PageHeader
+        eyebrow="Welcome back"
+        title="Log in to VelvetKey"
+        description="Continue to your applications, tickets, and event spaces."
+      />
+      <Card className="p-6 sm:p-8">
+        <form onSubmit={onSubmit} className="space-y-5">
+          <FormField label="Email" htmlFor="login-email">
+            <Input
+              id="login-email"
+              required
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </FormField>
+          <FormField label="Password" htmlFor="login-password">
+            <Input
+              id="login-password"
+              required
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </FormField>
+          {error && (
+            <Alert tone="danger" role="alert">
+              {error}
+            </Alert>
+          )}
+          <div className="flex justify-end">
+            <TextLink href="/auth/forgot-password" className="text-sm">
+              Forgot password?
+            </TextLink>
+          </div>
+          <Button type="submit" disabled={saving} className="w-full">
+            {saving ? 'Logging in…' : 'Log in'}
+          </Button>
+        </form>
+        <p className="mt-6 border-t border-border pt-5 text-center text-sm text-muted">
+          No account?{' '}
+          <TextLink
+            href={`/auth/register?next=${encodeURIComponent(next)}`}
+          >
+            Create one
+          </TextLink>
         </p>
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-        >
-          {saving ? 'Logging in…' : 'Log in'}
-        </button>
-      </form>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        No account?{' '}
-        <Link className="text-blue-600 underline" href={`/auth/register?next=${encodeURIComponent(next)}`}>
-          Create one
-        </Link>
-      </p>
-    </div>
+      </Card>
+    </PageShell>
   );
 }

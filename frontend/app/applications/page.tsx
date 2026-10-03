@@ -1,11 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { apiGetAuth } from '@/lib/api';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { EventCtaLinks } from '@/app/components/EventCtaLinks';
 import { useAuth } from '@/lib/auth';
+import {
+  Alert,
+  Badge,
+  Card,
+  EmptyState,
+  LoadingState,
+  PageHeader,
+  PageShell,
+  TextLink,
+} from '@/app/components/ui';
 
 type MyApplication = {
   id: string;
@@ -62,9 +71,9 @@ export default function MyApplicationsPage() {
 
   if (authLoading) {
     return (
-      <div className="max-w-2xl mx-auto p-6">
-        <div className="text-sm">Loading…</div>
-      </div>
+      <PageShell>
+        <LoadingState />
+      </PageShell>
     );
   }
 
@@ -78,27 +87,55 @@ export default function MyApplicationsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">My applications</h1>
-      {loading && <div className="text-sm">Loading…</div>}
-      {error && <div className="text-sm text-red-600">{error}</div>}
-      <div className="space-y-3">
+    <PageShell className="space-y-8">
+      <PageHeader
+        eyebrow="Your events"
+        title="My applications"
+        description="Track every application, host decision, and ticket from one place."
+      />
+      {loading && <LoadingState label="Loading applications…" />}
+      {error && (
+        <Alert tone="danger" role="alert">
+          {error}
+        </Alert>
+      )}
+      <div className="grid gap-4">
         {items.map((app) => (
-          <div key={app.id} className="border rounded p-4 space-y-2">
-            <Link href={`/events/${app.eventId}`} className="font-medium text-blue-600 underline">
-              {app.eventTitle}
-            </Link>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              {statusLabel(app.status)}
-              {app.status === 'waitlisted' && app.waitlistPosition
-                ? ` #${app.waitlistPosition}`
-                : ''}
-              {' · '}
-              Applied {new Date(app.createdAt).toLocaleString()}
+          <Card key={app.id} className="space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <TextLink
+                  href={`/events/${app.eventId}`}
+                  className="text-lg font-semibold text-foreground no-underline"
+                >
+                  {app.eventTitle}
+                </TextLink>
+                <div className="mt-1 text-xs text-muted">
+                  Applied {new Date(app.createdAt).toLocaleString()}
+                </div>
+              </div>
+              <Badge
+                tone={
+                  app.status === 'approved'
+                    ? 'success'
+                    : app.status === 'waitlisted'
+                      ? 'warning'
+                      : app.status === 'rejected'
+                        ? 'danger'
+                        : 'accent'
+                }
+              >
+                {statusLabel(app.status)}
+              </Badge>
             </div>
+            {app.status === 'waitlisted' && app.waitlistPosition && (
+              <div className="text-sm text-muted">
+                Waitlist position #{app.waitlistPosition}
+              </div>
+            )}
             {app.decisionReason && (
-              <div className="text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Host note:</span>{' '}
+              <div className="rounded-xl bg-surface-subtle px-4 py-3 text-sm">
+                <span className="font-medium">Host note:</span>{' '}
                 {app.decisionReason}
               </div>
             )}
@@ -107,17 +144,16 @@ export default function MyApplicationsPage() {
               applicationStatus={app.status}
               loggedIn
             />
-          </div>
+          </Card>
         ))}
         {!loading && !error && items.length === 0 && (
-          <div className="text-sm text-gray-500 space-y-2">
-            <p>You have not applied to any events yet.</p>
-            <Link href="/" className="text-blue-600 underline">
-              Browse events
-            </Link>
-          </div>
+          <EmptyState
+            title="No applications yet"
+            description="Explore upcoming gatherings and apply when one feels right."
+            action={<TextLink href="/">Browse events</TextLink>}
+          />
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

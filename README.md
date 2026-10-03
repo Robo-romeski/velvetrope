@@ -70,6 +70,9 @@ A sophisticated event management platform for exclusive events with local email/
    - Backend: http://localhost:3010
    - Health check: http://localhost:3010/healthz
 
+For the rehearsed two-user paid-event walkthrough, follow
+[docs/DEMO.md](docs/DEMO.md).
+
 ### Docker with Postgres (optional)
 
 ```bash

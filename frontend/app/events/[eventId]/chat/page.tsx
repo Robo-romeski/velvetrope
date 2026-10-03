@@ -14,6 +14,17 @@ import {
 import { useAuth } from '@/lib/auth';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { EventPageNav } from '@/app/components/EventPageNav';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Input,
+  LoadingState,
+  PageHeader,
+  PageShell,
+} from '@/app/components/ui';
 
 type ChatMessage = {
   id: string;
@@ -158,7 +169,11 @@ export default function EventChatPage() {
   };
 
   if (authLoading) {
-    return <div className="max-w-2xl mx-auto p-6 text-sm">Loading…</div>;
+    return (
+      <PageShell>
+        <LoadingState />
+      </PageShell>
+    );
   }
   if (!user) {
     return (
@@ -170,35 +185,50 @@ export default function EventChatPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-4">
+    <PageShell className="space-y-7">
       <EventPageNav eventId={eventId} title={eventTitle} />
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Event chat</h1>
-        <span className="text-xs text-gray-500">
-          {connected ? 'Live' : 'HTTP fallback'}
-        </span>
-      </div>
-      <p className="text-xs text-gray-500">
-        Available to approved attendees from 48 hours before until 48 hours
-        after the event. Hosts can moderate messages.
-      </p>
-      {error && <p className="text-sm">{error}</p>}
-      <div className="space-y-2 max-h-[28rem] overflow-auto border rounded p-3">
+      <PageHeader
+        eyebrow="Approved guests"
+        title="Event chat"
+        description="Available from 48 hours before until 48 hours after the event. Hosts can moderate messages."
+        actions={
+          <Badge tone={connected ? 'success' : 'neutral'}>
+            {connected ? 'Live' : 'HTTP fallback'}
+          </Badge>
+        }
+      />
+      {error && (
+        <Alert tone="info" role="status">
+          {error}
+        </Alert>
+      )}
+      <Card className="max-h-[32rem] space-y-1 overflow-auto p-3 sm:p-4">
         {messages.map((message) => (
-          <div key={message.id} className="text-sm border-b last:border-0 pb-2">
-            <div className="flex justify-between gap-2 text-xs text-gray-500">
-              <span>{message.author.displayName}</span>
+          <div
+            key={message.id}
+            className="rounded-xl px-3 py-3 text-sm transition-colors hover:bg-surface-subtle"
+          >
+            <div className="flex justify-between gap-2 text-xs text-muted">
+              <span className="font-medium text-foreground">
+                {message.author.displayName}
+              </span>
               <span>{new Date(message.createdAt).toLocaleString()}</span>
             </div>
-            <p className={message.deleted ? 'italic text-gray-500' : ''}>
+            <p
+              className={
+                message.deleted
+                  ? 'mt-1 italic text-muted'
+                  : 'mt-1 leading-6 text-foreground'
+              }
+            >
               {message.deleted ? 'Message removed by host.' : message.body}
             </p>
             {!message.deleted && message.author.id !== user.id && (
-              <div className="flex gap-2 mt-1 text-xs">
+              <div className="mt-2 flex gap-3 text-xs">
                 <button
                   type="button"
                   onClick={() => void report(message)}
-                  className="text-red-600 underline"
+                  className="font-medium text-danger underline underline-offset-4"
                 >
                   Report
                 </button>
@@ -206,7 +236,7 @@ export default function EventChatPage() {
                   <button
                     type="button"
                     onClick={() => void remove(message)}
-                    className="text-red-600 underline"
+                    className="font-medium text-danger underline underline-offset-4"
                   >
                     Remove
                   </button>
@@ -216,25 +246,27 @@ export default function EventChatPage() {
           </div>
         ))}
         {messages.length === 0 && (
-          <p className="text-sm text-gray-500">No messages yet.</p>
+          <EmptyState
+            title="No messages yet"
+            description="Start the conversation with your fellow guests."
+          />
         )}
-      </div>
+      </Card>
       <form onSubmit={send} className="flex gap-2">
-        <input
+        <Input
           value={body}
           onChange={(event) => setBody(event.target.value)}
           maxLength={1000}
           placeholder="Write a message"
-          className="border rounded px-3 py-2 bg-transparent flex-1"
+          className="flex-1"
         />
-        <button
+        <Button
           type="submit"
           disabled={sending || !body.trim()}
-          className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
         >
           {sending ? 'Sending…' : 'Send'}
-        </button>
+        </Button>
       </form>
-    </div>
+    </PageShell>
   );
 }

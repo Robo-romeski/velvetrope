@@ -8,6 +8,18 @@ import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { EventPageNav } from '@/app/components/EventPageNav';
 import { useAuth } from '@/lib/auth';
 import { useMyApplicationByEvent } from '@/lib/my-applications';
+import {
+  Alert,
+  Button,
+  ButtonLink,
+  Card,
+  FormField,
+  Input,
+  LoadingState,
+  PageHeader,
+  PageShell,
+  TextLink,
+} from '@/app/components/ui';
 
 type Field = { name: string; type: string; required?: boolean };
 
@@ -57,9 +69,9 @@ export default function ApplyToEventPage() {
 
   if (authLoading || appsLoading) {
     return (
-      <div className="max-w-2xl mx-auto p-6">
-        <div className="text-sm">Loading…</div>
-      </div>
+      <PageShell>
+        <LoadingState />
+      </PageShell>
     );
   }
 
@@ -128,130 +140,147 @@ export default function ApplyToEventPage() {
   const alreadyApplied = !!applicationStatus || submitted;
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-4">
+    <PageShell className="space-y-7">
       <EventPageNav eventId={eventId} title={eventTitle} />
-      <h1 className="text-2xl font-semibold">Apply{eventTitle ? `: ${eventTitle}` : ''}</h1>
+      <PageHeader
+        eyebrow="Application"
+        title={eventTitle ? `Apply to ${eventTitle}` : 'Apply to event'}
+        description="Share a few details with the host. Your answers stay connected to this application."
+      />
 
       {eventStatus && eventStatus !== 'published' && (
-        <p className="text-sm text-amber-700 dark:text-amber-400">
+        <Alert tone="warning">
           This event is not open for applications ({eventStatus}).
-        </p>
+        </Alert>
       )}
 
       {applicationStatus === 'approved' && (
-        <div className="text-sm space-y-2 border rounded p-3">
-          <p>You are approved for this event.</p>
-          <Link href={`/events/${eventId}/ticket`} className="text-blue-600 underline">
+        <Alert tone="success" title="You are approved">
+          <ButtonLink
+            href={`/events/${eventId}/ticket`}
+            size="sm"
+            className="mt-3"
+          >
             View ticket
-          </Link>
-        </div>
+          </ButtonLink>
+        </Alert>
       )}
 
       {applicationStatus === 'pending' && (
-        <div className="text-sm space-y-2 border rounded p-3">
-          <p>Your application is pending host review.</p>
-          <Link href="/applications" className="text-blue-600 underline">
+        <Alert tone="info" title="Pending host review">
+          <TextLink href="/applications" className="mt-2 inline-block">
             My applications
-          </Link>
-        </div>
+          </TextLink>
+        </Alert>
       )}
 
       {applicationStatus === 'waitlisted' && (
-        <div className="text-sm space-y-2 border rounded p-3">
-          <p>You are on the waitlist for this event.</p>
-          <Link href="/applications" className="text-blue-600 underline">
+        <Alert tone="warning" title="You are on the waitlist">
+          <TextLink href="/applications" className="mt-2 inline-block">
             View waitlist status
-          </Link>
-        </div>
+          </TextLink>
+        </Alert>
       )}
 
       {applicationStatus === 'rejected' && (
-        <div className="text-sm space-y-2 border rounded p-3">
-          <p>Your application was not approved for this event.</p>
-          <Link href="/applications" className="text-blue-600 underline">
+        <Alert tone="danger" title="Application not approved">
+          <TextLink href="/applications" className="mt-2 inline-block">
             My applications
-          </Link>
-        </div>
+          </TextLink>
+        </Alert>
       )}
 
       {submitted && !applicationStatus && (
-        <div className="text-sm">
-          <Link href="/applications" className="text-blue-600 underline">
+        <Alert tone="success" title="Application submitted">
+          <TextLink href="/applications" className="mt-2 inline-block">
             My applications
-          </Link>
-        </div>
+          </TextLink>
+        </Alert>
       )}
 
       {!alreadyApplied && !applicationStatus && (
-        <>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <label className="block text-sm font-medium">Invite Code *</label>
-              <input
-                className="w-full border rounded p-2"
+        <Card className="space-y-6 p-6 sm:p-8">
+          <div className="space-y-5">
+            <FormField
+              label="Invite code *"
+              htmlFor="invite-code"
+              error={errors['inviteCode']}
+              errorId="inviteCode-error"
+            >
+              <Input
+                id="invite-code"
                 type="text"
+                autoCapitalize="characters"
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value)}
                 aria-invalid={errors['inviteCode'] ? 'true' : 'false'}
-                aria-describedby={errors['inviteCode'] ? `inviteCode-error` : undefined}
+                aria-describedby={
+                  errors['inviteCode'] ? 'inviteCode-error' : undefined
+                }
               />
-              {errors['inviteCode'] && (
-                <div id={`inviteCode-error`} className="text-xs text-red-600">
-                  {errors['inviteCode']}
-                </div>
-              )}
-            </div>
+            </FormField>
             {fields.length === 0 && (
-              <div className="text-sm text-gray-500">No application form set for this event yet.</div>
+              <p className="text-sm text-muted">
+                No additional application questions are set for this event.
+              </p>
             )}
             {fields.map((f) => (
-              <div key={f.name} className="space-y-1">
-                <label className="block text-sm font-medium">
-                  {f.name}
-                  {f.required ? ' *' : ''}
-                </label>
-                <input
-                  className="w-full border rounded p-2"
+              <FormField
+                key={f.name}
+                label={`${f.name}${f.required ? ' *' : ''}`}
+                htmlFor={`application-${f.name}`}
+                error={errors[f.name]}
+                errorId={`${f.name}-error`}
+              >
+                <Input
+                  id={`application-${f.name}`}
                   type={f.type === 'text' ? 'text' : 'text'}
                   value={values[f.name] ?? ''}
-                  onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.value }))}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, [f.name]: e.target.value }))
+                  }
                   aria-invalid={errors[f.name] ? 'true' : 'false'}
-                  aria-describedby={errors[f.name] ? `${f.name}-error` : undefined}
+                  aria-describedby={
+                    errors[f.name] ? `${f.name}-error` : undefined
+                  }
                 />
-                {errors[f.name] && (
-                  <div id={`${f.name}-error`} className="text-xs text-red-600">
-                    {errors[f.name]}
-                  </div>
-                )}
-              </div>
+              </FormField>
             ))}
           </div>
-          <label className="flex items-start gap-2 text-sm">
+          <label className="flex items-start gap-3 rounded-xl border border-border bg-surface-subtle p-4 text-sm">
             <input
               type="checkbox"
               checked={acceptedCoC}
               onChange={(e) => setAcceptedCoC(e.target.checked)}
-              className="mt-1"
+              className="mt-0.5 size-4 accent-accent"
             />
-            <span>
+            <span className="leading-6">
               I agree to the{' '}
-              <Link href="/trust/code-of-conduct" className="text-blue-600 underline" target="_blank">
+              <Link
+                href="/trust/code-of-conduct"
+                className="font-medium text-accent underline underline-offset-4"
+                target="_blank"
+              >
                 VelvetKey code of conduct
               </Link>
               .
             </span>
           </label>
-          <button
+          <Button
+            type="button"
             onClick={submit}
             disabled={loading || eventStatus !== 'published' || !acceptedCoC}
-            className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
           >
-            {loading ? 'Submitting...' : 'Submit Application'}
-          </button>
-        </>
+            {loading ? 'Submitting…' : 'Submit application'}
+          </Button>
+        </Card>
       )}
 
-      {message && <div className="text-sm">{message}</div>}
-    </div>
+      {message && !submitted && (
+        <Alert tone="warning" role="alert">
+          {message}
+        </Alert>
+      )}
+    </PageShell>
   );
 }

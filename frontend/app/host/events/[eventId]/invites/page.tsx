@@ -6,6 +6,19 @@ import { apiGetAuth, apiPostAuth, isUnauthorized } from '@/lib/api';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { HostEventNav } from '@/app/components/HostEventNav';
 import { useAuth } from '@/lib/auth';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  FormField,
+  Input,
+  LoadingState,
+  MetricTile,
+  PageHeader,
+  PageShell,
+} from '@/app/components/ui';
 
 type Invite = {
   id: string;
@@ -119,9 +132,9 @@ export default function HostInvitesPage() {
 
   if (authLoading) {
     return (
-      <div className="max-w-xl mx-auto p-6">
-        <div className="text-sm">Loading…</div>
-      </div>
+      <PageShell>
+        <LoadingState />
+      </PageShell>
     );
   }
 
@@ -130,74 +143,102 @@ export default function HostInvitesPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-4">
+    <PageShell className="space-y-8">
       <HostEventNav eventId={eventId} />
-      <h1 className="text-2xl font-semibold">Invites</h1>
+      <PageHeader
+        eyebrow="Guest access"
+        title="Invites"
+        description="Generate private codes and monitor how they move through the guest funnel."
+      />
 
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-          <div className="border rounded p-3">
-            <div className="text-xs text-gray-500">Generated</div>
-            <div className="text-lg font-semibold">{stats.total}</div>
-          </div>
-          <div className="border rounded p-3">
-            <div className="text-xs text-gray-500">Redeemed</div>
-            <div className="text-lg font-semibold">{stats.redeemed}</div>
-          </div>
-          <div className="border rounded p-3">
-            <div className="text-xs text-gray-500">Unused</div>
-            <div className="text-lg font-semibold">{stats.unused}</div>
-          </div>
-          <div className="border rounded p-3">
-            <div className="text-xs text-gray-500">Conversion</div>
-            <div className="text-lg font-semibold">{formatPercent(stats.conversionRate)}</div>
-          </div>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <MetricTile label="Generated" value={stats.total} />
+          <MetricTile label="Redeemed" value={stats.redeemed} />
+          <MetricTile label="Unused" value={stats.unused} />
+          <MetricTile
+            label="Conversion"
+            value={formatPercent(stats.conversionRate)}
+          />
         </div>
       )}
       {stats && stats.expiredUnused > 0 && (
-        <p className="text-xs text-amber-700 dark:text-amber-400">
+        <Alert tone="warning">
           {stats.expiredUnused} unused code(s) have expired.
-        </p>
+        </Alert>
       )}
 
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="text-sm space-y-1">
-          <span className="block text-gray-600 dark:text-gray-400">Expires in (hours, optional)</span>
-          <input
+      <Card className="flex flex-col gap-4 sm:flex-row sm:items-end">
+        <FormField
+          label="Expires in"
+          hint="Hours; leave blank for no expiry."
+          htmlFor="invite-expiry"
+          className="sm:max-w-56"
+        >
+          <Input
+            id="invite-expiry"
             type="number"
             min={1}
             placeholder="Never"
             value={expiresInHours}
             onChange={(e) => setExpiresInHours(e.target.value)}
-            className="border rounded px-3 py-2 w-32 bg-transparent"
           />
-        </label>
-        <button
-          onClick={generate}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-        >
+        </FormField>
+        <Button onClick={generate} disabled={loading}>
           {loading ? 'Generating…' : 'Generate invite'}
-        </button>
-      </div>
+        </Button>
+      </Card>
 
-      {error && <div className="text-sm text-red-600">{error}</div>}
-      <div className="space-y-2">
+      {error && (
+        <Alert tone="danger" role="alert">
+          {error}
+        </Alert>
+      )}
+      <div className="grid gap-3">
         {invites.map((invite) => (
-          <div key={invite.id} className="border rounded p-3 flex items-center justify-between gap-3">
+          <Card
+            key={invite.id}
+            className="flex items-center justify-between gap-3 py-4"
+          >
             <div>
-              <div className="font-mono font-semibold">{invite.code}</div>
-              <div className="text-xs text-gray-500">{inviteStatus(invite)}</div>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="font-mono text-lg font-semibold tracking-[0.08em]">
+                  {invite.code}
+                </div>
+                <Badge
+                  tone={
+                    invite.usedAt
+                      ? 'success'
+                      : invite.expired
+                        ? 'danger'
+                        : 'neutral'
+                  }
+                >
+                  {invite.usedAt ? 'Redeemed' : invite.expired ? 'Expired' : 'Open'}
+                </Badge>
+              </div>
+              <div className="mt-1 text-xs text-muted">
+                {inviteStatus(invite)}
+              </div>
             </div>
             {!invite.usedAt && !invite.expired && (
-                <button onClick={() => copy(invite.code)} className="text-sm text-blue-600 underline">
-                  Copy
-                </button>
+              <Button
+                onClick={() => copy(invite.code)}
+                variant="secondary"
+                size="sm"
+              >
+                Copy
+              </Button>
             )}
-          </div>
+          </Card>
         ))}
-        {invites.length === 0 && <div className="text-sm text-gray-500">No invite codes yet.</div>}
+        {invites.length === 0 && (
+          <EmptyState
+            title="No invite codes yet"
+            description="Generate a private code to begin inviting guests."
+          />
+        )}
       </div>
-    </div>
+    </PageShell>
   );
 }

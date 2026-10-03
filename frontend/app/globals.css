@@ -1,26 +1,164 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #f7f7f5;
+  --surface: #ffffff;
+  --surface-subtle: #efefeb;
+  --surface-raised: #ffffff;
+  --foreground: #191918;
+  --muted: #6d6d68;
+  --border: #deded8;
+  --border-strong: #c8c8c0;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #eeedff;
+  --accent-foreground: #ffffff;
+  --success: #177245;
+  --success-soft: #eaf7ef;
+  --warning: #9a5b12;
+  --warning-soft: #fff6df;
+  --danger: #b42318;
+  --danger-soft: #fff0ee;
+  --focus: #6366f1;
+  --shadow-card: 0 1px 2px rgb(25 25 24 / 0.04), 0 12px 32px rgb(25 25 24 / 0.05);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-raised: var(--surface-raised);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-focus: var(--focus);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --radius-card: 1.25rem;
+  --shadow-card: var(--shadow-card);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    color-scheme: dark;
+    --background: #111110;
+    --surface: #191918;
+    --surface-subtle: #222220;
+    --surface-raised: #20201e;
+    --foreground: #f2f2ef;
+    --muted: #a5a59d;
+    --border: #32322f;
+    --border-strong: #494944;
+    --accent: #8b87ff;
+    --accent-hover: #a5a2ff;
+    --accent-soft: #292744;
+    --accent-foreground: #111110;
+    --success: #6ed39b;
+    --success-soft: #173426;
+    --warning: #e5ad5b;
+    --warning-soft: #3b2b14;
+    --danger: #ff8a80;
+    --danger-soft: #411f1c;
+    --focus: #a5a2ff;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.18), 0 16px 40px rgb(0 0 0 / 0.2);
   }
 }
 
+* {
+  border-color: var(--border);
+}
+
+html {
+  background: var(--background);
+  scroll-behavior: smooth;
+}
+
 body {
+  min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--foreground);
+}
+
+:where(a, button, input, textarea, select, summary):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+:where(button, input, textarea, select) {
+  font: inherit;
+}
+
+:where(button, summary) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer components {
+  .vk-field {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    color: var(--foreground);
+    padding: 0.7rem 0.875rem;
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      background-color 150ms ease;
+  }
+
+  .vk-field::placeholder {
+    color: var(--muted);
+  }
+
+  .vk-field:hover {
+    border-color: var(--border-strong);
+  }
+
+  .vk-field:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+    outline: none;
+  }
+
+  .vk-field:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  .vk-prose {
+    color: var(--muted);
+    line-height: 1.75;
+  }
+
+  .vk-prose :where(h2, h3) {
+    color: var(--foreground);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    margin-top: 1.75rem;
+  }
+
+  .vk-prose a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }

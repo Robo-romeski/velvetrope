@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import type { ApplicationStatus } from '@/lib/my-applications';
+import { Badge, ButtonLink, TextLink } from '@/app/components/ui';
 
 export function EventCtaLinks({
   eventId,
@@ -11,78 +11,78 @@ export function EventCtaLinks({
   loggedIn: boolean;
 }) {
   const detail = (
-    <Link className="text-blue-600 underline" href={`/events/${eventId}`}>
+    <TextLink href={`/events/${eventId}`} className="text-sm">
       Details
-    </Link>
+    </TextLink>
   );
 
   if (!loggedIn) {
     return (
-      <div className="flex flex-wrap gap-3 text-sm items-center">
+      <div className="flex flex-wrap items-center gap-3">
         {detail}
-        <Link className="text-blue-600 underline" href={`/events/${eventId}/apply`}>
+        <ButtonLink href={`/events/${eventId}/apply`} size="sm">
           Apply
-        </Link>
+        </ButtonLink>
       </div>
     );
   }
 
   if (applicationStatus === 'approved') {
     return (
-      <div className="flex flex-wrap gap-3 text-sm items-center">
+      <div className="flex flex-wrap items-center gap-3">
         {detail}
-        <Link className="text-blue-600 underline" href={`/events/${eventId}/ticket`}>
+        <ButtonLink href={`/events/${eventId}/ticket`} size="sm">
           View ticket
-        </Link>
-        <Link className="text-blue-600 underline" href="/applications">
+        </ButtonLink>
+        <TextLink href="/applications" className="text-sm">
           My applications
-        </Link>
+        </TextLink>
       </div>
     );
   }
 
   if (applicationStatus === 'pending') {
     return (
-      <div className="flex flex-wrap gap-3 text-sm items-center">
+      <div className="flex flex-wrap items-center gap-3">
         {detail}
-        <span className="text-gray-600 dark:text-gray-400">Pending review</span>
-        <Link className="text-blue-600 underline" href="/applications">
+        <Badge tone="accent">Pending review</Badge>
+        <TextLink href="/applications" className="text-sm">
           My applications
-        </Link>
+        </TextLink>
       </div>
     );
   }
 
   if (applicationStatus === 'waitlisted') {
     return (
-      <div className="flex flex-wrap gap-3 text-sm items-center">
+      <div className="flex flex-wrap items-center gap-3">
         {detail}
-        <span className="text-amber-700 dark:text-amber-400">Waitlisted</span>
-        <Link className="text-blue-600 underline" href="/applications">
+        <Badge tone="warning">Waitlisted</Badge>
+        <TextLink href="/applications" className="text-sm">
           My applications
-        </Link>
+        </TextLink>
       </div>
     );
   }
 
   if (applicationStatus === 'rejected') {
     return (
-      <div className="flex flex-wrap gap-3 text-sm items-center">
+      <div className="flex flex-wrap items-center gap-3">
         {detail}
-        <span className="text-gray-500">Not approved</span>
-        <Link className="text-blue-600 underline" href="/applications">
+        <Badge>Not approved</Badge>
+        <TextLink href="/applications" className="text-sm">
           My applications
-        </Link>
+        </TextLink>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-wrap gap-3 text-sm items-center">
+    <div className="flex flex-wrap items-center gap-3">
       {detail}
-      <Link className="text-blue-600 underline" href={`/events/${eventId}/apply`}>
+      <ButtonLink href={`/events/${eventId}/apply`} size="sm">
         Apply
-      </Link>
+      </ButtonLink>
     </div>
   );
 }

@@ -8,6 +8,19 @@ import { HostEventNav } from '@/app/components/HostEventNav';
 import { useAuth } from '@/lib/auth';
 import { downloadCsv } from '@/lib/csv';
 import QrCamera from '@/app/components/QrCamera';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Input,
+  LoadingState,
+  MetricTile,
+  PageHeader,
+  PageShell,
+  Select,
+} from '@/app/components/ui';
 
 type Ticket = {
   id: string;
@@ -140,9 +153,9 @@ export default function HostScanPage() {
 
   if (authLoading) {
     return (
-      <div className="max-w-xl mx-auto p-6">
-        <div className="text-sm">Loading…</div>
-      </div>
+      <PageShell>
+        <LoadingState />
+      </PageShell>
     );
   }
 
@@ -153,105 +166,135 @@ export default function HostScanPage() {
   const used = tickets.filter((ticket) => ticket.usedAt).length;
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-4">
+    <PageShell className="space-y-8">
       <HostEventNav eventId={eventId} />
-      <h1 className="text-2xl font-semibold">Check-in</h1>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        {used}/{tickets.length} checked in
-      </p>
-      <QrCamera onCode={onCode} />
-      <input
-        className="w-full border rounded p-2 bg-transparent"
-        placeholder="Paste scanned token"
-        value={token}
-        onChange={(e) => setToken(e.target.value)}
+      <PageHeader
+        eyebrow="Door operations"
+        title="Guest check-in"
+        description="Scan a guest QR or paste the entry token. Each ticket can be checked in once."
+        actions={
+          <MetricTile
+            label="Attendance"
+            value={`${used}/${tickets.length}`}
+            className="min-w-40"
+          />
+        }
       />
-      <button
-        onClick={() => prepareVerification(token)}
-        disabled={loading || !token.trim()}
-        className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-      >
-        {loading ? 'Verifying…' : 'Verify'}
-      </button>
-      {result && <div className="text-sm">{result}</div>}
+      <Card className="space-y-5 p-6 sm:p-8">
+        <QrCamera onCode={onCode} />
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Input
+            placeholder="Paste scanned token"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            className="font-mono text-sm"
+          />
+          <Button
+            onClick={() => prepareVerification(token)}
+            disabled={loading || !token.trim()}
+          >
+            {loading ? 'Verifying…' : 'Verify'}
+          </Button>
+        </div>
+        {result && (
+          <Alert
+            tone={result.startsWith('Checked in') ? 'success' : 'info'}
+            role="status"
+          >
+            {result}
+          </Alert>
+        )}
+      </Card>
       {photoReview && (
-        <div className="border rounded p-3 space-y-3">
+        <Card className="space-y-4">
+          <h2 className="text-lg font-semibold">Confirm attendee photo</h2>
           {/* Signed URL expires after five minutes and is only issued to the event host. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={photoReview.url}
             alt="Private attendee reference"
-            className="max-w-xs w-full rounded border"
+            className="w-full max-w-sm rounded-2xl border border-border"
           />
           <div className="flex flex-wrap gap-2">
-            <button
+            <Button
               type="button"
               disabled={loading}
               onClick={() => void verify(photoReview.token, true)}
-              className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50"
             >
               Confirm photo and check in
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={() => {
                 setPhotoReview(null);
                 setResult('Check-in cancelled.');
               }}
-              className="px-4 py-2 border rounded"
+              variant="secondary"
             >
               Cancel
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
-      {error && <div className="text-sm text-red-600">{error}</div>}
+      {error && (
+        <Alert tone="danger" role="alert">
+          {error}
+        </Alert>
+      )}
 
-      <div className="flex flex-wrap items-center gap-3 text-sm pt-2">
+      <div className="flex flex-wrap items-center gap-3 text-sm">
         <label className="flex items-center gap-2">
           <span>Show</span>
-          <select
+          <Select
             value={filter}
             onChange={(e) => setFilter(e.target.value as AttendanceFilter)}
-            className="border rounded px-2 py-1 bg-transparent"
+            className="w-auto py-2"
           >
             <option value="all">All tickets</option>
             <option value="checked-in">Checked in</option>
             <option value="not-checked-in">Not checked in</option>
-          </select>
+          </Select>
         </label>
-        <button
+        <Button
           type="button"
           onClick={exportAttendance}
           disabled={tickets.length === 0}
-          className="px-3 py-1 border rounded disabled:opacity-50"
+          variant="secondary"
+          size="sm"
         >
           Export CSV
-        </button>
+        </Button>
       </div>
 
-      <div className="space-y-2">
+      <div className="grid gap-3">
         {filtered.map((ticket) => (
-          <div
+          <Card
             key={ticket.id}
-            className="border rounded p-3 text-sm flex items-center justify-between gap-3"
+            className="flex items-center justify-between gap-3 py-4 text-sm"
           >
             <div className="break-all">{ticket.userSub}</div>
-            <div className="text-xs text-gray-500 whitespace-nowrap text-right">
-              {ticket.usedAt ? (
-                <>Checked in {new Date(ticket.usedAt).toLocaleString()}</>
-              ) : (
-                'Not checked in'
+            <div className="shrink-0 text-right">
+              <Badge tone={ticket.usedAt ? 'success' : 'neutral'}>
+                {ticket.usedAt ? 'Checked in' : 'Not checked in'}
+              </Badge>
+              {ticket.usedAt && (
+                <div className="mt-1 text-xs text-muted">
+                  {new Date(ticket.usedAt).toLocaleString()}
+                </div>
               )}
             </div>
-          </div>
+          </Card>
         ))}
         {filtered.length === 0 && (
-          <div className="text-sm text-gray-500">
-            {tickets.length === 0 ? 'No tickets issued yet.' : 'No tickets match this filter.'}
-          </div>
+          <EmptyState
+            title={
+              tickets.length === 0
+                ? 'No tickets issued yet'
+                : 'No tickets match this filter'
+            }
+          />
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

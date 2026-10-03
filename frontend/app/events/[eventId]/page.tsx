@@ -1,12 +1,20 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { apiGet } from '@/lib/api';
 import { EventCtaLinks } from '@/app/components/EventCtaLinks';
 import { EventPageNav } from '@/app/components/EventPageNav';
 import { useMyApplicationByEvent } from '@/lib/my-applications';
+import {
+  Alert,
+  ButtonLink,
+  Card,
+  LoadingState,
+  PageHeader,
+  PageShell,
+  TextLink,
+} from '@/app/components/ui';
 
 type EventDetail = {
   id: string;
@@ -54,61 +62,81 @@ export default function EventDetailPage() {
   const applicationStatus = getStatus(eventId);
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-4">
+    <PageShell className="space-y-7">
       <EventPageNav eventId={eventId} title={event?.title} />
-      {loading && <div className="text-sm">Loading…</div>}
-      {error && <div className="text-sm text-red-600">{error}</div>}
+      {loading && <LoadingState label="Opening event…" />}
+      {error && (
+        <Alert tone="danger" role="alert">
+          {error}
+        </Alert>
+      )}
       {event && (
-        <>
-          <h1 className="text-2xl font-semibold">{event.title}</h1>
-          {event.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">{event.description}</p>
-          )}
-          <div className="text-xs text-gray-500">
-            {new Date(event.date).toLocaleString()} · capacity {event.capacity}
+        <Card className="space-y-7 p-6 sm:p-8">
+          <PageHeader
+            eyebrow="Private gathering"
+            title={event.title}
+            description={event.description}
+          />
+          <div className="grid gap-3 border-y border-border py-5 text-sm sm:grid-cols-2">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+                Date and time
+              </div>
+              <div className="mt-1 font-medium">
+                {new Date(event.date).toLocaleString()}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+                Capacity
+              </div>
+              <div className="mt-1 font-medium">{event.capacity} guests</div>
+            </div>
           </div>
           {event.status !== 'published' && (
-            <p className="text-sm text-amber-700 dark:text-amber-400">
+            <Alert tone="warning">
               This event is not open for applications ({event.status}).
-            </p>
+            </Alert>
           )}
           {!appsLoading && (
-            <>
+            <div className="space-y-4">
               <EventCtaLinks
                 eventId={eventId}
                 applicationStatus={applicationStatus}
                 loggedIn={loggedIn}
               />
               {applicationStatus === 'approved' && (
-                <div className="flex flex-wrap gap-3 text-sm">
-                  <Link
+                <div className="flex flex-wrap gap-2">
+                  <ButtonLink
                     href={`/events/${eventId}/chat`}
-                    className="text-blue-600 underline"
+                    variant="secondary"
+                    size="sm"
                   >
                     Event chat
-                  </Link>
+                  </ButtonLink>
                   {eventStarted && (
-                    <Link
+                    <ButtonLink
                       href={`/events/${eventId}/feedback`}
-                      className="text-blue-600 underline"
+                      variant="secondary"
+                      size="sm"
                     >
                       Leave feedback
-                    </Link>
+                    </ButtonLink>
                   )}
                 </div>
               )}
-            </>
+            </div>
           )}
           {loggedIn && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted">
               Need your status?{' '}
-              <Link href="/applications" className="underline">
+              <TextLink href="/applications">
                 My applications
-              </Link>
+              </TextLink>
             </p>
           )}
-        </>
+        </Card>
       )}
-    </div>
+    </PageShell>
   );
 }

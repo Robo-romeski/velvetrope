@@ -1,10 +1,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { apiDeleteAuth, apiGetAuth, apiPostAuth, isUnauthorized } from '@/lib/api';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { useAuth } from '@/lib/auth';
+import {
+  Alert,
+  Badge,
+  Button,
+  ButtonLink,
+  Card,
+  EmptyState,
+  LoadingState,
+  MetricTile,
+  PageHeader,
+  PageShell,
+  Select,
+  TextLink,
+} from '@/app/components/ui';
 
 type HostEvent = {
   id: string;
@@ -97,9 +110,9 @@ export default function HostEventsPage() {
 
   if (authLoading) {
     return (
-      <div className="max-w-3xl mx-auto p-6">
-        <div className="text-sm">Loading…</div>
-      </div>
+      <PageShell>
+        <LoadingState />
+      </PageShell>
     );
   }
 
@@ -108,109 +121,171 @@ export default function HostEventsPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Your events</h1>
-        <Link href="/host/events/new" className="px-4 py-2 bg-blue-600 text-white rounded text-sm">
-          New event
-        </Link>
-      </div>
-      {loading && <div className="text-sm">Loading…</div>}
-      {error && <div className="text-sm text-red-600">{error}</div>}
-      {summary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-          <div className="border rounded p-3">
-            <div className="text-xs text-gray-500">Events</div>
-            <div className="text-lg font-semibold">{summary.events}</div>
+    <PageShell size="wide" className="space-y-7">
+      <section className="rounded-card border border-border bg-surface-subtle p-6 sm:p-8">
+        <PageHeader
+          eyebrow="Host workspace"
+          title="Your events"
+          description="Create memorable gatherings and manage every guest touchpoint."
+          actions={
+            <ButtonLink href="/host/events/new">
+              New event
+            </ButtonLink>
+          }
+        />
+        {summary && (
+          <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <MetricTile label="Events" value={summary.events} />
+            <MetricTile label="Applications" value={summary.applications} />
+            <MetricTile label="Waitlisted" value={summary.waitlisted} />
+            <MetricTile
+              label="Gross revenue"
+              value={(summary.grossRevenueCents / 100).toLocaleString(
+                undefined,
+                {
+                  style: 'currency',
+                  currency: 'USD',
+                },
+              )}
+            />
           </div>
-          <div className="border rounded p-3">
-            <div className="text-xs text-gray-500">Applications</div>
-            <div className="text-lg font-semibold">{summary.applications}</div>
-          </div>
-          <div className="border rounded p-3">
-            <div className="text-xs text-gray-500">Waitlisted</div>
-            <div className="text-lg font-semibold">{summary.waitlisted}</div>
-          </div>
-          <div className="border rounded p-3">
-            <div className="text-xs text-gray-500">Gross revenue</div>
-            <div className="text-lg font-semibold">
-              {(summary.grossRevenueCents / 100).toLocaleString(undefined, {
-                style: 'currency',
-                currency: 'USD',
-              })}
-            </div>
-          </div>
-        </div>
+        )}
+      </section>
+      {loading && <LoadingState label="Loading host workspace…" />}
+      {error && (
+        <Alert tone="danger" role="alert">
+          {error}
+        </Alert>
       )}
-      <div className="flex items-center gap-2 text-sm">
-        <span>Status</span>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-          className="border rounded px-2 py-1 bg-transparent"
-        >
-          <option value="all">All</option>
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+      <div className="flex flex-col gap-3 rounded-card border border-border bg-surface px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold tracking-[-0.02em]">
+            Event portfolio
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            Manage status, guests, invitations, and check-in.
+          </p>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-muted">
+          <span>Status</span>
+          <Select
+            value={statusFilter}
+            onChange={(e) =>
+              setStatusFilter(e.target.value as typeof statusFilter)
+            }
+            className="min-w-36 py-2"
+          >
+            <option value="all">All</option>
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="cancelled">Cancelled</option>
+          </Select>
+        </label>
       </div>
-      <div className="space-y-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         {visible.map((event) => (
-          <div key={event.id} className="border rounded p-4 space-y-2">
-            <div className="flex items-center justify-between gap-3">
-              <div className="font-medium">{event.title}</div>
-              <span className="text-xs uppercase tracking-wide text-gray-500">{event.status}</span>
+          <Card key={event.id} className="flex flex-col gap-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold tracking-[-0.02em]">
+                  {event.title}
+                </h3>
+                <div className="mt-1 text-xs text-muted">
+                  {new Date(event.date).toLocaleString()}
+                </div>
+              </div>
+              <Badge
+                tone={
+                  event.status === 'published'
+                    ? 'success'
+                    : event.status === 'cancelled'
+                      ? 'danger'
+                      : 'neutral'
+                }
+              >
+                {event.status}
+              </Badge>
             </div>
             {event.description && (
-              <div className="text-sm text-gray-600 dark:text-gray-400">{event.description}</div>
+              <p className="line-clamp-2 text-sm leading-6 text-muted">
+                {event.description}
+              </p>
             )}
-            <div className="text-xs text-gray-500">
-              {new Date(event.date).toLocaleString()} · {event.approvedCount}/{event.capacity} approved
-              {event.pendingCount ? ` · ${event.pendingCount} pending` : ''}
+            <div className="flex gap-6 border-y border-border py-4 text-sm">
+              <div>
+                <div className="text-xs text-muted">Approved</div>
+                <div className="mt-1 font-semibold">
+                  {event.approvedCount}/{event.capacity}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-muted">Pending</div>
+                <div className="mt-1 font-semibold">{event.pendingCount}</div>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-3 text-sm">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-3 text-sm">
+              <ButtonLink
+                href={`/host/events/${event.id}/applications`}
+                size="sm"
+              >
+                Manage guests
+              </ButtonLink>
+              <TextLink href={`/host/events/${event.id}/edit`}>Edit</TextLink>
+              <TextLink href={`/host/events/${event.id}/invites`}>
+                Invites
+              </TextLink>
+              <TextLink href={`/host/events/${event.id}/scan`}>
+                Check-in
+              </TextLink>
+              <TextLink href={`/host/events/${event.id}/analytics`}>
+                Analytics
+              </TextLink>
+              <TextLink href={`/host/events/${event.id}/form`}>Form</TextLink>
+            </div>
+            <div className="flex flex-wrap gap-2 border-t border-border pt-4">
               {event.status === 'draft' && (
-                <button onClick={() => setStatus(event.id, 'publish')} className="text-blue-600 underline">
+                <Button
+                  onClick={() => setStatus(event.id, 'publish')}
+                  variant="secondary"
+                  size="sm"
+                >
                   Publish
-                </button>
+                </Button>
               )}
               {event.status !== 'cancelled' && (
-                <button onClick={() => setStatus(event.id, 'cancel')} className="text-blue-600 underline">
+                <Button
+                  onClick={() => setStatus(event.id, 'cancel')}
+                  variant="ghost"
+                  size="sm"
+                >
                   Cancel
-                </button>
+                </Button>
               )}
-              <Link className="text-blue-600 underline" href={`/host/events/${event.id}/edit`}>
-                Edit
-              </Link>
-              <button onClick={() => remove(event.id)} className="text-red-600 underline">
-                Delete
-              </button>
-              <Link className="text-blue-600 underline" href={`/host/events/${event.id}/form`}>
-                Form
-              </Link>
-              <Link className="text-blue-600 underline" href={`/host/events/${event.id}/invites`}>
-                Invites
-              </Link>
-              <Link className="text-blue-600 underline" href={`/host/events/${event.id}/applications`}>
-                Applications
-              </Link>
-              <Link className="text-blue-600 underline" href={`/host/events/${event.id}/scan`}>
-                Check-in
-              </Link>
-              <Link
-                className="text-blue-600 underline"
-                href={`/host/events/${event.id}/analytics`}
+              <Button
+                onClick={() => remove(event.id)}
+                variant="ghost"
+                size="sm"
+                className="text-danger hover:bg-danger-soft"
               >
-                Analytics
-              </Link>
+                Delete
+              </Button>
             </div>
-          </div>
+          </Card>
         ))}
         {!loading && visible.length === 0 && (
-          <div className="text-sm text-gray-500">No events yet. Create one to get started.</div>
+          <div className="lg:col-span-2">
+            <EmptyState
+              title="No events here yet"
+              description="Create your first event or change the status filter."
+              action={
+                <ButtonLink href="/host/events/new" size="sm">
+                  Create event
+                </ButtonLink>
+              }
+            />
+          </div>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

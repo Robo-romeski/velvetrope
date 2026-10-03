@@ -7,6 +7,18 @@ import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { HostEventNav } from '@/app/components/HostEventNav';
 import { useAuth } from '@/lib/auth';
 import { parseApplicationAnswers } from '@/lib/parse-application-answers';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  LoadingState,
+  PageHeader,
+  PageShell,
+  Select,
+  Textarea,
+} from '@/app/components/ui';
 
 type Application = {
   id: string;
@@ -24,13 +36,13 @@ function ApplicationAnswers({ answers }: { answers?: string | null }) {
   const parsed = parseApplicationAnswers(answers);
   const entries = Object.entries(parsed);
   if (entries.length === 0) {
-    return <div className="text-xs text-gray-500">No form answers</div>;
+    return <div className="text-xs text-muted">No form answers</div>;
   }
   return (
-    <dl className="text-sm space-y-1 mt-2">
+    <dl className="mt-3 grid gap-3 rounded-xl bg-surface-subtle p-4 text-sm sm:grid-cols-2">
       {entries.map(([key, value]) => (
         <div key={key}>
-          <dt className="text-gray-600 dark:text-gray-400">{key}</dt>
+          <dt className="text-xs text-muted">{key}</dt>
           <dd className="font-medium break-words">{value || '—'}</dd>
         </div>
       ))}
@@ -108,9 +120,9 @@ export default function HostApplicationsPage() {
 
   if (authLoading) {
     return (
-      <div className="max-w-3xl mx-auto p-6">
-        <div className="text-sm">Loading…</div>
-      </div>
+      <PageShell>
+        <LoadingState />
+      </PageShell>
     );
   }
 
@@ -119,43 +131,48 @@ export default function HostApplicationsPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-4">
+    <PageShell size="wide" className="space-y-8">
       <HostEventNav eventId={eventId} />
-      <h1 className="text-2xl font-semibold">Applications</h1>
-      <div className="flex flex-wrap items-center gap-3 text-sm">
-        <span>
-          Page {page} / {Math.max(1, Math.ceil(total / pageSize))}
+      <PageHeader
+        eyebrow="Guest review"
+        title="Applications"
+        description={`${total} application${total === 1 ? '' : 's'} across every status.`}
+      />
+      <Card className="flex flex-wrap items-center gap-3 py-4 text-sm">
+        <span className="text-muted">
+          Page {page} of {Math.max(1, Math.ceil(total / pageSize))}
         </span>
-        <button
+        <Button
           disabled={page <= 1}
           onClick={() => setPage((p) => p - 1)}
-          className="px-2 py-1 border rounded disabled:opacity-50"
+          variant="secondary"
+          size="sm"
         >
-          Prev
-        </button>
-        <button
+          Previous
+        </Button>
+        <Button
           disabled={page >= Math.max(1, Math.ceil(total / pageSize))}
           onClick={() => setPage((p) => p + 1)}
-          className="px-2 py-1 border rounded disabled:opacity-50"
+          variant="secondary"
+          size="sm"
         >
           Next
-        </button>
-        <select
+        </Button>
+        <Select
           value={pageSize}
           onChange={(e) => {
             setPage(1);
             setPageSize(parseInt(e.target.value, 10));
           }}
-          className="border rounded px-2 py-1 bg-transparent"
+          className="w-auto py-2"
         >
           <option value={5}>5</option>
           <option value={10}>10</option>
           <option value={20}>20</option>
-        </select>
-        <span>{total} total</span>
-        <div className="flex items-center gap-2">
+        </Select>
+        <div className="ml-auto flex items-center gap-2">
           <span>Status</span>
-          <select
+          <Select
             value={status}
             onChange={(e) => {
               setPage(1);
@@ -168,43 +185,61 @@ export default function HostApplicationsPage() {
                   | 'rejected',
               );
             }}
-            className="border rounded px-2 py-1 bg-transparent"
+            className="w-auto min-w-32 py-2"
           >
             <option value="all">All</option>
             <option value="pending">Pending</option>
             <option value="waitlisted">Waitlisted</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
-          </select>
+          </Select>
         </div>
-      </div>
-      {loading && <div className="text-sm">Loading…</div>}
-      {error && <div className="text-sm text-red-600">{error}</div>}
-      <div className="space-y-3">
+      </Card>
+      {loading && <LoadingState label="Loading applications…" />}
+      {error && (
+        <Alert tone="danger" role="alert">
+          {error}
+        </Alert>
+      )}
+      <div className="grid gap-4">
         {items.map((a, index) => (
-          <div key={a.id} className="border rounded p-3 space-y-2">
+          <Card key={a.id} className="space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <div className="font-medium break-all">{a.applicantSub}</div>
-                <div className="text-xs text-gray-500 capitalize">Status: {a.status}</div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="break-all font-medium">{a.applicantSub}</div>
+                  <Badge
+                    tone={
+                      a.status === 'approved'
+                        ? 'success'
+                        : a.status === 'waitlisted'
+                          ? 'warning'
+                          : a.status === 'rejected'
+                            ? 'danger'
+                            : 'accent'
+                    }
+                  >
+                    {a.status}
+                  </Badge>
+                </div>
                 {a.status === 'waitlisted' && status === 'waitlisted' && (
-                  <div className="text-xs text-gray-500">
+                  <div className="mt-1 text-xs text-muted">
                     Waitlist position {(page - 1) * pageSize + index + 1}
                   </div>
                 )}
                 {a.decisionReason && (
-                  <div className="text-sm mt-1">
-                    <span className="text-gray-600 dark:text-gray-400">Host note:</span>{' '}
+                  <div className="mt-2 text-sm">
+                    <span className="text-muted">Host note:</span>{' '}
                     {a.decisionReason}
                   </div>
                 )}
                 <ApplicationAnswers answers={a.answers} />
               </div>
               {a.status === 'pending' && (
-                <div className="space-y-2 shrink-0 min-w-56">
+                <div className="min-w-64 shrink-0 space-y-3">
                   <label className="block text-xs space-y-1">
                     <span>Optional note to attendee</span>
-                    <textarea
+                    <Textarea
                       value={reasonById[a.id] ?? ''}
                       maxLength={1000}
                       rows={2}
@@ -214,37 +249,39 @@ export default function HostApplicationsPage() {
                           [a.id]: e.target.value,
                         }))
                       }
-                      className="w-full border rounded px-2 py-1 bg-transparent"
                     />
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    <button
+                    <Button
                       disabled={busyId === a.id}
                       onClick={() => decide(a.id, 'approved')}
-                      className="px-3 py-1 bg-green-600 text-white rounded text-sm disabled:opacity-50"
+                      size="sm"
                     >
                       Approve
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       disabled={busyId === a.id}
                       onClick={() => decide(a.id, 'waitlisted')}
-                      className="px-3 py-1 bg-amber-600 text-white rounded text-sm disabled:opacity-50"
+                      variant="secondary"
+                      size="sm"
                     >
                       Waitlist
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       disabled={busyId === a.id}
                       onClick={() => decide(a.id, 'rejected')}
-                      className="px-3 py-1 bg-red-600 text-white rounded text-sm disabled:opacity-50"
+                      variant="ghost"
+                      size="sm"
+                      className="text-danger hover:bg-danger-soft"
                     >
                       Reject
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
               {a.status === 'waitlisted' && status === 'waitlisted' && (
                 <div className="flex gap-2 shrink-0">
-                  <button
+                  <Button
                     disabled={busyId === a.id || index !== 0 || page !== 1}
                     onClick={() => promote(a.id)}
                     title={
@@ -252,35 +289,42 @@ export default function HostApplicationsPage() {
                         ? 'Promote the first attendee in FIFO order'
                         : undefined
                     }
-                    className="px-3 py-1 bg-green-600 text-white rounded text-sm disabled:opacity-50"
+                    size="sm"
                   >
                     Promote
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     disabled={busyId === a.id}
                     onClick={() => decide(a.id, 'rejected')}
-                    className="px-3 py-1 border border-red-600 text-red-700 dark:text-red-400 rounded text-sm disabled:opacity-50"
+                    variant="ghost"
+                    size="sm"
+                    className="text-danger hover:bg-danger-soft"
                   >
                     Reject
-                  </button>
+                  </Button>
                 </div>
               )}
               {a.status === 'approved' && (
-                <button
+                <Button
                   disabled={busyId === a.id}
                   onClick={() => decide(a.id, 'rejected')}
-                  className="px-3 py-1 border border-red-600 text-red-700 dark:text-red-400 rounded text-sm disabled:opacity-50"
+                  variant="ghost"
+                  size="sm"
+                  className="text-danger hover:bg-danger-soft"
                 >
                   Revoke approval
-                </button>
+                </Button>
               )}
             </div>
-          </div>
+          </Card>
         ))}
         {items.length === 0 && !loading && (
-          <div className="text-sm text-gray-500">No applications yet.</div>
+          <EmptyState
+            title="No applications yet"
+            description="Applications will appear here as guests redeem invites."
+          />
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

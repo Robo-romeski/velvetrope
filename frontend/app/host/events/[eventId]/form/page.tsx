@@ -6,6 +6,16 @@ import { useParams } from 'next/navigation';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { HostEventNav } from '@/app/components/HostEventNav';
 import { useAuth } from '@/lib/auth';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  LoadingState,
+  PageHeader,
+  PageShell,
+  Textarea,
+} from '@/app/components/ui';
 
 export default function HostEventFormEditor() {
   const { user, loading: authLoading } = useAuth();
@@ -40,9 +50,9 @@ export default function HostEventFormEditor() {
 
   if (authLoading) {
     return (
-      <div className="max-w-3xl mx-auto p-6">
-        <div className="text-sm">Loading…</div>
-      </div>
+      <PageShell>
+        <LoadingState />
+      </PageShell>
     );
   }
 
@@ -93,31 +103,50 @@ export default function HostEventFormEditor() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-4">
+    <PageShell className="space-y-8">
       <HostEventNav eventId={eventId} />
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-semibold">Application form</h1>
-        <div className="flex items-center gap-2 text-sm">
-          <span className="px-2 py-1 border rounded">Status: {eventStatus ?? 'unknown'}</span>
-          <button onClick={publish} disabled={loading} className="px-3 py-1 border rounded disabled:opacity-50">Publish</button>
-          <button onClick={cancel} disabled={loading} className="px-3 py-1 border rounded disabled:opacity-50">Cancel</button>
-        </div>
-      </div>
-      <p className="text-sm text-gray-500">Edit JSON schema for the application form.</p>
-      <textarea
-        className="w-full h-80 border rounded p-2 font-mono text-sm"
-        value={schemaText}
-        onChange={(e) => setSchemaText(e.target.value)}
+      <PageHeader
+        eyebrow="Guest questions"
+        title="Application form"
+        description="Define the questions guests answer when they apply."
+        actions={
+          <Badge tone={eventStatus === 'published' ? 'success' : 'neutral'}>
+            {eventStatus ?? 'Unknown'}
+          </Badge>
+        }
       />
-      <button
-        onClick={onSave}
-        disabled={loading}
-        className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-      >
-        {loading ? 'Saving...' : 'Save'}
-      </button>
-      {message && <div className="text-sm">{message}</div>}
-    </div>
+      <Card className="space-y-5 p-6 sm:p-8">
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={publish} disabled={loading} variant="secondary" size="sm">
+            Publish event
+          </Button>
+          <Button onClick={cancel} disabled={loading} variant="ghost" size="sm">
+            Cancel event
+          </Button>
+        </div>
+        <label className="block space-y-2">
+          <span className="text-sm font-medium">JSON schema</span>
+          <Textarea
+            className="h-80 font-mono text-sm"
+            value={schemaText}
+            onChange={(e) => setSchemaText(e.target.value)}
+          />
+        </label>
+        <Button onClick={onSave} disabled={loading}>
+          {loading ? 'Saving…' : 'Save form'}
+        </Button>
+        {message && (
+          <Alert
+            tone={
+              message === 'Saved' || message === 'Published' ? 'success' : 'info'
+            }
+            role="status"
+          >
+            {message}
+          </Alert>
+        )}
+      </Card>
+    </PageShell>
   );
 }
 

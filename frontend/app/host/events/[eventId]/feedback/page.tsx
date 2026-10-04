@@ -6,6 +6,16 @@ import { apiGetAuth } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { HostEventNav } from '@/app/components/HostEventNav';
+import {
+  Alert,
+  Card,
+  EmptyState,
+  LoadingState,
+  MetricTile,
+  PageHeader,
+  PageShell,
+  Section,
+} from '@/app/components/ui';
 
 type FeedbackSummary = {
   count: number;
@@ -48,56 +58,69 @@ export default function HostFeedbackPage() {
   }, [authLoading, eventId, user]);
 
   if (authLoading) {
-    return <div className="max-w-3xl mx-auto p-6 text-sm">Loading…</div>;
+    return (
+      <PageShell>
+        <LoadingState />
+      </PageShell>
+    );
   }
   if (!user) return <HostLoginPrompt title="Event feedback" />;
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-4">
+    <PageShell className="space-y-8">
       <HostEventNav eventId={eventId} />
-      <h1 className="text-2xl font-semibold">Event feedback</h1>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {!summary && !error && <p className="text-sm">Loading…</p>}
+      <PageHeader
+        eyebrow="Guest sentiment"
+        title="Event feedback"
+        description="A private view of ratings and comments shared after the event."
+      />
+      {error && (
+        <Alert tone="danger" role="alert">
+          {error}
+        </Alert>
+      )}
+      {!summary && !error && <LoadingState label="Loading feedback…" />}
       {summary && (
         <>
           <div className="grid grid-cols-2 gap-3">
-            <div className="border rounded p-3">
-              <div className="text-xs text-gray-500">Responses</div>
-              <div className="text-xl font-semibold">{summary.count}</div>
-            </div>
-            <div className="border rounded p-3">
-              <div className="text-xs text-gray-500">Average rating</div>
-              <div className="text-xl font-semibold">
-                {summary.averageRating.toFixed(1)} / 5
-              </div>
-            </div>
+            <MetricTile label="Responses" value={summary.count} />
+            <MetricTile
+              label="Average rating"
+              value={`${summary.averageRating.toFixed(1)} / 5`}
+            />
           </div>
-          <div className="border rounded p-3 text-sm">
+          <Card className="space-y-2 text-sm">
             {[5, 4, 3, 2, 1].map((rating) => (
               <div key={rating} className="flex justify-between">
                 <span>{rating} stars</span>
-                <span>{summary.distribution[String(rating)] ?? 0}</span>
+                <span className="font-semibold">
+                  {summary.distribution[String(rating)] ?? 0}
+                </span>
               </div>
             ))}
-          </div>
-          <div className="space-y-2">
-            {summary.comments.map((comment) => (
-              <div key={comment.id} className="border rounded p-3 text-sm">
-                <div className="text-xs text-gray-500">
-                  {comment.rating}/5 ·{' '}
-                  {comment.authorSub
-                    ? `Attendee ${comment.authorSub}`
-                    : 'Anonymous'}
-                </div>
-                <p className="whitespace-pre-wrap">{comment.comment}</p>
-              </div>
-            ))}
-            {summary.comments.length === 0 && (
-              <p className="text-sm text-gray-500">No written comments.</p>
-            )}
-          </div>
+          </Card>
+          <Section title="Written comments">
+            <div className="grid gap-3">
+              {summary.comments.map((comment) => (
+                <Card key={comment.id} className="text-sm">
+                  <div className="text-xs text-muted">
+                    {comment.rating}/5 ·{' '}
+                    {comment.authorSub
+                      ? `Attendee ${comment.authorSub}`
+                      : 'Anonymous'}
+                  </div>
+                  <p className="mt-2 whitespace-pre-wrap leading-6">
+                    {comment.comment}
+                  </p>
+                </Card>
+              ))}
+              {summary.comments.length === 0 && (
+                <EmptyState title="No written comments" />
+              )}
+            </div>
+          </Section>
         </>
       )}
-    </div>
+    </PageShell>
   );
 }

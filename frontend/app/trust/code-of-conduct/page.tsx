@@ -1,5 +1,10 @@
-import Link from 'next/link';
 import { API_SERVER_BASE } from '@/lib/server-api';
+import {
+  ButtonLink,
+  Card,
+  PageHeader,
+  PageShell,
+} from '@/app/components/ui';
 
 async function loadCodeOfConduct() {
   const res = await fetch(`${API_SERVER_BASE}/trust/code-of-conduct`, {
@@ -15,17 +20,20 @@ export default async function CodeOfConductPage() {
   const { version, text } = await loadCodeOfConduct();
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Code of conduct</h1>
-      {version && (
-        <p className="text-xs text-gray-500">Version {version}</p>
-      )}
-      <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans border rounded p-4 bg-black/[0.02] dark:bg-white/[0.04]">
-        {text}
-      </pre>
-      <Link href="/" className="text-sm text-blue-600 underline">
+    <PageShell className="space-y-8">
+      <PageHeader
+        eyebrow={version ? `Version ${version}` : 'Community standards'}
+        title="Code of conduct"
+        description="The shared expectations that keep VelvetKey gatherings respectful, consensual, and safe."
+      />
+      <Card className="p-6 sm:p-8">
+        <pre className="vk-prose whitespace-pre-wrap font-sans text-sm">
+          {text}
+        </pre>
+      </Card>
+      <ButtonLink href="/" variant="secondary">
         Back to events
-      </Link>
-    </div>
+      </ButtonLink>
+    </PageShell>
   );
 }

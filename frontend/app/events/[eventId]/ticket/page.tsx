@@ -1,9 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { apiGet, apiGetAuth, apiPostAuth, isUnauthorized } from '@/lib/api';
+import {
+  apiGet,
+  apiGetAuth,
+  apiPostAuth,
+  getApiStatus,
+  isUnauthorized,
+} from '@/lib/api';
 import { EventPageNav } from '@/app/components/EventPageNav';
 import QRCode from 'react-qr-code';
 import {
@@ -11,6 +16,16 @@ import {
   getOfflineTicket,
   saveOfflineTicket,
 } from '@/lib/offline-ticket';
+import {
+  Alert,
+  Button,
+  ButtonLink,
+  Card,
+  LoadingState,
+  PageHeader,
+  PageShell,
+  TextLink,
+} from '@/app/components/ui';
 
 type PhotoStatus = {
   required: boolean;
@@ -139,7 +154,7 @@ export default function EventTicketPage() {
         setUnauthorized(true);
       } else {
         const message = e instanceof Error ? e.message : 'Failed to load ticket';
-        if (message.includes('403')) {
+        if (getApiStatus(e) === 403) {
           setPaymentRequired(true);
           setError('Complete ticket payment before your QR is issued.');
         } else {
@@ -187,9 +202,15 @@ export default function EventTicketPage() {
         window.location.href = checkout.url as string;
         return;
       }
-      setError(
-        'Checkout URL was not returned. Ask the host to confirm Stripe is configured, or retry in test mode.',
-      );
+      if (checkout?.sessionId) {
+        await apiPostAuth(
+          `/stripe/checkout/${encodeURIComponent(eventId)}/confirm`,
+          { sessionId: checkout.sessionId },
+        );
+        await loadTicket();
+        return;
+      }
+      setError('Checkout could not be started. Please try again.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not start checkout');
     } finally {
@@ -245,45 +266,55 @@ export default function EventTicketPage() {
   };
 
   if (unauthorized) {
+    const next = `/events/${encodeURIComponent(eventId)}/ticket`;
     return (
-      <div className="max-w-xl mx-auto p-6 space-y-3">
+      <PageShell size="narrow" className="space-y-7">
         <EventPageNav eventId={eventId} title={title} />
-        <h1 className="text-2xl font-semibold">{title ?? 'Your ticket'}</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Log in to show your check-in QR.
-        </p>
-        <div className="flex gap-3">
-          <Link href="/auth/login" className="inline-block px-4 py-2 bg-blue-600 text-white rounded">
-            Login
-          </Link>
-          <Link href="/auth/register" className="inline-block px-4 py-2 border rounded">
+        <PageHeader
+          eyebrow="Your ticket"
+          title={title ?? 'Your ticket'}
+          description="Log in to show your check-in QR."
+        />
+        <Card className="flex flex-col gap-3 sm:flex-row">
+          <ButtonLink
+            href={`/auth/login?next=${encodeURIComponent(next)}`}
+          >
+            Log in
+          </ButtonLink>
+          <ButtonLink
+            href={`/auth/register?next=${encodeURIComponent(next)}`}
+            variant="secondary"
+          >
             Sign up
-          </Link>
-        </div>
-      </div>
+          </ButtonLink>
+        </Card>
+      </PageShell>
     );
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-4">
+    <PageShell size="narrow" className="space-y-7">
       <EventPageNav eventId={eventId} title={title} />
-      <h1 className="text-2xl font-semibold">{title ?? 'Your ticket'}</h1>
-      {eventDate && (
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          {new Date(eventDate).toLocaleString()}
-        </p>
-      )}
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Show this QR at the door. Hosts can also paste the token if the camera cannot read it.
-      </p>
+      <PageHeader
+        eyebrow="Your ticket"
+        title={title ?? 'Your ticket'}
+        description={
+          eventDate
+            ? `${new Date(eventDate).toLocaleString()} · Show this QR at the door.`
+            : 'Show this QR at the door.'
+        }
+      />
       {(!isOnline || usingOfflineCopy) && token && (
-        <div className="text-sm border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 rounded p-3">
+        <Alert tone="warning" title="Offline copy">
           Offline copy — host verification still requires their device to be online.
-        </div>
+        </Alert>
       )}
-      {loading && <div>Loading…</div>}
+      {loading && <LoadingState label="Preparing your ticket…" />}
       {paymentRequired && !token && (
-        <div className="text-sm space-y-3 border rounded p-4">
+        <Card className="space-y-4">
+          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+            Payment required
+          </div>
           <p>
             This event requires a paid ticket (
             {(paymentAmountCents / 100).toLocaleString(undefined, {
@@ -292,74 +323,72 @@ export default function EventTicketPage() {
             })}
             ) before your check-in QR is issued.
           </p>
-          <button
+          <Button
             type="button"
             onClick={startCheckout}
             disabled={paying}
-            className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
           >
             {paying ? 'Redirecting…' : 'Pay with Stripe'}
-          </button>
-        </div>
+          </Button>
+        </Card>
       )}
       {identityRequired && !token && (
-        <div className="text-sm space-y-3 border rounded p-4">
+        <Card className="space-y-4">
+          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+            Identity verification
+          </div>
           <p>
             This event requires approved Persona identity verification before
             your QR ticket can be issued.
           </p>
-          <p className="text-gray-600 dark:text-gray-400 capitalize">
+          <p className="text-sm capitalize text-muted">
             Current status: {identityStatus.replaceAll('_', ' ')}
           </p>
           {identityConfigured ? (
-            <Link
-              href="/identity/verify"
-              className="inline-block px-4 py-2 bg-blue-600 text-white rounded"
-            >
+            <ButtonLink href="/identity/verify">
               Verify identity
-            </Link>
+            </ButtonLink>
           ) : (
-            <p className="text-amber-700 dark:text-amber-400">
+            <Alert tone="warning">
               Persona is not configured on this deployment. Contact the host.
-            </p>
+            </Alert>
           )}
-        </div>
+        </Card>
       )}
       {error && (
-        <div className="text-sm space-y-2">
-          <div className="text-red-600">{error}</div>
+        <Alert tone="danger" title={error} role="alert">
           {!paymentRequired && (
-            <>
-              <p className="text-gray-600 dark:text-gray-400">
+            <div className="space-y-2">
+              <p>
                 Tickets are available after the host approves your application.
               </p>
               <div className="flex flex-wrap gap-3">
-                <Link href={`/events/${eventId}/apply`} className="text-blue-600 underline">
+                <TextLink href={`/events/${eventId}/apply`}>
                   Apply
-                </Link>
-                <Link href="/applications" className="text-blue-600 underline">
+                </TextLink>
+                <TextLink href="/applications">
                   My applications
-                </Link>
+                </TextLink>
               </div>
-            </>
+            </div>
           )}
-        </div>
+        </Alert>
       )}
       {photoStatus?.required && (
-        <div className="border rounded p-4 text-sm space-y-3">
-          <h2 className="font-semibold">Check-in reference photo</h2>
+        <Card className="space-y-4 text-sm">
+          <h2 className="text-lg font-semibold">Check-in reference photo</h2>
           {!photoStatus.configured ? (
-            <p className="text-amber-700 dark:text-amber-400">
+            <Alert tone="warning">
               The host enabled photo check-in, but private photo storage is not
               configured. Contact the host before the event.
-            </p>
+            </Alert>
           ) : photoStatus.uploaded ? (
-            <p className="text-green-700 dark:text-green-400">
+            <Alert tone="success">
               Photo uploaded. The host will compare it visually at check-in.
-            </p>
+            </Alert>
           ) : (
             <>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-muted">
                 Upload a clear photo of yourself. It is private, available only
                 to the event host, and deleted seven days after the event.
               </p>
@@ -373,43 +402,53 @@ export default function EventTicketPage() {
                   if (file) void uploadPhoto(file);
                 }}
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted">
                 JPEG, PNG, or WebP; maximum 5 MB.
               </p>
             </>
           )}
           {photoUploading && <p>Uploading…</p>}
-        </div>
+        </Card>
       )}
       {token && (
-        <div className="space-y-3">
-          <div id="ticket-qr-wrap" className="p-4 bg-white rounded shadow inline-block">
-            <QRCode value={token} size={200} />
+        <Card className="overflow-hidden p-0">
+          <div className="flex flex-col items-center gap-5 p-6 text-center sm:p-8">
+            <div
+              id="ticket-qr-wrap"
+              className="inline-block rounded-2xl bg-white p-5 shadow-sm"
+            >
+              <QRCode value={token} size={200} />
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                Entry token
+              </div>
+              <div className="mt-2 break-all font-mono text-xs">{token}</div>
+            </div>
+            <Button onClick={download} variant="secondary">
+              Download QR
+            </Button>
           </div>
-          <div className="text-sm break-all font-mono">{token}</div>
-          <button onClick={download} className="px-4 py-2 border rounded text-sm">
-            Download QR
-          </button>
           {availableOffline && (
-            <div className="text-xs text-gray-500 space-y-1">
-              <div>Available offline on this device until one day after the event.</div>
+            <div className="space-y-2 border-t border-border bg-surface-subtle px-5 py-4 text-xs text-muted">
+              <div>
+                Available offline on this device until one day after the event.
+              </div>
               <button
                 type="button"
                 onClick={async () => {
                   await deleteOfflineTicket(eventId);
                   setAvailableOffline(false);
                 }}
-                className="text-red-600 underline"
+                className="font-medium text-danger underline underline-offset-4"
               >
                 Remove offline copy
               </button>
             </div>
           )}
-          <Link href="/applications" className="block text-sm text-blue-600 underline">
-            My applications
-          </Link>
-        </div>
+        </Card>
       )}
-    </div>
+      {token && <TextLink href="/applications">My applications</TextLink>}
+    </PageShell>
   );
 }

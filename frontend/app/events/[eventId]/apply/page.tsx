@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { apiGet, apiPostAuth } from '@/lib/api';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { EventPageNav } from '@/app/components/EventPageNav';
 import { useAuth } from '@/lib/auth';
@@ -26,6 +26,7 @@ type Field = { name: string; type: string; required?: boolean };
 export default function ApplyToEventPage() {
   const { user, loading: authLoading } = useAuth();
   const params = useParams();
+  const searchParams = useSearchParams();
   const eventId = useMemo(() => String(params?.eventId ?? ''), [params]);
   const { getStatus, loading: appsLoading } = useMyApplicationByEvent();
   const applicationStatus = getStatus(eventId);
@@ -39,6 +40,13 @@ export default function ApplyToEventPage() {
   const [inviteCode, setInviteCode] = useState<string>('');
   const [submitted, setSubmitted] = useState(false);
   const [acceptedCoC, setAcceptedCoC] = useState(false);
+
+  useEffect(() => {
+    const fromQuery = searchParams?.get('invite')?.trim();
+    if (fromQuery) {
+      setInviteCode(fromQuery.toUpperCase());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     let mounted = true;

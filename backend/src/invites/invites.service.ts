@@ -77,11 +77,16 @@ export class InvitesService {
     throw new BadRequestException('Failed to generate unique code');
   }
 
+  async findByCode(code: string): Promise<InviteEntity | null> {
+    return await this.repo.findOne({ where: { code } });
+  }
+
   async validate(code: string): Promise<{
     valid: boolean;
     eventId?: string;
     used?: boolean;
     expired?: boolean;
+    usedBy?: string | null;
   }> {
     const invite = await this.repo.findOne({ where: { code } });
     if (!invite) return { valid: false };
@@ -94,7 +99,12 @@ export class InvitesService {
         expired: true,
       };
     }
-    return { valid: true, eventId: invite.eventId, used: !!invite.usedAt };
+    return {
+      valid: true,
+      eventId: invite.eventId,
+      used: !!invite.usedAt,
+      usedBy: invite.usedBy ?? null,
+    };
   }
 
   async redeem(code: string, userSub: string): Promise<InviteEntity> {
@@ -103,7 +113,12 @@ export class InvitesService {
     if (this.isExpired(invite)) {
       throw new BadRequestException('Invite code expired');
     }
-    if (invite.usedAt) throw new BadRequestException('Invite already used');
+    if (invite.usedAt) {
+      if (invite.usedBy === userSub) {
+        return invite;
+      }
+      throw new BadRequestException('Invite already used');
+    }
     invite.usedAt = new Date();
     invite.usedBy = userSub;
     return await this.repo.save(invite);

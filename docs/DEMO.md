@@ -91,11 +91,18 @@ The home page should now show the published event.
 
 ### Attendee applies
 
-1. In the attendee window, open the event from **Events**.
-2. Select **Apply**.
-3. Paste the invite code.
-4. Accept the code of conduct and submit.
-5. Show **My applications** with the pending status.
+Either path works:
+
+1. Open the event from **Events**, select **Apply**, paste the invite code,
+   accept the code of conduct, and submit.
+2. Or open **Redeem invite** (from an invite link), enter the code, choose
+   **Redeem and apply**, then submit on the application page.
+
+Before any paid ticket demo, the **same host account that owns the event** must
+show **Payments** as connected. A Stripe account linked to a different host
+will not satisfy checkout for that event.
+
+3. Show **My applications** with the pending status.
 
 ### Host approves
 

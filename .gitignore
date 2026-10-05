@@ -25,12 +25,9 @@ htmlcov/
 # OS / Editors
 .DS_Store
 Thumbs.db
-.vscode/
 .idea/
 
 # Env / Secrets
-.env
-.env.*
 !.env.example
 !**/.env.example
 *.local
@@ -49,3 +46,4 @@ dist/
 out/
 logs/
 *.log
+config.bat

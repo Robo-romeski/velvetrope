@@ -201,14 +201,16 @@ export class ApplicationsService {
     if (!result.valid) {
       throw new BadRequestException('Invalid invite code');
     }
-    if (result.used) {
-      throw new BadRequestException('Invite code already used');
-    }
     if (result.eventId && result.eventId !== dto.eventId) {
       throw new BadRequestException('Invite code not valid for this event');
     }
-    // redeem (consume) the invite for this applicant
-    await this.invites.redeem(code, dto.applicantSub);
+    if (result.used) {
+      if (result.usedBy !== dto.applicantSub) {
+        throw new BadRequestException('Invite code already used');
+      }
+    } else {
+      await this.invites.redeem(code, dto.applicantSub);
+    }
 
     const entity = this.repo.create({
       eventId: dto.eventId,

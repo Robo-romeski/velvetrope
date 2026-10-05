@@ -271,6 +271,32 @@ describe('Applications (e2e)', () => {
       .expect(400);
   });
 
+  it('allows application when the same user already redeemed the invite', async () => {
+    const event = await createEvent(app.getHttpServer());
+
+    const invite = await request(app.getHttpServer())
+      .post(`/invites/generate/${event.id}`)
+      .set(hostAuth())
+      .expect(201);
+    const code = invite.body.code as string;
+
+    await request(app.getHttpServer())
+      .post(`/invites/redeem/${code}`)
+      .set(userAuth('user|redeemer-first'))
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/applications')
+      .set(userAuth('user|redeemer-first'))
+      .send({
+        eventId: event.id,
+        answers: {},
+        acceptedCodeOfConduct: true,
+        inviteCode: code,
+      })
+      .expect(201);
+  });
+
   it('rejects a second approval when the event is at capacity', async () => {
     const event = await createEvent(app.getHttpServer(), 'test-user', {
       capacity: 1,

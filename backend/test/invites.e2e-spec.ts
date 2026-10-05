@@ -44,6 +44,11 @@ describe('Invites (e2e)', () => {
 
     await request(app.getHttpServer())
       .post(`/invites/redeem/${code}`)
+      .set(userAuth('user|xyz'))
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/invites/redeem/${code}`)
       .set(userAuth('user|abc'))
       .expect(400);
   });

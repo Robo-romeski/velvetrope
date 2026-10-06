@@ -89,11 +89,29 @@ In the browser: `https://YOUR_DOMAIN` (Community / Learn / Events).
 
 ## 5. Updates
 
+From the server (requires a GitHub deploy key or HTTPS credentials on the host):
+
 ```bash
 cd /home/ubuntu/epic-sexual
 git pull
 docker compose -f docker-compose.yml -f docker-compose.postgres.yml \
   -f deploy/lightsail/docker-compose.prod.yml --profile postgres up -d --build
+```
+
+From your laptop (no GitHub access on the box): sync with tar and rebuild. On macOS set
+`COPYFILE_DISABLE=1` so resource forks do not corrupt `.git` on the server:
+
+```bash
+export COPYFILE_DISABLE=1
+cd /path/to/epic-sexual
+tar czf - \
+  --exclude='node_modules' --exclude='frontend/node_modules' --exclude='backend/node_modules' \
+  --exclude='frontend/.next' --exclude='.env' \
+  . | ssh -i ~/.ssh/YOUR.pem ubuntu@STATIC_IP 'tar xzf - -C ~/epic-sexual'
+
+ssh -i ~/.ssh/YOUR.pem ubuntu@STATIC_IP 'cd ~/epic-sexual && sudo docker compose \
+  -f docker-compose.yml -f docker-compose.postgres.yml \
+  -f deploy/lightsail/docker-compose.prod.yml --profile postgres up -d --build'
 ```
 
 Backend runs TypeORM migrations on startup when `DATABASE_URL` is set.

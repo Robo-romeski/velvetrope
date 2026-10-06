@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiGetAuth, apiPatchAuth, isUnauthorized } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -256,12 +257,12 @@ export default function ProfileSettingsPage() {
           {profile.educator ? 'enabled' : 'off — enable when creating content at Learn → Create'}
         </p>
         <div className="flex flex-wrap gap-3 pt-2">
-          <a href="/settings/connections" className="text-accent">
+          <Link href="/settings/connections" className="text-accent">
             Followers & following
-          </a>
-          <a href="/settings/blocks" className="text-accent">
+          </Link>
+          <Link href="/settings/blocks" className="text-accent">
             Blocked members
-          </a>
+          </Link>
         </div>
       </Card>
     </PageShell>

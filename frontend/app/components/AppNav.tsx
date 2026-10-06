@@ -221,6 +221,9 @@ export function AppNav() {
                 <Link href="/settings/profile" className={navLinkClass(false)}>
                   Profile
                 </Link>
+                <Link href="/settings/connections" className={navLinkClass(false)}>
+                  Follows
+                </Link>
                 <Link
                   href={
                     user.id

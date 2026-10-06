@@ -27,6 +27,8 @@ type PublicEvent = {
 
 export default function Home() {
   const [events, setEvents] = useState<PublicEvent[]>([]);
+  const [learnCount, setLearnCount] = useState(0);
+  const [groupCount, setGroupCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { getStatus, loading: appsLoading, loggedIn } = useMyApplicationByEvent();
@@ -38,6 +40,12 @@ export default function Home() {
         const data = await apiGet('/events');
         if (!mounted) return;
         setEvents(Array.isArray(data) ? data : []);
+        try {
+          const learn = await apiGet('/learn');
+          if (mounted) setLearnCount(Array.isArray(learn) ? learn.length : 0);
+        } catch {
+          if (mounted) setLearnCount(0);
+        }
       } catch (e) {
         if (!mounted) return;
         setError(e instanceof Error ? e.message : 'Could not load events');
@@ -49,6 +57,23 @@ export default function Home() {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!loggedIn) return;
+    let mounted = true;
+    (async () => {
+      try {
+        const { apiGetAuth } = await import('@/lib/api');
+        const groups = await apiGetAuth('/groups');
+        if (mounted) setGroupCount(Array.isArray(groups) ? groups.length : 0);
+      } catch {
+        if (mounted) setGroupCount(0);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [loggedIn]);
 
   return (
     <PageShell size="wide" className="space-y-10 sm:space-y-12">
@@ -66,6 +91,12 @@ export default function Home() {
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <ButtonLink href="#upcoming-events">Browse events</ButtonLink>
+            <ButtonLink href="/community" variant="secondary">
+              Community
+            </ButtonLink>
+            <ButtonLink href="/learn" variant="secondary">
+              Learn
+            </ButtonLink>
             <ButtonLink
               href="/auth/register?next=%2Fhost%2Fevents&host=1"
               variant="secondary"
@@ -106,6 +137,28 @@ export default function Home() {
           </dl>
         </aside>
       </section>
+      {(learnCount > 0 || (loggedIn && groupCount > 0)) && (
+        <section className="rounded-card border border-border bg-surface p-6 sm:p-8">
+          <h2 className="text-lg font-semibold">Beyond events</h2>
+          <p className="mt-2 text-sm text-muted max-w-2xl">
+            VelvetKey is growing into a community for learning and conversation—separate from invite-only gatherings.
+          </p>
+          <dl className="mt-4 flex flex-wrap gap-6 text-sm">
+            {learnCount > 0 && (
+              <div>
+                <dt className="text-muted">Published guides</dt>
+                <dd className="font-semibold">{learnCount}</dd>
+              </div>
+            )}
+            {loggedIn && groupCount > 0 && (
+              <div>
+                <dt className="text-muted">Groups you can access</dt>
+                <dd className="font-semibold">{groupCount}</dd>
+              </div>
+            )}
+          </dl>
+        </section>
+      )}
       <dl
         id="how-it-works"
         className="grid scroll-mt-28 divide-y divide-border overflow-hidden rounded-card border border-border bg-surface sm:grid-cols-3 sm:divide-x sm:divide-y-0"

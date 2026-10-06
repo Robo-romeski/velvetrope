@@ -1,7 +1,11 @@
+NOTE (2026-10-05): Superseded for platform direction by docs/PRODUCT_PLAN.md and
+.taskmaster/docs/platform-vision-2026.txt. This file remains historical for the
+event-MVP phase; ticket checkout is live in test mode on main (see docs/DEMO.md).
+
 Product: VelvetKey (velvetrope)
 Repository: NestJS 11 + Next.js 15 App Router, TypeORM, SQLite (dev/tests), Docker Compose
 Auth: Local email/password, JWT (HS256, AUTH_SECRET), roles host + attendee — NOT Auth0
-Payments: Stripe Connect scaffolding exists; ticket checkout NOT live — enable only when product owner opts in
+Payments: Stripe Connect + test-mode ticket checkout on main; production provider TBD per PRODUCT_PLAN.md
 Infrastructure: Local + GitHub Actions CI only — NO AWS EKS/GHCR prod compose from old PR #1
 
 ================================================================================

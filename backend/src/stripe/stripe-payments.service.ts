@@ -12,10 +12,21 @@ import { EventPaymentEntity } from './event-payment.entity';
 import { StripeAccountEntity } from './stripe-account.entity';
 import { EventEntity } from '../events/event.entity';
 import { randomBytes } from 'crypto';
+import { CommerceService } from '../commerce/commerce.service';
+import { EducationalContentEntity } from '../education/educational-content.entity';
 
 @Injectable()
 export class StripePaymentsService {
   private stripe: Stripe | null = null;
+
+  isLiveStripeEnabled(): boolean {
+    return this.stripe !== null;
+  }
+
+  simulatedCheckoutPageUrl(sessionId: string): string {
+    const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
+    return `${baseUrl}/checkout/simulate?session_id=${encodeURIComponent(sessionId)}`;
+  }
 
   constructor(
     private readonly config: ConfigService,
@@ -25,6 +36,9 @@ export class StripePaymentsService {
     private readonly accounts: Repository<StripeAccountEntity>,
     @InjectRepository(EventEntity)
     private readonly events: Repository<EventEntity>,
+    @InjectRepository(EducationalContentEntity)
+    private readonly courses: Repository<EducationalContentEntity>,
+    private readonly commerce: CommerceService,
   ) {
     const key = this.config.get<string>('STRIPE_SECRET_KEY');
     if (key && process.env.NODE_ENV !== 'test') {
@@ -122,7 +136,7 @@ export class StripePaymentsService {
       record.status = 'pending';
       record.stripeCheckoutSessionId = sessionId;
       await this.payments.save(record);
-      return { url: null, sessionId };
+      return { url: this.simulatedCheckoutPageUrl(sessionId), sessionId };
     }
 
     const session = await this.stripe.checkout.sessions.create(
@@ -140,7 +154,11 @@ export class StripePaymentsService {
         ],
         success_url: `${baseUrl}/events/${encodeURIComponent(eventId)}/ticket?paid=1&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/events/${encodeURIComponent(eventId)}/ticket`,
-        metadata: { eventId, userSub },
+        metadata: {
+          eventId,
+          userSub,
+          orderKind: 'event_ticket',
+        },
       },
       { stripeAccount: hostAccount.accountId },
     );
@@ -169,11 +187,7 @@ export class StripePaymentsService {
     const record = await this.payments.findOne({
       where: { stripeCheckoutSessionId: sessionId },
     });
-    if (
-      !record ||
-      record.eventId !== eventId ||
-      record.userSub !== userSub
-    ) {
+    if (!record || record.eventId !== eventId || record.userSub !== userSub) {
       throw new ForbiddenException('Checkout session does not match attendee');
     }
     if (record.status === 'paid') {
@@ -200,10 +214,7 @@ export class StripePaymentsService {
       { expand: ['payment_intent'] },
       { stripeAccount: hostAccount.accountId },
     );
-    if (
-      session.status !== 'complete' ||
-      session.payment_status !== 'paid'
-    ) {
+    if (session.status !== 'complete' || session.payment_status !== 'paid') {
       throw new BadRequestException('Checkout session is not paid');
     }
     if (
@@ -255,6 +266,19 @@ export class StripePaymentsService {
     }
 
     if (record.status === 'paid') {
+      await this.commerce.recordInstantPaidOrder({
+        buyerId: input.userSub,
+        provider: 'stripe',
+        providerRef: input.sessionId,
+        totalCents: record.amountCents,
+        lines: [
+          {
+            productType: 'event_ticket',
+            productId: input.eventId,
+            amountCents: record.amountCents,
+          },
+        ],
+      });
       return record;
     }
 
@@ -265,7 +289,30 @@ export class StripePaymentsService {
     if (input.paymentIntentId) {
       record.stripePaymentIntentId = input.paymentIntentId;
     }
-    return await this.payments.save(record);
+    const saved = await this.payments.save(record);
+    await this.commerce.recordInstantPaidOrder({
+      buyerId: input.userSub,
+      provider: 'stripe',
+      providerRef: input.sessionId,
+      totalCents: saved.amountCents,
+      lines: [
+        {
+          productType: 'event_ticket',
+          productId: input.eventId,
+          amountCents: saved.amountCents,
+        },
+      ],
+    });
+    return saved;
+  }
+
+  async fulfillAnyCheckoutSession(sessionId: string): Promise<void> {
+    const order = await this.commerce.findByProviderRef(sessionId);
+    if (order) {
+      await this.commerce.fulfillPaidOrder(sessionId);
+      return;
+    }
+    await this.fulfillCheckoutBySessionId(sessionId);
   }
 
   async fulfillCheckoutBySessionId(
@@ -284,9 +331,170 @@ export class StripePaymentsService {
     });
   }
 
+  async getCourseAccessStatus(contentId: string, userSub: string) {
+    const content = await this.courses.findOne({ where: { id: contentId } });
+    if (!content) throw new NotFoundException('Content not found');
+    const priceCents = Math.max(0, content.priceCents ?? 0);
+    if (priceCents === 0) {
+      return { required: false, status: 'not_required' as const, priceCents: 0 };
+    }
+    const entitled = await this.commerce.hasActiveEntitlement(
+      userSub,
+      'course_access',
+      contentId,
+    );
+    return {
+      required: true,
+      priceCents,
+      status: entitled ? ('paid' as const) : ('pending' as const),
+    };
+  }
+
+  async createCourseCheckoutSession(
+    contentSlug: string,
+    userSub: string,
+  ): Promise<{ url: string | null; sessionId: string }> {
+    const content = await this.courses.findOne({ where: { slug: contentSlug } });
+    if (!content || content.status !== 'published') {
+      throw new NotFoundException('Content not found');
+    }
+    const amountCents = Math.max(0, content.priceCents ?? 0);
+    if (amountCents === 0) {
+      throw new BadRequestException('This content is free');
+    }
+    if (content.creatorId === userSub) {
+      throw new BadRequestException('Creators already have access');
+    }
+    const entitled = await this.commerce.hasActiveEntitlement(
+      userSub,
+      'course_access',
+      content.id,
+    );
+    if (entitled) {
+      throw new BadRequestException('Already purchased');
+    }
+
+    const creatorAccount = await this.accounts.findOne({
+      where: { hostId: content.creatorId },
+    });
+    if (!creatorAccount) {
+      throw new BadRequestException(
+        'Educator has not connected payouts for paid content',
+      );
+    }
+
+    const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
+
+    if (!this.stripe) {
+      const sessionId = `cs_test_${randomBytes(16).toString('hex')}`;
+      await this.commerce.createPendingOrder({
+        buyerId: userSub,
+        provider: 'stripe',
+        providerRef: sessionId,
+        totalCents: amountCents,
+        lines: [
+          {
+            productType: 'course_access',
+            productId: content.id,
+            amountCents,
+            payeeId: content.creatorId,
+          },
+        ],
+      });
+      return { url: this.simulatedCheckoutPageUrl(sessionId), sessionId };
+    }
+
+    const session = await this.stripe.checkout.sessions.create(
+      {
+        mode: 'payment',
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: 'usd',
+              unit_amount: amountCents,
+              product_data: { name: content.title },
+            },
+          },
+        ],
+        success_url: `${baseUrl}/learn/${encodeURIComponent(content.slug)}?paid=1&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/learn/${encodeURIComponent(content.slug)}`,
+        metadata: {
+          orderKind: 'course_access',
+          contentId: content.id,
+          userSub,
+        },
+      },
+      { stripeAccount: creatorAccount.accountId },
+    );
+
+    await this.commerce.createPendingOrder({
+      buyerId: userSub,
+      provider: 'stripe',
+      providerRef: session.id,
+      totalCents: amountCents,
+      lines: [
+        {
+          productType: 'course_access',
+          productId: content.id,
+          amountCents,
+          payeeId: content.creatorId,
+        },
+      ],
+    });
+
+    return { url: session.url ?? null, sessionId: session.id };
+  }
+
+  async confirmCourseCheckoutSession(
+    contentSlug: string,
+    userSub: string,
+    sessionId: string,
+  ): Promise<void> {
+    const content = await this.courses.findOne({ where: { slug: contentSlug } });
+    if (!content) throw new NotFoundException('Content not found');
+
+    if (!this.stripe) {
+      await this.commerce.fulfillPaidOrder(sessionId);
+      return;
+    }
+
+    const creatorAccount = await this.accounts.findOne({
+      where: { hostId: content.creatorId },
+    });
+    if (!creatorAccount) {
+      throw new BadRequestException('Educator payout account not connected');
+    }
+
+    const session = await this.stripe.checkout.sessions.retrieve(
+      sessionId,
+      { expand: ['payment_intent'] },
+      { stripeAccount: creatorAccount.accountId },
+    );
+    if (session.status !== 'complete' || session.payment_status !== 'paid') {
+      throw new BadRequestException('Checkout session is not paid');
+    }
+    if (
+      session.metadata?.orderKind !== 'course_access' ||
+      session.metadata?.contentId !== content.id ||
+      session.metadata?.userSub !== userSub
+    ) {
+      throw new ForbiddenException('Checkout session metadata mismatch');
+    }
+    await this.commerce.fulfillPaidOrder(sessionId);
+  }
+
   async handleCheckoutSessionCompleted(
     session: Stripe.Checkout.Session,
   ): Promise<void> {
+    const orderKind = session.metadata?.orderKind ?? 'event_ticket';
+    if (orderKind === 'course_access') {
+      if (session.id) {
+        await this.commerce.fulfillPaidOrder(session.id);
+      }
+      return;
+    }
+
     const eventId = session.metadata?.eventId;
     const userSub = session.metadata?.userSub;
     if (!eventId || !userSub || !session.id) return;

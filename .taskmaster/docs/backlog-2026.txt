@@ -1,6 +1,10 @@
 VelvetKey — remaining post-MVP backlog
 =======================================
 
+Expanded platform vision (community + education + kudos): see docs/PRODUCT_PLAN.md
+and .taskmaster/docs/platform-vision-2026.txt. Event demo (M0) remains the
+regression milestone; M1–M4 are separate tags when work starts.
+
 Master roadmap tasks 1–10 are implemented on main. Do not reopen unless product owner requests.
 
 TASK 12 — Future epics (separate PRDs / tags)

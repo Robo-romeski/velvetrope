@@ -1,0 +1,23 @@
+VelvetKey Platform Vision PRD (2026)
+Source of truth for phased work: docs/PRODUCT_PLAN.md
+
+PRODUCT
+Knowledge-centered social community for adults (ENM, poly, swinging, kink).
+Community-led. NOT primary dating/matchmaking.
+Domain: epicsexual.com / VelvetKey.
+
+NON-NEGOTIABLES
+- Preserve event module: invites, applications, approvals, waitlist, Stripe test checkout, QR ticket, single-use check-in, event chat, analytics, feedback.
+- Event invite does NOT grant full community access.
+- Kudos separate from event feedback ratings and trust reports; no member score/leaderboard.
+- Stripe test for local demo; production payments provider-agnostic and approval-dependent.
+- Stack: Next.js, NestJS, TypeORM, PostgreSQL.
+
+MILESTONES (sequential themes, not one launch)
+M0 Event demo stable (DEMO.md + e2e) — CURRENT BASELINE
+M1 Community: profiles, visibility, groups, posts, blocks
+M2 Education: free content, drafts, lessons, progress, content reports
+M3 Commerce: orders, entitlements, paid courses, migrate event payments to adapter
+M4 Kudos: approve-to-display, anti-gaming, verified context optional
+
+Parse into tag platform-roadmap when ready; keep master for M0 regression only.

@@ -12,6 +12,20 @@ import { CheckinPhotoEntity } from '../checkin/checkin-photo.entity';
 import { ChatMessageEntity } from '../chat/chat-message.entity';
 import { EventFeedbackEntity } from '../feedback/event-feedback.entity';
 import { IdentityVerificationEntity } from '../identity/identity-verification.entity';
+import { MemberProfileEntity } from '../members/member-profile.entity';
+import { MemberBlockEntity } from '../members/member-block.entity';
+import { MemberFollowEntity } from '../members/member-follow.entity';
+import { GroupEntity } from '../social/group.entity';
+import { GroupMembershipEntity } from '../social/group-membership.entity';
+import { GroupPostEntity } from '../social/group-post.entity';
+import { PostCommentEntity } from '../social/post-comment.entity';
+import { EducationalContentEntity } from '../education/educational-content.entity';
+import { EducationLessonEntity } from '../education/education-lesson.entity';
+import { LessonProgressEntity } from '../education/lesson-progress.entity';
+import { OrderEntity } from '../commerce/order.entity';
+import { OrderLineEntity } from '../commerce/order-line.entity';
+import { EntitlementEntity } from '../commerce/entitlement.entity';
+import { RefundEntity } from '../commerce/refund.entity';
 
 export const entities = [
   EventEntity,
@@ -28,4 +42,18 @@ export const entities = [
   ChatMessageEntity,
   EventFeedbackEntity,
   IdentityVerificationEntity,
+  MemberProfileEntity,
+  MemberBlockEntity,
+  MemberFollowEntity,
+  GroupEntity,
+  GroupMembershipEntity,
+  GroupPostEntity,
+  PostCommentEntity,
+  EducationalContentEntity,
+  EducationLessonEntity,
+  LessonProgressEntity,
+  OrderEntity,
+  OrderLineEntity,
+  EntitlementEntity,
+  RefundEntity,
 ];

@@ -28,6 +28,8 @@ export function AppNav() {
   const closeMenu = () => setMenuOpen(false);
   const eventsActive =
     pathname === '/' || pathname?.startsWith('/events/') === true;
+  const communityActive = pathname?.startsWith('/community') === true;
+  const learnActive = pathname?.startsWith('/learn') === true;
 
   const navLinkClass = (active: boolean) =>
     cn(
@@ -39,6 +41,20 @@ export function AppNav() {
 
   const signedInLinks = (
     <>
+      <Link
+        href="/community"
+        onClick={closeMenu}
+        className={navLinkClass(communityActive)}
+      >
+        Community
+      </Link>
+      <Link
+        href="/learn"
+        onClick={closeMenu}
+        className={navLinkClass(learnActive)}
+      >
+        Learn
+      </Link>
       <Link
         href="/applications"
         onClick={closeMenu}
@@ -105,6 +121,21 @@ export function AppNav() {
             )}
           >
             Events
+          </Link>
+          <Link
+            href="/community"
+            className={cn(
+              navLinkClass(communityActive),
+              'hidden md:inline-flex',
+            )}
+          >
+            Community
+          </Link>
+          <Link
+            href="/learn"
+            className={cn(navLinkClass(learnActive), 'hidden md:inline-flex')}
+          >
+            Learn
           </Link>
           <Link
             href="/#how-it-works"
@@ -187,6 +218,19 @@ export function AppNav() {
                   </div>
                   <div className="truncate text-xs text-muted">{user.email}</div>
                 </div>
+                <Link href="/settings/profile" className={navLinkClass(false)}>
+                  Profile
+                </Link>
+                <Link
+                  href={
+                    user.id
+                      ? `/members/${user.id}`
+                      : '/settings/profile'
+                  }
+                  className={navLinkClass(false)}
+                >
+                  Public profile
+                </Link>
                 <Link
                   href="/identity/verify"
                   className={navLinkClass(false)}
@@ -229,6 +273,13 @@ export function AppNav() {
                 className={navLinkClass(eventsActive)}
               >
                 Events
+              </Link>
+              <Link
+                href="/community"
+                onClick={closeMenu}
+                className={navLinkClass(communityActive)}
+              >
+                Community
               </Link>
               <Link
                 href="/#how-it-works"

@@ -1,0 +1,53 @@
+# Production overlay for a single Lightsail instance.
+# From repo root:
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml \
+#     -f deploy/lightsail/docker-compose.prod.yml --profile postgres up -d --build
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    volumes:
+      - ./deploy/lightsail/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-network
+
+  postgres:
+    ports: !reset []
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+
+  backend:
+    ports: !reset []
+    restart: unless-stopped
+    environment:
+      - APP_BASE_URL=https://${DOMAIN}
+      - CORS_ORIGINS=https://${DOMAIN},https://www.${DOMAIN}
+      - DATABASE_URL=postgres://velvet:${POSTGRES_PASSWORD}@postgres:5432/velvetkey
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+
+  frontend:
+    ports: !reset []
+    restart: unless-stopped
+    build:
+      args:
+        NEXT_PUBLIC_API_BASE_URL: https://api.${DOMAIN}
+    environment:
+      - APP_BASE_URL=https://${DOMAIN}
+      - API_SERVER_BASE_URL=http://backend:3010
+      - NEXT_PUBLIC_API_BASE_URL=https://api.${DOMAIN}
+
+volumes:
+  caddy-data:
+  caddy-config:

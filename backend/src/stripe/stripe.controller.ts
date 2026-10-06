@@ -90,7 +90,7 @@ export class StripeController {
     if (!sessionId) {
       throw new ForbiddenException('sessionId required');
     }
-    await this.payments.fulfillCheckoutBySessionId(sessionId);
+    await this.payments.fulfillAnyCheckoutSession(sessionId);
     return { ok: true };
   }
 }

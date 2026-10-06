@@ -34,8 +34,9 @@ export class StripeService {
         });
         await this.accounts.save(created);
       }
+      const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
       return {
-        url: `https://connect.stripe.com/setup/s/${encodeURIComponent(hostId)}`,
+        url: `${baseUrl}/host/stripe/simulated-connect`,
       };
     }
 

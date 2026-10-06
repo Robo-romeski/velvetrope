@@ -202,14 +202,6 @@ export default function EventTicketPage() {
         window.location.href = checkout.url as string;
         return;
       }
-      if (checkout?.sessionId) {
-        await apiPostAuth(
-          `/stripe/checkout/${encodeURIComponent(eventId)}/confirm`,
-          { sessionId: checkout.sessionId },
-        );
-        await loadTicket();
-        return;
-      }
       setError('Checkout could not be started. Please try again.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not start checkout');

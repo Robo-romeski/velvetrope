@@ -1,6 +1,11 @@
 # VelvetKey
 
-A sophisticated event management platform for exclusive events with local email/password authentication, Stripe Connect payments, and application management.
+A knowledge-centered community platform for adults (ENM, poly, swinging, kink)—profiles, groups, member-created education, and curated events. Community-led, not a dating product.
+
+**Platform plan (modules, phases, acceptance criteria):** [docs/PRODUCT_PLAN.md](docs/PRODUCT_PLAN.md)  
+**Local event demo runbook:** [docs/DEMO.md](docs/DEMO.md)
+
+Today the repo ships a strong **events module** (applications, invites, payments in test mode, QR check-in, analytics) on local email/password auth, with community and education modules planned as extensions—not replacements.
 
 ## Features Implemented
 
@@ -72,6 +77,8 @@ A sophisticated event management platform for exclusive events with local email/
 
 For the rehearsed two-user paid-event walkthrough, follow
 [docs/DEMO.md](docs/DEMO.md).
+
+**Production on AWS Lightsail:** [docs/DEPLOY_LIGHTSAIL.md](docs/DEPLOY_LIGHTSAIL.md)
 
 ### Docker with Postgres (optional)
 

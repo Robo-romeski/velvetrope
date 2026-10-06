@@ -79,9 +79,10 @@ export default function HostStripeOnboardingPage() {
         }
       />
       {status?.stripeConfigured === false && (
-        <Alert tone="warning" title="Stripe is running in local simulation">
-          Stripe API keys are not configured on the server. Onboarding links are simulated locally;
-          set <code className="text-xs">STRIPE_SECRET_KEY</code> in production to enable live Connect.
+        <Alert tone="warning" title="Payments run in simulation mode">
+          Checkout and Connect follow the same URLs and fulfillment paths as live Stripe, but no
+          money moves until you set <code className="text-xs">STRIPE_SECRET_KEY</code> on the
+          server.
         </Alert>
       )}
       <Card className="space-y-6 p-6 sm:p-8">

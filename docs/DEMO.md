@@ -12,9 +12,21 @@ This runbook demonstrates VelvetKey's core paid-event journey on one Mac:
 Persona, photo check-in, real email delivery, admin moderation, and public
 hosting are intentionally outside this demo.
 
+**Community (M1):** After the stack is up, migration `1738000000011-CommunityModule`
+runs automatically on Postgres. Migration `1738000000012-EducationModule` adds
+Learn. Try `/community`, `/learn`, `/settings/profile`, and
+`/members/{your-user-id}` (profiles are created on first visit).
+
 ## 1. Preflight
 
-Use Stripe test mode only. The root `.env` must contain:
+**Payments:** You can run the full paid-event and paid-course journey in **simulation
+mode** (no Stripe keys) or with **Stripe test mode** keys.
+
+Simulation (default when `STRIPE_SECRET_KEY` is unset): Connect and Checkout use
+in-app simulated pages; fulfillment still writes `Order`, `Entitlement`, and event
+payment records the same way as live Stripe after return URLs confirm the session.
+
+With Stripe test keys, the root `.env` should contain:
 
 ```dotenv
 AUTH_SECRET=replace-with-at-least-32-characters
@@ -66,7 +78,8 @@ Use the same two accounts for rehearsals. If the host is not connected:
 
 1. Log in as the host.
 2. Open **Payments**.
-3. Complete Stripe Connect test onboarding.
+3. Start Connect — with simulation, finish on **Simulated payout setup**; with
+   Stripe keys, complete Stripe Connect test onboarding.
 4. Return to VelvetKey and confirm the page reports the account as connected.
 
 Never enter real identity, bank, or card data in this demo.
@@ -113,8 +126,8 @@ will not satisfy checkout for that event.
 ### Attendee pays and receives a ticket
 
 1. In the attendee window, refresh **My applications** and open **Ticket**.
-2. Select **Pay with Stripe**.
-3. On Stripe Checkout use:
+2. Select **Pay with Stripe** (simulation sends you to the in-app checkout page).
+3. With real Stripe test Checkout use:
    - Card: `4242 4242 4242 4242`
    - Expiry: any future date
    - CVC: any three digits

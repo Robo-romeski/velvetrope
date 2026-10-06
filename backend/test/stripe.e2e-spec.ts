@@ -35,8 +35,7 @@ describe('Stripe (e2e)', () => {
       .set(hostAuth('host-stripe'))
       .expect(200);
     expect(typeof res.body?.url).toBe('string');
-    expect(res.body.url).toContain('connect.stripe.com');
-    expect(res.body.url).toContain(encodeURIComponent('host-stripe'));
+    expect(res.body.url).toContain('/host/stripe/simulated-connect');
   });
 
   it('GET /stripe/status is keyed by the authenticated host', async () => {
@@ -117,6 +116,7 @@ describe('Stripe (e2e)', () => {
       .expect(201);
     const sessionId = checkout.body.sessionId as string;
     expect(sessionId).toMatch(/^cs_test_/);
+    expect(checkout.body.url).toContain('/checkout/simulate');
 
     await request(app.getHttpServer())
       .post(`/stripe/checkout/${event.id}/confirm`)

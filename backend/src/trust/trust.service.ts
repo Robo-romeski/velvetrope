@@ -66,7 +66,7 @@ export class TrustService {
 
   async createReport(input: {
     reporterSub: string;
-    subjectType: 'event' | 'user' | 'message';
+    subjectType: 'event' | 'user' | 'message' | 'content';
     subjectId: string;
     category: string;
     details: string;

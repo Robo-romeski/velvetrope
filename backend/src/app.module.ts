@@ -24,6 +24,10 @@ import { AdminModule } from './admin/admin.module';
 import { ChatModule } from './chat/chat.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { IdentityModule } from './identity/identity.module';
+import { MembersModule } from './members/members.module';
+import { SocialModule } from './social/social.module';
+import { EducationModule } from './education/education.module';
+import { CommerceModule } from './commerce/commerce.module';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -63,6 +67,10 @@ const isTest = process.env.NODE_ENV === 'test';
     ChatModule,
     FeedbackModule,
     IdentityModule,
+    MembersModule,
+    SocialModule,
+    EducationModule,
+    CommerceModule,
   ],
   controllers: [AppController, HealthController, HostController],
   providers: [AppService, RolesGuard],

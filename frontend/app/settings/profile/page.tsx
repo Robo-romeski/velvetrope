@@ -257,6 +257,9 @@ export default function ProfileSettingsPage() {
           {profile.educator ? 'enabled' : 'off — enable when creating content at Learn → Create'}
         </p>
         <div className="flex flex-wrap gap-3 pt-2">
+          <Link href="/settings/kudos" className="text-accent">
+            Kudos inbox
+          </Link>
           <Link href="/settings/connections" className="text-accent">
             Followers & following
           </Link>

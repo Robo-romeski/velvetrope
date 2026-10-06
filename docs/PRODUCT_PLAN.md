@@ -302,7 +302,7 @@ Each phase is independently shippable. **Not** a single big-bang launch.
 
 ---
 
-### Milestone M4 — Member kudos
+### Milestone M4 — Member kudos — **SHIPPED (core)**
 
 **Goal:** Optional positive recognition without reputation scores.
 
@@ -316,10 +316,10 @@ Each phase is independently shippable. **Not** a single big-bang launch.
 
 **Acceptance criteria**
 
-- [ ] Submit kudo → pending → recipient approves → visible on profile.
-- [ ] Reciprocal spam pattern throttled.
-- [ ] Trust report and suspension hide kudos display; enforcement unchanged.
-- [ ] Event feedback stars remain on event host analytics only—not on member profiles.
+- [x] Submit kudo → pending → recipient approves → visible on profile.
+- [x] Reciprocal spam pattern throttled.
+- [x] Trust report and suspension hide kudos display; enforcement unchanged.
+- [x] Event feedback stars remain on event host analytics only—not on member profiles.
 
 **Dependencies:** M1 profiles; optional M0 event attendance for verified event kudos.  
 **New:** `kudos` module.

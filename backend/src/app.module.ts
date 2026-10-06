@@ -28,6 +28,7 @@ import { MembersModule } from './members/members.module';
 import { SocialModule } from './social/social.module';
 import { EducationModule } from './education/education.module';
 import { CommerceModule } from './commerce/commerce.module';
+import { KudosModule } from './kudos/kudos.module';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -71,6 +72,7 @@ const isTest = process.env.NODE_ENV === 'test';
     SocialModule,
     EducationModule,
     CommerceModule,
+    KudosModule,
   ],
   controllers: [AppController, HealthController, HostController],
   providers: [AppService, RolesGuard],

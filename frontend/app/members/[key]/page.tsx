@@ -9,7 +9,6 @@ import {
   apiGetAuth,
   apiPostAuth,
   getAccessTokenClient,
-  isUnauthorized,
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import {
@@ -18,9 +17,12 @@ import {
   Button,
   Card,
   EmptyState,
+  FormField,
   LoadingState,
   PageHeader,
   PageShell,
+  Select,
+  Textarea,
   TextLink,
 } from '@/app/components/ui';
 
@@ -37,6 +39,23 @@ type PublicProfile = {
   followingCount: number;
 };
 
+type KudoItem = {
+  id: string;
+  kudoType: string;
+  message: string | null;
+  contextVerified: boolean;
+  giver: { slug: string; displayName: string | null };
+};
+
+type KudoTypeOption = { id: string; label: string };
+
+const KUDO_LABELS: Record<string, string> = {
+  welcoming: 'Welcoming',
+  knowledge_sharing: 'Knowledge sharing',
+  respectful_communication: 'Respectful communication',
+  event_contribution: 'Event contribution',
+};
+
 export default function MemberProfilePage() {
   const params = useParams();
   const key = String(params?.key ?? '');
@@ -46,6 +65,12 @@ export default function MemberProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [kudos, setKudos] = useState<KudoItem[]>([]);
+  const [kudoTypes, setKudoTypes] = useState<KudoTypeOption[]>([]);
+  const [kudoType, setKudoType] = useState('welcoming');
+  const [kudoMessage, setKudoMessage] = useState('');
+  const [kudoSending, setKudoSending] = useState(false);
+  const [kudoSent, setKudoSent] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -63,6 +88,14 @@ export default function MemberProfilePage() {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           })) as PublicProfile);
       setProfile(data);
+      try {
+        const list = token
+          ? await apiGetAuth(`/kudos/profile/${encodeURIComponent(key)}`)
+          : await apiGet(`/kudos/profile/${encodeURIComponent(key)}`);
+        setKudos(Array.isArray(list) ? list : []);
+      } catch {
+        setKudos([]);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Member not found');
       setProfile(null);
@@ -74,8 +107,31 @@ export default function MemberProfilePage() {
   useEffect(() => {
     if (authLoading) return;
     void load();
+    void apiGet('/kudos/types')
+      .then((t) => setKudoTypes(Array.isArray(t) ? t : []))
+      .catch(() => setKudoTypes([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, authLoading]);
+
+  const sendKudo = async () => {
+    if (!profile || !user) return;
+    setKudoSending(true);
+    setActionError(null);
+    setKudoSent(false);
+    try {
+      await apiPostAuth('/kudos', {
+        recipientId: profile.userId,
+        kudoType,
+        message: kudoMessage.trim() || null,
+      });
+      setKudoMessage('');
+      setKudoSent(true);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Could not send kudo');
+    } finally {
+      setKudoSending(false);
+    }
+  };
 
   const toggleFollow = async () => {
     if (!profile || !user) return;
@@ -185,10 +241,75 @@ export default function MemberProfilePage() {
             </Button>
           </div>
         )}
+        {user && !isSelf && (
+          <div className="border-t border-border pt-4 space-y-3">
+            <p className="text-sm font-medium">Send kudos</p>
+            <p className="text-xs text-muted">
+              They approve before it appears publicly. Not a rating or safety badge.
+            </p>
+            {kudoSent && (
+              <Alert tone="success" title="Sent">
+                Pending their approval in Settings → Kudos.
+              </Alert>
+            )}
+            <FormField label="Type">
+              <Select
+                value={kudoType}
+                onChange={(e) => setKudoType(e.target.value)}
+              >
+                {(kudoTypes.length ? kudoTypes : [{ id: 'welcoming', label: 'Welcoming' }]).map(
+                  (opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.label}
+                    </option>
+                  ),
+                )}
+              </Select>
+            </FormField>
+            <FormField label="Note (optional)">
+              <Textarea
+                value={kudoMessage}
+                onChange={(e) => setKudoMessage(e.target.value)}
+                rows={2}
+                maxLength={280}
+              />
+            </FormField>
+            <Button type="button" onClick={sendKudo} disabled={kudoSending}>
+              {kudoSending ? 'Sending…' : 'Send kudos'}
+            </Button>
+          </div>
+        )}
         {isSelf && (
-          <TextLink href="/settings/profile">Edit your profile</TextLink>
+          <div className="flex flex-wrap gap-3 text-sm">
+            <TextLink href="/settings/profile">Edit your profile</TextLink>
+            <TextLink href="/settings/kudos">Kudos inbox</TextLink>
+          </div>
         )}
       </Card>
+      {kudos.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Kudos shared with them</h2>
+          <ul className="space-y-3">
+            {kudos.map((k) => (
+              <Card key={k.id} className="p-4 text-sm space-y-1">
+                <p className="font-medium">
+                  {KUDO_LABELS[k.kudoType] ?? k.kudoType}
+                  {k.contextVerified && (
+                    <span className="text-muted font-normal"> · verified context</span>
+                  )}
+                </p>
+                <p className="text-muted">
+                  From{' '}
+                  <Link href={`/members/${k.giver.slug}`} className="text-accent">
+                    {k.giver.displayName ?? k.giver.slug}
+                  </Link>
+                </p>
+                {k.message && <p>{k.message}</p>}
+              </Card>
+            ))}
+          </ul>
+        </section>
+      )}
     </PageShell>
   );
 }

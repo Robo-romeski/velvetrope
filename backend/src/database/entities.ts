@@ -26,6 +26,7 @@ import { OrderEntity } from '../commerce/order.entity';
 import { OrderLineEntity } from '../commerce/order-line.entity';
 import { EntitlementEntity } from '../commerce/entitlement.entity';
 import { RefundEntity } from '../commerce/refund.entity';
+import { MemberKudoEntity } from '../kudos/member-kudo.entity';
 
 export const entities = [
   EventEntity,
@@ -56,4 +57,5 @@ export const entities = [
   OrderLineEntity,
   EntitlementEntity,
   RefundEntity,
+  MemberKudoEntity,
 ];

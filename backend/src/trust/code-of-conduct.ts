@@ -1,6 +1,6 @@
 export const CODE_OF_CONDUCT_VERSION = '2026-01';
 
-export const CODE_OF_CONDUCT_TEXT = `VelvetKey community standards
+export const CODE_OF_CONDUCT_TEXT = `epicsexual community standards
 
 - Respect consent, boundaries, and privacy at all times.
 - Do not harass, threaten, or discriminate against anyone.

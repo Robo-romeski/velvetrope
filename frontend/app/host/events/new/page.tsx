@@ -25,6 +25,7 @@ export default function NewHostEventPage() {
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [capacity, setCapacity] = useState(20);
+  const [isDiscoveryVisible, setIsDiscoveryVisible] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +39,7 @@ export default function NewHostEventPage() {
         description: description.trim() || undefined,
         date: new Date(date).toISOString(),
         capacity: Number(capacity),
+        isDiscoveryVisible,
       });
       router.push('/host/events');
       return created;
@@ -111,6 +113,23 @@ export default function NewHostEventPage() {
               />
             </FormField>
           </div>
+          <label className="flex items-start gap-3 border border-border bg-surface-subtle p-4 text-sm">
+            <input
+              type="checkbox"
+              checked={isDiscoveryVisible}
+              onChange={(event) =>
+                setIsDiscoveryVisible(event.target.checked)
+              }
+              className="mt-0.5 size-4 accent-accent"
+            />
+            <span>
+              Include this event in public discovery
+              <span className="block text-xs text-muted">
+                Turn this off for test, demo, rehearsal, or private-link events.
+                The record remains available in your host workspace.
+              </span>
+            </span>
+          </label>
           {error && (
             <Alert tone="danger" role="alert">
               {error}

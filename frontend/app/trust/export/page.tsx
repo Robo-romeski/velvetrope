@@ -1,10 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiGetAuth, apiPostAuth } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import {
+  Alert,
+  Button,
+  ButtonLink,
+  Card,
+  FormField,
+  Input,
+  LoadingState,
+  PageHeader,
+  PageShell,
+} from '@/app/components/ui';
 
 export default function DataExportPage() {
   const { user, loading, logout } = useAuth();
@@ -27,7 +37,7 @@ export default function DataExportPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'velvetkey-export.json';
+      a.download = 'epicsexual-export.json';
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
@@ -38,81 +48,81 @@ export default function DataExportPage() {
   };
 
   if (loading) {
-    return <div className="max-w-xl mx-auto p-6 text-sm">Loading…</div>;
+    return <PageShell size="narrow"><LoadingState /></PageShell>;
   }
 
   if (!user) {
     return (
-      <div className="max-w-xl mx-auto p-6 space-y-2">
-        <h1 className="text-2xl font-semibold">Download my data</h1>
-        <p className="text-sm">Log in to export your account data.</p>
-        <Link href="/auth/login" className="text-blue-600 underline text-sm">
-          Login
-        </Link>
-      </div>
+      <PageShell size="narrow" className="space-y-6">
+        <PageHeader
+          eyebrow="Privacy"
+          title="Download my data"
+          description="Log in to export your account data."
+        />
+        <ButtonLink href="/auth/login">Log in</ButtonLink>
+      </PageShell>
     );
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Download my data</h1>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        JSON export of your profile and application history (passwords are never included).
-      </p>
-      <button
-        type="button"
-        onClick={download}
-        disabled={fetching}
-        className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-      >
-        {fetching ? 'Preparing…' : 'Download JSON'}
-      </button>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+    <PageShell size="narrow" className="space-y-7">
+      <PageHeader
+        eyebrow="Privacy"
+        title="Your data"
+        description="Download a JSON export of your profile and application history. Passwords are never included."
+      />
+      <Card className="space-y-5 p-6 sm:p-8">
+        <Button type="button" onClick={download} disabled={fetching}>
+          {fetching ? 'Preparing…' : 'Download JSON'}
+        </Button>
+        {error && <Alert tone="danger" role="alert">{error}</Alert>}
       {json && (
-        <pre className="text-xs overflow-auto max-h-64 border rounded p-2 bg-black/[0.02] dark:bg-white/[0.04]">
+        <pre className="max-h-64 overflow-auto rounded-md border border-border bg-surface-subtle p-3 text-xs">
           {json}
         </pre>
       )}
+      </Card>
 
-      <hr className="border-black/10 dark:border-white/15" />
-
-      <h2 className="text-lg font-semibold">Delete account</h2>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Permanently deletes your profile, applications, tickets, and payments. You cannot delete while
-        you still host events — remove those first.
-      </p>
-      <label className="block text-sm space-y-1">
-        <span>Confirm with your password</span>
-        <input
-          type="password"
-          className="w-full border rounded px-3 py-2 bg-transparent"
-          value={deletePassword}
-          onChange={(e) => setDeletePassword(e.target.value)}
-        />
-      </label>
-      <button
-        type="button"
-        disabled={deleting || !deletePassword}
-        onClick={async () => {
-          setDeleting(true);
-          setDeleteMessage(null);
-          setError(null);
-          try {
-            await apiPostAuth('/trust/delete-account', { password: deletePassword });
-            await logout();
-            router.push('/');
-            router.refresh();
-          } catch (e) {
-            setDeleteMessage(e instanceof Error ? e.message : 'Delete failed');
-          } finally {
-            setDeleting(false);
-          }
-        }}
-        className="px-4 py-2 border border-red-600 text-red-700 dark:text-red-400 rounded disabled:opacity-50"
-      >
-        {deleting ? 'Deleting…' : 'Delete my account'}
-      </button>
-      {deleteMessage && <p className="text-sm text-red-600">{deleteMessage}</p>}
-    </div>
+      <Card className="space-y-5 border-danger/30 p-6 sm:p-8">
+        <div>
+          <h2 className="font-display text-2xl font-semibold">Delete account</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Permanently deletes your profile, applications, tickets, and payments.
+            You cannot delete while you still host events—remove those first.
+          </p>
+        </div>
+        <FormField label="Confirm with your password" htmlFor="delete-password">
+          <Input
+            id="delete-password"
+            type="password"
+            value={deletePassword}
+            onChange={(e) => setDeletePassword(e.target.value)}
+          />
+        </FormField>
+        <Button
+          type="button"
+          variant="danger"
+          disabled={deleting || !deletePassword}
+          onClick={async () => {
+            setDeleting(true);
+            setDeleteMessage(null);
+            setError(null);
+            try {
+              await apiPostAuth('/trust/delete-account', { password: deletePassword });
+              await logout();
+              router.push('/');
+              router.refresh();
+            } catch (e) {
+              setDeleteMessage(e instanceof Error ? e.message : 'Delete failed');
+            } finally {
+              setDeleting(false);
+            }
+          }}
+        >
+          {deleting ? 'Deleting…' : 'Delete my account'}
+        </Button>
+        {deleteMessage && <Alert tone="danger" role="alert">{deleteMessage}</Alert>}
+      </Card>
+    </PageShell>
   );
 }

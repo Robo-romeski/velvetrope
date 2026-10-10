@@ -27,10 +27,7 @@ export class EducationController {
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get()
-  async catalog(
-    @Query('tag') tag?: string,
-    @Query('q') q?: string,
-  ) {
+  async catalog(@Query('tag') tag?: string, @Query('q') q?: string) {
     return await this.education.listPublished({ tag, q });
   }
 

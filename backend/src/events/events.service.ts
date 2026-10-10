@@ -16,6 +16,7 @@ export interface EventItem {
   date: string; // ISO
   capacity: number;
   status: EventEntity['status'];
+  isDiscoveryVisible: boolean;
   ticketPriceCents: number;
   requirePhotoCheckin: boolean;
   requireIdentityVerification: boolean;
@@ -37,7 +38,7 @@ export class EventsService {
 
   async listPublished(): Promise<EventItem[]> {
     return await this.repo.find({
-      where: { status: 'published' },
+      where: { status: 'published', isDiscoveryVisible: true },
       order: { date: 'ASC' },
     });
   }
@@ -94,10 +95,12 @@ export class EventsService {
       | 'id'
       | 'status'
       | 'ticketPriceCents'
+      | 'isDiscoveryVisible'
       | 'requirePhotoCheckin'
       | 'requireIdentityVerification'
     > & {
       status?: EventItem['status'];
+      isDiscoveryVisible?: boolean;
       ticketPriceCents?: number;
       requirePhotoCheckin?: boolean;
       requireIdentityVerification?: boolean;
@@ -110,6 +113,7 @@ export class EventsService {
     const entity = this.repo.create({
       ...data,
       ticketPriceCents,
+      isDiscoveryVisible: data.isDiscoveryVisible ?? true,
       requirePhotoCheckin: data.requirePhotoCheckin ?? false,
       requireIdentityVerification: data.requireIdentityVerification ?? false,
       status: data.status ?? 'draft',

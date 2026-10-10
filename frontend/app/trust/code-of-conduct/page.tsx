@@ -24,7 +24,7 @@ export default async function CodeOfConductPage() {
       <PageHeader
         eyebrow={version ? `Version ${version}` : 'Community standards'}
         title="Code of conduct"
-        description="The shared expectations that keep VelvetKey gatherings respectful, consensual, and safe."
+        description="The shared expectations that keep epicsexual gatherings respectful, consensual, and safe."
       />
       <Card className="p-6 sm:p-8">
         <pre className="vk-prose whitespace-pre-wrap font-sans text-sm">

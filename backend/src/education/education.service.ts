@@ -9,7 +9,6 @@ import { Repository } from 'typeorm';
 import { MembersService } from '../members/members.service';
 import { uniqueSlug } from '../members/slug.util';
 import {
-  ContentStatus,
   ContentType,
   EducationalContentEntity,
 } from './educational-content.entity';
@@ -149,10 +148,14 @@ export class EducationService {
     });
     if (content.contentType === 'workshop_link') {
       if (!content.externalUrl) {
-        throw new BadRequestException('Workshop link URL is required to publish');
+        throw new BadRequestException(
+          'Workshop link URL is required to publish',
+        );
       }
     } else if (lessonRows.length === 0) {
-      throw new BadRequestException('Add at least one lesson before publishing');
+      throw new BadRequestException(
+        'Add at least one lesson before publishing',
+      );
     }
     content.status = 'published';
     content.publishedAt = new Date();
@@ -203,8 +206,7 @@ export class EducationService {
         id: l.id,
         sortOrder: l.sortOrder,
         title: l.title,
-        body:
-          hasAccess || (published && l.isPreview) ? l.body : undefined,
+        body: hasAccess || (published && l.isPreview) ? l.body : undefined,
         isPreview: l.isPreview,
         completed: completedLessonIds.includes(l.id),
       })),
@@ -222,7 +224,11 @@ export class EducationService {
     };
   }
 
-  async getLesson(contentSlug: string, lessonId: string, viewerId: string | null) {
+  async getLesson(
+    contentSlug: string,
+    lessonId: string,
+    viewerId: string | null,
+  ) {
     const detail = await this.getDetail(contentSlug, viewerId);
     const lesson = detail.lessons.find((l) => l.id === lessonId);
     if (!lesson || lesson.body === undefined) {
@@ -274,19 +280,19 @@ export class EducationService {
       where: { id: lessonId, contentId: content.id },
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
-    if (input.title !== undefined) lesson.title = input.title.trim().slice(0, 200);
-    if (input.body !== undefined) lesson.body = input.body.trim().slice(0, 50_000);
+    if (input.title !== undefined)
+      lesson.title = input.title.trim().slice(0, 200);
+    if (input.body !== undefined)
+      lesson.body = input.body.trim().slice(0, 50_000);
     if (input.isPreview !== undefined) lesson.isPreview = input.isPreview;
     if (input.sortOrder !== undefined) lesson.sortOrder = input.sortOrder;
     return await this.lessons.save(lesson);
   }
 
-  async completeLesson(
-    contentSlug: string,
-    lessonId: string,
-    userId: string,
-  ) {
-    const content = await this.contents.findOne({ where: { slug: contentSlug } });
+  async completeLesson(contentSlug: string, lessonId: string, userId: string) {
+    const content = await this.contents.findOne({
+      where: { slug: contentSlug },
+    });
     if (!content || content.status !== 'published') {
       throw new NotFoundException('Content not found');
     }
@@ -362,7 +368,11 @@ export class EducationService {
   ) {
     const priceCents = Math.max(0, content.priceCents ?? 0);
     if (priceCents === 0) {
-      return { required: false, priceCents: 0, status: 'not_required' as const };
+      return {
+        required: false,
+        priceCents: 0,
+        status: 'not_required' as const,
+      };
     }
     if (isOwner) {
       return { required: true, priceCents, status: 'paid' as const };
@@ -386,11 +396,12 @@ export class EducationService {
       id: row.id,
       slug: row.slug,
       title: row.title,
+      summary: row.summary,
       contentType: row.contentType,
       tags: row.tags ?? [],
       priceCents: row.priceCents ?? 0,
       publishedAt: row.publishedAt,
-      ...(includeStatus ? { status: row.status as ContentStatus } : {}),
+      ...(includeStatus ? { status: row.status } : {}),
     };
   }
 

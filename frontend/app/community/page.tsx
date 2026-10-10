@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { apiGetAuth, apiPostAuth, isUnauthorized } from '@/lib/api';
+import { apiGet, apiGetAuth, apiPostAuth, isUnauthorized } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import {
   Alert,
@@ -48,7 +48,7 @@ export default function CommunityPage() {
     try {
       const data = user
         ? ((await apiGetAuth('/groups')) as GroupSummary[])
-        : [];
+        : ((await apiGet('/groups')) as GroupSummary[]);
       setGroups(Array.isArray(data) ? data : []);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load groups');
@@ -59,10 +59,6 @@ export default function CommunityPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
-      setLoading(false);
-      return;
-    }
     void loadGroups();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user]);
@@ -90,10 +86,24 @@ export default function CommunityPage() {
   };
 
   return (
-    <PageShell size="wide" className="space-y-8">
+    <PageShell size="wide" className="space-y-10">
+      {user && (
+        <nav aria-label="Community sections" className="flex gap-4 text-sm">
+          <Link href="/feed" className="font-semibold text-accent">
+            Feed
+          </Link>
+          <span aria-current="page" className="font-semibold">
+            Groups
+          </span>
+          <Link href="/notifications" className="font-semibold text-accent">
+            Notifications
+          </Link>
+        </nav>
+      )}
       <PageHeader
-        title="Community"
-        description="Topic groups for conversation and learning—separate from event invitations."
+        eyebrow="Community groups"
+        title="Enter through a shared question."
+        description="Topic-led spaces for lived experience and practical exchange. Public summaries are visible here; posts and participation remain inside the community."
         actions={
           user ? (
             <Button type="button" onClick={() => setShowCreate((v) => !v)}>
@@ -107,8 +117,14 @@ export default function CommunityPage() {
 
       {!user && !authLoading && (
         <Alert tone="info">
-          Sign in to browse groups, follow members, and customize your profile.{' '}
-          <Link href="/auth/register?next=%2Fcommunity">Create an account</Link>
+          You can preview public topics below.{' '}
+          <Link
+            className="font-semibold underline underline-offset-4"
+            href="/auth/register?next=%2Fcommunity"
+          >
+            Create an account
+          </Link>{' '}
+          to enter a group, read posts, and participate.
         </Alert>
       )}
 
@@ -147,34 +163,79 @@ export default function CommunityPage() {
 
       {loading || authLoading ? (
         <LoadingState />
-      ) : user && groups.length === 0 ? (
+      ) : groups.length === 0 ? (
         <EmptyState
-          title="No groups yet"
-          description="Start a space around a topic you care about."
+          title="No public conversations yet"
+          description={
+            user
+              ? 'Start a space around a topic you care about.'
+              : 'Public topic summaries will appear here when they are published.'
+          }
         />
       ) : (
-        user && (
-          <div className="grid gap-4 md:grid-cols-2">
-            {groups.map((group) => (
-              <Card key={group.id} className="p-5 flex flex-col gap-2">
-                <div className="flex items-start justify-between gap-2">
-                  <h2 className="text-lg font-semibold">{group.name}</h2>
-                  <span className="text-xs uppercase text-muted">{group.privacy}</span>
-                </div>
-                {group.description && (
-                  <p className="text-sm text-muted line-clamp-3">{group.description}</p>
-                )}
-                <p className="text-xs text-muted">{group.memberCount} members</p>
-                <Link
-                  href={`/community/groups/${group.slug}`}
-                  className="text-sm font-medium text-accent mt-auto"
-                >
-                  {group.isMember ? 'Open group →' : 'View group →'}
-                </Link>
-              </Card>
-            ))}
+        <section
+          aria-labelledby="topics-heading"
+          className="bg-surface-subtle px-5 py-8 sm:px-10 sm:py-10"
+        >
+          <div className="mb-6 max-w-xl">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-accent">
+              Current topics
+            </p>
+            <h2
+              id="topics-heading"
+              className="mt-2 font-display text-2xl font-semibold"
+            >
+              Enter through a shared question.
+            </h2>
           </div>
-        )
+          <div className="border-t border-foreground/30">
+            {groups.map((group, index) => {
+              const path = `/community/groups/${group.slug}`;
+              const href = user
+                ? path
+                : `/auth/login?next=${encodeURIComponent(path)}`;
+              return (
+                <article
+                  key={group.id}
+                  className="grid gap-3 border-b border-foreground/30 py-6 sm:grid-cols-[2.5rem_1fr_auto]"
+                >
+                  <span className="font-display text-lg text-accent">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <div>
+                    <div className="flex flex-wrap items-baseline gap-3">
+                      <h3 className="font-display text-2xl font-semibold">
+                        {group.name}
+                      </h3>
+                      <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted">
+                        {group.privacy}
+                      </span>
+                    </div>
+                    {group.description && (
+                      <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
+                        {group.description}
+                      </p>
+                    )}
+                    <p className="mt-3 text-xs text-muted">
+                      {group.memberCount}{' '}
+                      {group.memberCount === 1 ? 'member' : 'members'}
+                    </p>
+                  </div>
+                  <Link
+                    href={href}
+                    className="self-start text-sm font-semibold text-accent underline-offset-4 hover:underline"
+                  >
+                    {user
+                      ? group.isMember
+                        ? 'Open topic'
+                        : 'View topic'
+                      : 'Log in to enter'}
+                  </Link>
+                </article>
+              );
+            })}
+          </div>
+        </section>
       )}
     </PageShell>
   );

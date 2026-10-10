@@ -19,6 +19,7 @@ import {
 } from '@/app/components/ui';
 
 type VisibilityLevel = 'public' | 'members' | 'private';
+type MessagePermission = 'following' | 'members' | 'none';
 
 type OwnProfile = {
   userId: string;
@@ -35,6 +36,7 @@ type OwnProfile = {
     avatarUrl: VisibilityLevel;
   };
   educator: boolean;
+  messagePermission: MessagePermission;
 };
 
 const visibilityOptions = [
@@ -98,6 +100,7 @@ export default function ProfileSettingsPage() {
         links: profile.links,
         avatarUrl: profile.avatarUrl,
         visibility: profile.visibility,
+        messagePermission: profile.messagePermission,
       })) as OwnProfile;
       setProfile(updated);
       setSaved(true);
@@ -150,7 +153,7 @@ export default function ProfileSettingsPage() {
         <form onSubmit={onSubmit} className="space-y-5">
           <FormField label="Profile URL">
             <p className="text-sm text-muted">
-              velvetkey.com/members/{profile.slug}
+              epicsexual.com/members/{profile.slug}
             </p>
           </FormField>
           <FormField label="Display name">
@@ -182,6 +185,24 @@ export default function ProfileSettingsPage() {
                 setProfile({ ...profile, avatarUrl: e.target.value })
               }
             />
+          </FormField>
+          <FormField
+            label="Who can message you"
+            hint="Blocks always take priority. You can change this at any time."
+          >
+            <Select
+              value={profile.messagePermission}
+              onChange={(e) =>
+                setProfile({
+                  ...profile,
+                  messagePermission: e.target.value as MessagePermission,
+                })
+              }
+            >
+              <option value="following">People you follow</option>
+              <option value="members">Any signed-in member</option>
+              <option value="none">Nobody</option>
+            </Select>
           </FormField>
           <div className="grid gap-4 sm:grid-cols-2">
             {(['bio', 'interests', 'links', 'avatarUrl'] as const).map((key) => (

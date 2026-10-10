@@ -336,7 +336,11 @@ export class StripePaymentsService {
     if (!content) throw new NotFoundException('Content not found');
     const priceCents = Math.max(0, content.priceCents ?? 0);
     if (priceCents === 0) {
-      return { required: false, status: 'not_required' as const, priceCents: 0 };
+      return {
+        required: false,
+        status: 'not_required' as const,
+        priceCents: 0,
+      };
     }
     const entitled = await this.commerce.hasActiveEntitlement(
       userSub,
@@ -354,7 +358,9 @@ export class StripePaymentsService {
     contentSlug: string,
     userSub: string,
   ): Promise<{ url: string | null; sessionId: string }> {
-    const content = await this.courses.findOne({ where: { slug: contentSlug } });
+    const content = await this.courses.findOne({
+      where: { slug: contentSlug },
+    });
     if (!content || content.status !== 'published') {
       throw new NotFoundException('Content not found');
     }
@@ -451,7 +457,9 @@ export class StripePaymentsService {
     userSub: string,
     sessionId: string,
   ): Promise<void> {
-    const content = await this.courses.findOne({ where: { slug: contentSlug } });
+    const content = await this.courses.findOne({
+      where: { slug: contentSlug },
+    });
     if (!content) throw new NotFoundException('Content not found');
 
     if (!this.stripe) {

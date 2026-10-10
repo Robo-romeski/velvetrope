@@ -1,4 +1,4 @@
-# VelvetKey
+# epicsexual
 
 A knowledge-centered community platform for adults (ENM, poly, swinging, kink)—profiles, groups, member-created education, and curated events. Community-led, not a dating product.
 

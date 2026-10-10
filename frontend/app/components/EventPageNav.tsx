@@ -16,7 +16,7 @@ export function EventPageNav({
         href="/"
         className="font-medium transition-colors hover:text-foreground"
       >
-        Events
+        Gatherings
       </Link>
       {title && (
         <>

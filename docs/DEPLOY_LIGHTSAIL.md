@@ -1,4 +1,4 @@
-# Deploy VelvetKey on AWS Lightsail
+# Deploy epicsexual on AWS Lightsail
 
 Single **Ubuntu + Docker Compose** box: Postgres, Nest backend, Next frontend, **Caddy** for HTTPS.
 

@@ -48,7 +48,7 @@ describe('Trust (e2e)', () => {
       .post('/trust/reports')
       .set(userAuth('reporter-1'))
       .send({
-        subjectType: 'event',
+        subjectType: 'content',
         subjectId: 'event-abc',
         category: 'safety',
         details: 'Unsafe behavior reported at the door.',

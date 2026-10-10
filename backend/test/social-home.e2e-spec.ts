@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { hostAuth } from './auth-headers';
 
 describe('Social home (e2e)', () => {
   let app: INestApplication<App>;
@@ -134,6 +135,90 @@ describe('Social home (e2e)', () => {
       .expect(200);
     expect(comments.body).toHaveLength(1);
     expect(comments.body[0].body).toBe('A thoughtful reply.');
+  });
+
+  it('links member posts to published gatherings when allowed', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/events')
+      .set(hostAuth('gathering-host'))
+      .send({
+        title: 'Community Salon',
+        date: new Date(Date.now() + 86_400_000).toISOString(),
+        capacity: 20,
+        isDiscoveryVisible: true,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/events/${created.body.id}/publish`)
+      .set(hostAuth('gathering-host'))
+      .expect(201);
+
+    const linkable = await request(app.getHttpServer())
+      .get('/social/linkable-events')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .expect(200);
+    expect(
+      linkable.body.some(
+        (event: { id: string }) => event.id === created.body.id,
+      ),
+    ).toBe(true);
+
+    const shared = await request(app.getHttpServer())
+      .post('/social/posts')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({
+        body: 'Looking forward to this gathering.',
+        eventId: created.body.id,
+      })
+      .expect(201);
+    expect(shared.body.linkedEvent).toMatchObject({
+      id: created.body.id,
+      title: 'Community Salon',
+    });
+
+    const discoverFeed = await request(app.getHttpServer())
+      .get('/social/feed?scope=discover')
+      .set('Authorization', `Bearer ${tokenC}`)
+      .expect(200);
+    expect(
+      discoverFeed.body.items.find(
+        (post: { id: string }) => post.id === shared.body.id,
+      )?.linkedEvent?.id,
+    ).toBe(created.body.id);
+
+    const hidden = await request(app.getHttpServer())
+      .post('/events')
+      .set(hostAuth('gathering-host'))
+      .send({
+        title: 'Internal run-through',
+        date: new Date(Date.now() + 172_800_000).toISOString(),
+        capacity: 10,
+        isDiscoveryVisible: false,
+      })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/events/${hidden.body.id}/publish`)
+      .set(hostAuth('gathering-host'))
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/social/posts')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({
+        body: 'Should not attach hidden gathering.',
+        eventId: hidden.body.id,
+      })
+      .expect(403);
+
+    const publicList = await request(app.getHttpServer())
+      .get('/events')
+      .expect(200);
+    expect(
+      publicList.body.find(
+        (event: { id: string }) => event.id === hidden.body.id,
+      ),
+    ).toBeFalsy();
   });
 
   it('includes joined group posts in the following feed without following the author', async () => {

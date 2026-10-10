@@ -89,6 +89,84 @@ export class EventsService {
     return item;
   }
 
+  async listLinkableForMember(
+    userId: string,
+  ): Promise<Array<{ id: string; title: string; date: string }>> {
+    const byId = new Map<string, EventEntity>();
+    const discoverable = await this.repo.find({
+      where: { status: 'published', isDiscoveryVisible: true },
+      order: { date: 'ASC' },
+    });
+    for (const event of discoverable) byId.set(event.id, event);
+    const hosted = await this.repo.find({
+      where: { hostId: userId, status: 'published' },
+    });
+    for (const event of hosted) byId.set(event.id, event);
+
+    const approvedApps = await this.applications.find({
+      where: { applicantSub: userId, status: 'approved' },
+    });
+    for (const app of approvedApps) {
+      const event = await this.repo.findOne({
+        where: { id: app.eventId, status: 'published' },
+      });
+      if (event) byId.set(event.id, event);
+    }
+
+    return [...byId.values()]
+      .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+      .map((event) => ({
+        id: event.id,
+        title: event.title,
+        date: String(event.date),
+      }));
+  }
+
+  async assertMemberCanLinkEvent(
+    userId: string,
+    eventId: string,
+  ): Promise<EventEntity> {
+    const event = await this.repo.findOne({ where: { id: eventId } });
+    if (!event || event.status !== 'published') {
+      throw new ForbiddenException('Published gathering required');
+    }
+    if (event.hostId === userId) return event;
+    if (event.isDiscoveryVisible) return event;
+    const approved = await this.applications.findOne({
+      where: { eventId, applicantSub: userId, status: 'approved' },
+    });
+    if (approved) return event;
+    throw new ForbiddenException('You cannot link this gathering');
+  }
+
+  async canViewerSeeLinkedEvent(
+    viewerId: string | null,
+    event: EventEntity,
+    authorId: string,
+  ): Promise<boolean> {
+    if (event.status !== 'published') return false;
+    if (!viewerId) return false;
+    if (event.isDiscoveryVisible) return true;
+    if (viewerId === event.hostId || viewerId === authorId) return true;
+    const approved = await this.applications.findOne({
+      where: { eventId: event.id, applicantSub: viewerId, status: 'approved' },
+    });
+    return Boolean(approved);
+  }
+
+  async resolveLinkedEventForViewer(
+    eventId: string,
+    viewerId: string | null,
+    authorId: string,
+  ): Promise<{ id: string; title: string } | null> {
+    const event = await this.repo.findOne({ where: { id: eventId } });
+    if (!event) return null;
+    if (!(await this.canViewerSeeLinkedEvent(viewerId, event, authorId))) {
+      return null;
+    }
+    return { id: event.id, title: event.title };
+  }
+
   async create(
     data: Omit<
       EventItem,

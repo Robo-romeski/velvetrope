@@ -3239,8 +3239,32 @@
         "dependencies": [
           "3"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Post eventId migration and validation",
+            "description": "Link posts to published gatherings with visibility rules",
+            "dependencies": [],
+            "details": "migration 1738000000018; EventsService link helpers",
+            "status": "done",
+            "testStrategy": "social-home gathering link e2e",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Feed composer and linked event card",
+            "description": "linkable-events API; optional gathering select on /feed",
+            "dependencies": [
+              "1"
+            ],
+            "details": "GET /social/linkable-events; linkedEvent on posts",
+            "status": "done",
+            "testStrategy": "Frontend build",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-10-10T20:00:00.000Z"
       },
       {
         "id": "6",
@@ -3316,9 +3340,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-10-10T19:30:00.000Z",
+      "lastModified": "2026-10-10T20:00:00.000Z",
       "taskCount": 10,
-      "completedCount": 4,
+      "completedCount": 5,
       "tags": [
         "platform-social-v2"
       ]

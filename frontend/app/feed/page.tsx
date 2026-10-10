@@ -28,6 +28,7 @@ import type {
   GroupSummary,
   SocialComment,
   SocialDiscovery,
+  LinkableEvent,
   SocialFeedPage,
   SocialPost,
 } from '@/lib/social';
@@ -69,6 +70,8 @@ export default function FeedPage() {
   const [postLink, setPostLink] = useState('');
   const [postAudience, setPostAudience] =
     useState<'members' | 'followers'>('members');
+  const [postEventId, setPostEventId] = useState('');
+  const [linkableEvents, setLinkableEvents] = useState<LinkableEvent[]>([]);
   const [posting, setPosting] = useState(false);
   const [search, setSearch] = useState('');
   const [expandedPost, setExpandedPost] = useState<string | null>(null);
@@ -91,15 +94,19 @@ export default function FeedPage() {
       setLoading(true);
       setError(null);
       try {
-        const [feed, found, mine] = await Promise.all([
+        const [feed, found, mine, gatherings] = await Promise.all([
           apiGetAuth(`/social/feed?scope=${nextScope}`),
           apiGetAuth(`/social/discovery?q=${encodeURIComponent(query.trim())}`),
           apiGetAuth('/social/joined-groups'),
+          apiGetAuth('/social/linkable-events'),
         ]);
         const page = parseFeedPage(feed);
         setPosts(page.items);
         setFeedCursor(page.nextCursor);
         setJoinedGroups(Array.isArray(mine) ? (mine as GroupSummary[]) : []);
+        setLinkableEvents(
+          Array.isArray(gatherings) ? (gatherings as LinkableEvent[]) : [],
+        );
         setDiscovery(
           found && typeof found === 'object'
             ? (found as SocialDiscovery)
@@ -168,9 +175,11 @@ export default function FeedPage() {
         body: postBody,
         linkUrl: postLink.trim() || null,
         audience: postAudience,
+        eventId: postEventId.trim() || null,
       });
       setPostBody('');
       setPostLink('');
+      setPostEventId('');
       setScope('following');
       await load('following', search);
     } catch (cause) {
@@ -293,6 +302,21 @@ export default function FeedPage() {
                   </Select>
                 </FormField>
               </div>
+              {linkableEvents.length > 0 && (
+                <FormField label="Related gathering (optional)">
+                  <Select
+                    value={postEventId}
+                    onChange={(event) => setPostEventId(event.target.value)}
+                  >
+                    <option value="">None</option>
+                    {linkableEvents.map((event) => (
+                      <option key={event.id} value={event.id}>
+                        {event.title}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+              )}
               <div className="flex items-center justify-between gap-4">
                 <p className="text-xs text-muted">
                   Text and links only. Blocks apply across the feed.
@@ -368,6 +392,14 @@ export default function FeedPage() {
                     <div className="mt-3 whitespace-pre-wrap text-[0.98rem] leading-7">
                       {post.body}
                     </div>
+                    {post.linkedEvent && (
+                      <Link
+                        href={`/events/${post.linkedEvent.id}`}
+                        className="mt-4 block border-l-2 border-accent bg-surface-subtle px-4 py-3 text-sm font-semibold text-accent hover:underline"
+                      >
+                        Gathering: {post.linkedEvent.title}
+                      </Link>
+                    )}
                     {post.linkUrl && (
                       <a
                         href={post.linkUrl}

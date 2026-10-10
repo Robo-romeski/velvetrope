@@ -15,10 +15,17 @@ export type SocialPost = {
   body: string;
   audience: 'group' | 'members' | 'followers';
   linkUrl: string | null;
+  linkedEvent: { id: string; title: string } | null;
   createdAt: string;
   author: SocialMember;
   commentCount: number;
   group: { slug: string; name: string; isMember: boolean } | null;
+};
+
+export type LinkableEvent = {
+  id: string;
+  title: string;
+  date: string;
 };
 
 export type SocialComment = {

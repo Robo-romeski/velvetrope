@@ -47,9 +47,15 @@ export class SocialFeedController {
       body?: string;
       linkUrl?: string | null;
       audience?: PostAudience;
+      eventId?: string | null;
     },
   ) {
     return await this.social.createMemberPost(getAuthUser(req).sub, body);
+  }
+
+  @Get('linkable-events')
+  async linkableEvents(@Req() req: Request) {
+    return await this.social.listLinkableEvents(getAuthUser(req).sub);
   }
 
   @Get('discovery')

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { MembersModule } from '../members/members.module';
+import { EventsModule } from '../events/events.module';
 import { GroupEntity } from './group.entity';
 import { GroupMembershipEntity } from './group-membership.entity';
 import { GroupPostEntity } from './group-post.entity';
@@ -17,6 +18,7 @@ import { SocialActivityReadEntity } from './social-activity-read.entity';
   imports: [
     AuthModule,
     MembersModule,
+    EventsModule,
     TypeOrmModule.forFeature([
       GroupEntity,
       GroupMembershipEntity,

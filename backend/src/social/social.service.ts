@@ -16,6 +16,7 @@ import { GroupPostEntity, PostAudience } from './group-post.entity';
 import { PostCommentEntity } from './post-comment.entity';
 import { uniqueSlug } from '../members/slug.util';
 import { SocialActivityReadEntity } from './social-activity-read.entity';
+import { EventsService } from '../events/events.service';
 
 @Injectable()
 export class SocialService {
@@ -31,7 +32,12 @@ export class SocialService {
     @InjectRepository(SocialActivityReadEntity)
     private readonly activityReads: Repository<SocialActivityReadEntity>,
     private readonly members: MembersService,
+    private readonly events: EventsService,
   ) {}
+
+  async listLinkableEvents(userId: string) {
+    return await this.events.listLinkableForMember(userId);
+  }
 
   async listGroups(viewerId: string | null) {
     const all = await this.groups.find({ order: { createdAt: 'DESC' } });
@@ -219,6 +225,7 @@ export class SocialService {
       body?: string;
       linkUrl?: string | null;
       audience?: PostAudience;
+      eventId?: string | null;
     },
   ) {
     await this.members.ensureProfileForUser(authorId);
@@ -227,6 +234,12 @@ export class SocialService {
     const audience: PostAudience =
       input.audience === 'followers' ? 'followers' : 'members';
     const linkUrl = this.normalizeLink(input.linkUrl);
+    const eventIdRaw = (input.eventId ?? '').trim();
+    let eventId: string | null = null;
+    if (eventIdRaw) {
+      await this.events.assertMemberCanLinkEvent(authorId, eventIdRaw);
+      eventId = eventIdRaw;
+    }
     const post = await this.posts.save(
       this.posts.create({
         groupId: null,
@@ -235,6 +248,7 @@ export class SocialService {
         body: body.slice(0, 20_000),
         audience,
         linkUrl,
+        eventId,
       }),
     );
     return this.toPost(post, authorId);
@@ -649,6 +663,13 @@ export class SocialService {
     const group = post.groupId
       ? await this.groups.findOne({ where: { id: post.groupId } })
       : null;
+    const linkedEvent = post.eventId
+      ? await this.events.resolveLinkedEventForViewer(
+          post.eventId,
+          viewerId,
+          post.authorId,
+        )
+      : null;
     return {
       id: post.id,
       groupId: post.groupId,
@@ -656,6 +677,7 @@ export class SocialService {
       body: post.body,
       audience: post.audience ?? 'group',
       linkUrl: post.linkUrl ?? null,
+      linkedEvent,
       createdAt: post.createdAt,
       author: authorProfile
         ? {

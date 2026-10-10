@@ -11,6 +11,7 @@ import { MemberBlockEntity } from './member-block.entity';
 import { MemberFollowEntity } from './member-follow.entity';
 import {
   MemberProfileEntity,
+  MessagePermission,
   ProfileLink,
 } from './member-profile.entity';
 import {
@@ -33,6 +34,7 @@ export type OwnProfile = {
   followerCount: number;
   followingCount: number;
   educator: boolean;
+  messagePermission: MessagePermission;
 };
 
 export type PublicProfile = {
@@ -46,6 +48,7 @@ export type PublicProfile = {
   isFollowing?: boolean;
   followerCount: number;
   followingCount: number;
+  canMessage?: boolean;
 };
 
 @Injectable()
@@ -65,7 +68,8 @@ export class MembersService {
     const existing = await this.profiles.findOne({ where: { userId } });
     if (existing) return existing;
     const user = await this.users.findOne({ where: { id: userId } });
-    const label = seedName?.trim() || user?.name?.trim() || user?.email || userId;
+    const label =
+      seedName?.trim() || user?.name?.trim() || user?.email || userId;
     const profile = this.profiles.create({
       userId,
       slug: uniqueSlug(label),
@@ -76,6 +80,7 @@ export class MembersService {
       avatarUrl: null,
       visibility: MemberProfileEntity.defaultVisibility(),
       educator: false,
+      messagePermission: 'following',
     });
     return await this.profiles.save(profile);
   }
@@ -98,6 +103,7 @@ export class MembersService {
       followerCount,
       followingCount,
       educator: profile.educator === true,
+      messagePermission: profile.messagePermission ?? 'following',
     };
   }
 
@@ -110,6 +116,7 @@ export class MembersService {
       links?: ProfileLink[];
       avatarUrl?: string | null;
       visibility?: Partial<ProfileVisibility>;
+      messagePermission?: MessagePermission;
     },
   ): Promise<OwnProfile> {
     const profile = await this.ensureProfileForUser(userId);
@@ -133,6 +140,12 @@ export class MembersService {
         ...(profile.visibility ?? DEFAULT_PROFILE_VISIBILITY),
         ...this.normalizeVisibility(input.visibility),
       };
+    }
+    if (input.messagePermission !== undefined) {
+      if (!['following', 'members', 'none'].includes(input.messagePermission)) {
+        throw new BadRequestException('Invalid message permission');
+      }
+      profile.messagePermission = input.messagePermission;
     }
     await this.profiles.save(profile);
     return this.getOwnProfile(userId);
@@ -201,6 +214,7 @@ export class MembersService {
         where: { followerId: viewerId, followingId: targetId },
       });
       result.isFollowing = Boolean(follow);
+      result.canMessage = await this.canSendMessage(viewerId, targetId);
     }
 
     return result;
@@ -217,12 +231,16 @@ export class MembersService {
       where: { blockerId, blockedId },
     });
     if (!existing) {
-      await this.blocks.save(
-        this.blocks.create({ blockerId, blockedId }),
-      );
+      await this.blocks.save(this.blocks.create({ blockerId, blockedId }));
     }
-    await this.follows.delete({ followerId: blockerId, followingId: blockedId });
-    await this.follows.delete({ followerId: blockedId, followingId: blockerId });
+    await this.follows.delete({
+      followerId: blockerId,
+      followingId: blockedId,
+    });
+    await this.follows.delete({
+      followerId: blockedId,
+      followingId: blockerId,
+    });
     return { blocked: true };
   }
 
@@ -262,9 +280,7 @@ export class MembersService {
       where: { followerId, followingId },
     });
     if (!existing) {
-      await this.follows.save(
-        this.follows.create({ followerId, followingId }),
-      );
+      await this.follows.save(this.follows.create({ followerId, followingId }));
     }
     return { following: true };
   }
@@ -282,7 +298,10 @@ export class MembersService {
       where: { followingId: userId },
       order: { createdAt: 'DESC' },
     });
-    return this.mapFollowProfiles(rows.map((r) => r.followerId), viewerId);
+    return this.mapFollowProfiles(
+      rows.map((r) => r.followerId),
+      viewerId,
+    );
   }
 
   async listFollowing(userId: string, viewerId: string) {
@@ -293,7 +312,72 @@ export class MembersService {
       where: { followerId: userId },
       order: { createdAt: 'DESC' },
     });
-    return this.mapFollowProfiles(rows.map((r) => r.followingId), viewerId);
+    return this.mapFollowProfiles(
+      rows.map((r) => r.followingId),
+      viewerId,
+    );
+  }
+
+  async getFollowingIds(userId: string): Promise<string[]> {
+    const rows = await this.follows.find({
+      where: { followerId: userId },
+      order: { createdAt: 'DESC' },
+    });
+    return rows.map((row) => row.followingId);
+  }
+
+  async searchMembers(viewerId: string, query = '') {
+    const needle = query.trim().toLowerCase().slice(0, 80);
+    const rows = await this.profiles.find({
+      order: { updatedAt: 'DESC' },
+      take: 100,
+    });
+    const results: PublicProfile[] = [];
+    for (const row of rows) {
+      if (row.userId === viewerId) continue;
+      const haystack = [
+        row.displayName ?? '',
+        row.slug,
+        ...(row.interests ?? []),
+      ]
+        .join(' ')
+        .toLowerCase();
+      if (needle && !haystack.includes(needle)) continue;
+      try {
+        results.push(await this.getPublicProfile(row.userId, viewerId));
+      } catch {
+        // Skip blocked, suspended, or missing members.
+      }
+      if (results.length >= 20) break;
+    }
+    return results;
+  }
+
+  async listRecentFollowerActivity(userId: string) {
+    const rows = await this.follows.find({
+      where: { followingId: userId },
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
+    const results = [];
+    for (const row of rows) {
+      try {
+        const actor = await this.getPublicProfile(row.followerId, userId);
+        results.push({
+          id: row.id,
+          createdAt: row.createdAt,
+          actor: {
+            userId: actor.userId,
+            slug: actor.slug,
+            displayName: actor.displayName,
+            avatarUrl: actor.avatarUrl ?? null,
+          },
+        });
+      } catch {
+        // Skip blocked, suspended, or missing members.
+      }
+    }
+    return results;
   }
 
   private async mapFollowProfiles(userIds: string[], viewerId: string) {
@@ -321,6 +405,28 @@ export class MembersService {
       ],
     });
     return Boolean(hit);
+  }
+
+  async canSendMessage(
+    senderId: string,
+    recipientId: string,
+  ): Promise<boolean> {
+    if (senderId === recipientId) return false;
+    if (await this.isBlockedEitherWay(senderId, recipientId)) return false;
+
+    const recipient = await this.users.findOne({ where: { id: recipientId } });
+    if (!recipient || recipient.accountStatus === 'suspended') return false;
+
+    const profile = await this.ensureProfileForUser(recipientId);
+    const permission = profile.messagePermission ?? 'following';
+    if (permission === 'none') return false;
+    if (permission === 'members') return true;
+
+    return Boolean(
+      await this.follows.findOne({
+        where: { followerId: recipientId, followingId: senderId },
+      }),
+    );
   }
 
   private normalizeTags(tags: string[]): string[] {

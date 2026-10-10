@@ -33,6 +33,7 @@ export default function EditHostEventPage() {
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [capacity, setCapacity] = useState(20);
+  const [isDiscoveryVisible, setIsDiscoveryVisible] = useState(true);
   const [ticketPriceUsd, setTicketPriceUsd] = useState('0');
   const [requirePhotoCheckin, setRequirePhotoCheckin] = useState(false);
   const [requireIdentityVerification, setRequireIdentityVerification] =
@@ -52,6 +53,7 @@ export default function EditHostEventPage() {
         setDescription(event.description ?? '');
         setDate(toLocalInput(event.date));
         setCapacity(event.capacity ?? 20);
+        setIsDiscoveryVisible(event.isDiscoveryVisible ?? true);
         const cents = Number(event.ticketPriceCents ?? 0);
         setTicketPriceUsd(Number.isFinite(cents) ? (cents / 100).toFixed(2) : '0');
         setRequirePhotoCheckin(event.requirePhotoCheckin === true);
@@ -92,6 +94,7 @@ export default function EditHostEventPage() {
         description: description.trim() || undefined,
         date: new Date(date).toISOString(),
         capacity: Number(capacity),
+        isDiscoveryVisible,
         ticketPriceCents: Math.max(
           0,
           Math.round(Number.parseFloat(ticketPriceUsd || '0') * 100),
@@ -170,6 +173,23 @@ export default function EditHostEventPage() {
               onChange={(e) => setCapacity(Number(e.target.value))}
               className="vk-field"
             />
+          </label>
+          <label className="flex items-start gap-3 border border-border bg-surface-subtle p-4 text-sm">
+            <input
+              type="checkbox"
+              checked={isDiscoveryVisible}
+              onChange={(event) =>
+                setIsDiscoveryVisible(event.target.checked)
+              }
+              className="mt-0.5 size-4 accent-accent"
+            />
+            <span>
+              Include this event in public discovery
+              <span className="block text-xs text-muted">
+                Turn this off for test, demo, rehearsal, or private-link
+                events. The event remains available in your host workspace.
+              </span>
+            </span>
           </label>
           <label className="block text-sm space-y-1">
             <span>Ticket price (USD)</span>

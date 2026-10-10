@@ -10,6 +10,7 @@ import type { ProfileVisibility } from './profile-visibility';
 import { DEFAULT_PROFILE_VISIBILITY } from './profile-visibility';
 
 export type ProfileLink = { label: string; url: string };
+export type MessagePermission = 'following' | 'members' | 'none';
 
 @Entity({ name: 'member_profiles' })
 export class MemberProfileEntity {
@@ -40,6 +41,9 @@ export class MemberProfileEntity {
 
   @Column({ type: 'boolean', default: false })
   educator!: boolean;
+
+  @Column({ type: 'text', default: 'following' })
+  messagePermission!: MessagePermission;
 
   @CreateDateColumn()
   createdAt!: Date;

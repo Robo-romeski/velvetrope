@@ -23,6 +23,9 @@ export class EventEntity {
   @Column({ type: 'text', default: 'draft' })
   status!: 'draft' | 'published' | 'cancelled';
 
+  @Column({ type: 'boolean', default: true })
+  isDiscoveryVisible!: boolean;
+
   /** 0 = free ticket (default). */
   @Column({ type: 'integer', default: 0 })
   ticketPriceCents!: number;

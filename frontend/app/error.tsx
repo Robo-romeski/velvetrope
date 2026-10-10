@@ -17,7 +17,7 @@ export default function ErrorPage({
   return (
     <PageShell size="narrow" className="space-y-7 py-16 sm:py-24">
       <PageHeader
-        eyebrow="VelvetKey"
+        eyebrow="epicsexual"
         title="Something went wrong"
         description="We could not load this page. Try again, or return to the event list."
       />

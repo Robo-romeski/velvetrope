@@ -1,14 +1,17 @@
-'use client';
-
-import Link from 'next/link';
+import { ButtonLink, Card, PageHeader, PageShell } from '@/app/components/ui';
 
 export default function StripeRefreshPage() {
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Stripe Onboarding</h1>
-      <p className="text-sm text-gray-600">You can restart onboarding if something went wrong.</p>
-      <Link className="text-blue-600 underline" href="/host/stripe">Return to Stripe settings</Link>
-    </div>
+    <PageShell size="narrow" className="space-y-7">
+      <PageHeader
+        eyebrow="Payments"
+        title="Stripe onboarding"
+        description="You can restart onboarding if something interrupted the setup."
+      />
+      <Card className="p-6">
+        <ButtonLink href="/host/stripe">Return to payment settings</ButtonLink>
+      </Card>
+    </PageShell>
   );
 }
 

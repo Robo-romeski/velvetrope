@@ -37,6 +37,7 @@ type PublicProfile = {
   isFollowing?: boolean;
   followerCount: number;
   followingCount: number;
+  canMessage?: boolean;
 };
 
 type KudoItem = {
@@ -71,6 +72,7 @@ export default function MemberProfilePage() {
   const [kudoMessage, setKudoMessage] = useState('');
   const [kudoSending, setKudoSending] = useState(false);
   const [kudoSent, setKudoSent] = useState(false);
+  const [messageStarting, setMessageStarting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -159,6 +161,23 @@ export default function MemberProfilePage() {
     }
   };
 
+  const startMessage = async () => {
+    if (!profile || !user) return;
+    setMessageStarting(true);
+    setActionError(null);
+    try {
+      const conversation = (await apiPostAuth('/messages/conversations', {
+        recipientId: profile.userId,
+      })) as { id: string };
+      router.push(`/messages/${conversation.id}`);
+    } catch (e) {
+      setActionError(
+        e instanceof Error ? e.message : 'Could not start conversation',
+      );
+      setMessageStarting(false);
+    }
+  };
+
   if (loading || authLoading) {
     return (
       <PageShell size="narrow">
@@ -236,6 +255,20 @@ export default function MemberProfilePage() {
             <Button type="button" onClick={toggleFollow}>
               {profile.isFollowing ? 'Unfollow' : 'Follow'}
             </Button>
+            {profile.canMessage ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={startMessage}
+                disabled={messageStarting}
+              >
+                {messageStarting ? 'Opening…' : 'Message'}
+              </Button>
+            ) : (
+              <span className="self-center text-xs text-muted">
+                Messages closed by this member’s settings
+              </span>
+            )}
             <Button type="button" variant="secondary" onClick={blockMember}>
               Block
             </Button>

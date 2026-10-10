@@ -15,7 +15,7 @@ import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { getAuthUser, getOptionalAuthUser } from '../auth/request-user';
 import { MembersService } from './members.service';
 import type { ProfileVisibility } from './profile-visibility';
-import type { ProfileLink } from './member-profile.entity';
+import type { MessagePermission, ProfileLink } from './member-profile.entity';
 
 @Controller('members')
 export class MembersController {
@@ -40,6 +40,7 @@ export class MembersController {
       links?: ProfileLink[];
       avatarUrl?: string | null;
       visibility?: Partial<ProfileVisibility>;
+      messagePermission?: MessagePermission;
     },
   ) {
     const { sub } = getAuthUser(req);

@@ -222,6 +222,31 @@ export default function FeedPage() {
     }
   };
 
+  const toggleAppreciation = async (post: SocialPost) => {
+    if (post.author.userId === user?.id) return;
+    try {
+      const result = (await apiPostAuth(
+        `/posts/${encodeURIComponent(post.id)}/appreciate`,
+        {},
+      )) as { appreciated: boolean; appreciationCount: number };
+      setPosts((current) =>
+        current.map((row) =>
+          row.id === post.id
+            ? {
+                ...row,
+                viewerAppreciated: result.appreciated,
+                appreciationCount: result.appreciationCount,
+              }
+            : row,
+        ),
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : 'Could not update thanks',
+      );
+    }
+  };
+
   const submitComment = async (post: SocialPost) => {
     const body = commentDrafts[post.id]?.trim();
     if (!body) return;
@@ -440,6 +465,20 @@ export default function FeedPage() {
                         {post.commentCount}{' '}
                         {post.commentCount === 1 ? 'comment' : 'comments'}
                       </button>
+                      {post.author.userId !== user?.id && (
+                        <button
+                          type="button"
+                          className={`font-semibold hover:text-accent ${
+                            post.viewerAppreciated ? 'text-accent' : ''
+                          }`}
+                          onClick={() => void toggleAppreciation(post)}
+                        >
+                          Thanks
+                          {post.appreciationCount > 0
+                            ? ` · ${post.appreciationCount}`
+                            : ''}
+                        </button>
+                      )}
                     </footer>
 
                     {expandedPost === post.id && (

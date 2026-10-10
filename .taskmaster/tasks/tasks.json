@@ -3276,8 +3276,32 @@
         "dependencies": [
           "3"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "post_appreciations entity and toggle API",
+            "description": "Unique per post+member; daily cap; block/self rules",
+            "dependencies": [],
+            "details": "POST /posts/:id/appreciate; migration 1738000000019",
+            "status": "done",
+            "testStrategy": "social-home appreciation e2e",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Feed thanks control",
+            "description": "Per-post count and viewer state on feed cards",
+            "dependencies": [
+              "1"
+            ],
+            "details": "frontend/app/feed/page.tsx Thanks button",
+            "status": "done",
+            "testStrategy": "Frontend build",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-10-10T21:00:00.000Z"
       },
       {
         "id": "7",
@@ -3340,9 +3364,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-10-10T20:00:00.000Z",
+      "lastModified": "2026-10-10T21:00:00.000Z",
       "taskCount": 10,
-      "completedCount": 5,
+      "completedCount": 6,
       "tags": [
         "platform-social-v2"
       ]

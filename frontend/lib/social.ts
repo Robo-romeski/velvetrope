@@ -19,7 +19,14 @@ export type SocialPost = {
   createdAt: string;
   author: SocialMember;
   commentCount: number;
+  appreciationCount: number;
+  viewerAppreciated: boolean;
   group: { slug: string; name: string; isMember: boolean } | null;
+};
+
+export type PostAppreciationState = {
+  appreciated: boolean;
+  appreciationCount: number;
 };
 
 export type LinkableEvent = {

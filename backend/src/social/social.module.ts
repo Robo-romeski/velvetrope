@@ -13,6 +13,7 @@ import { MemberWallController } from './member-wall.controller';
 import { SocialFeedController } from './social-feed.controller';
 import { SocialService } from './social.service';
 import { SocialActivityReadEntity } from './social-activity-read.entity';
+import { PostAppreciationEntity } from './post-appreciation.entity';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SocialActivityReadEntity } from './social-activity-read.entity';
       GroupPostEntity,
       PostCommentEntity,
       SocialActivityReadEntity,
+      PostAppreciationEntity,
     ]),
   ],
   controllers: [

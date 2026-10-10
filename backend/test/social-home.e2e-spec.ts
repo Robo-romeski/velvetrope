@@ -137,6 +137,36 @@ describe('Social home (e2e)', () => {
     expect(comments.body[0].body).toBe('A thoughtful reply.');
   });
 
+  it('toggles post appreciation per member and blocks self-appreciation', async () => {
+    const appreciate = await request(app.getHttpServer())
+      .post(`/posts/${membersPostId}/appreciate`)
+      .set('Authorization', `Bearer ${tokenC}`)
+      .expect(201);
+    expect(appreciate.body.appreciated).toBe(true);
+    expect(appreciate.body.appreciationCount).toBe(1);
+
+    const feed = await request(app.getHttpServer())
+      .get('/social/feed?scope=discover')
+      .set('Authorization', `Bearer ${tokenC}`)
+      .expect(200);
+    expect(
+      feed.body.items.find((post: { id: string }) => post.id === membersPostId)
+        ?.viewerAppreciated,
+    ).toBe(true);
+
+    const remove = await request(app.getHttpServer())
+      .post(`/posts/${membersPostId}/appreciate`)
+      .set('Authorization', `Bearer ${tokenC}`)
+      .expect(201);
+    expect(remove.body.appreciated).toBe(false);
+    expect(remove.body.appreciationCount).toBe(0);
+
+    await request(app.getHttpServer())
+      .post(`/posts/${membersPostId}/appreciate`)
+      .set('Authorization', `Bearer ${tokenB}`)
+      .expect(400);
+  });
+
   it('links member posts to published gatherings when allowed', async () => {
     const created = await request(app.getHttpServer())
       .post('/events')

@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, MoreThan, Repository } from 'typeorm';
 import { MembersService } from '../members/members.service';
 import { GroupEntity, GroupPrivacy } from './group.entity';
 import {
@@ -17,6 +17,8 @@ import { PostCommentEntity } from './post-comment.entity';
 import { uniqueSlug } from '../members/slug.util';
 import { SocialActivityReadEntity } from './social-activity-read.entity';
 import { EventsService } from '../events/events.service';
+import { PostAppreciationEntity } from './post-appreciation.entity';
+import { MAX_POST_APPRECIATIONS_PER_DAY } from './post-appreciation.constants';
 
 @Injectable()
 export class SocialService {
@@ -31,6 +33,8 @@ export class SocialService {
     private readonly comments: Repository<PostCommentEntity>,
     @InjectRepository(SocialActivityReadEntity)
     private readonly activityReads: Repository<SocialActivityReadEntity>,
+    @InjectRepository(PostAppreciationEntity)
+    private readonly appreciations: Repository<PostAppreciationEntity>,
     private readonly members: MembersService,
     private readonly events: EventsService,
   ) {}
@@ -251,7 +255,9 @@ export class SocialService {
         eventId,
       }),
     );
-    return this.toPost(post, authorId);
+    const created = await this.toPost(post, authorId);
+    const [enriched] = await this.withPostAppreciationMeta([created], authorId);
+    return enriched ?? created;
   }
 
   async listFeed(
@@ -310,7 +316,49 @@ export class SocialService {
           )
         : null;
 
-    return { items, nextCursor };
+    const enriched = await this.withPostAppreciationMeta(items, viewerId);
+    return { items: enriched, nextCursor };
+  }
+
+  async togglePostAppreciation(postId: string, userId: string) {
+    await this.members.ensureProfileForUser(userId);
+    const post = await this.posts.findOne({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Post not found');
+    await this.assertCanViewPost(post, userId);
+    if (post.authorId === userId) {
+      throw new BadRequestException('You cannot appreciate your own post');
+    }
+    if (await this.members.isBlockedEitherWay(userId, post.authorId)) {
+      throw new ForbiddenException('Cannot appreciate this post');
+    }
+
+    const existing = await this.appreciations.findOne({
+      where: { postId, userId },
+    });
+    if (existing) {
+      await this.appreciations.delete({ id: existing.id });
+    } else {
+      const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const sentToday = await this.appreciations.count({
+        where: { userId, createdAt: MoreThan(dayAgo) },
+      });
+      if (sentToday >= MAX_POST_APPRECIATIONS_PER_DAY) {
+        throw new BadRequestException('Daily appreciation limit reached');
+      }
+      await this.appreciations.save(
+        this.appreciations.create({ postId, userId }),
+      );
+    }
+
+    const meta = await this.appreciationMetaForPosts([postId], userId);
+    const row = meta.get(postId) ?? {
+      appreciationCount: 0,
+      viewerAppreciated: false,
+    };
+    return {
+      appreciated: row.viewerAppreciated,
+      appreciationCount: row.appreciationCount,
+    };
   }
 
   async listJoinedGroups(viewerId: string) {
@@ -536,7 +584,66 @@ export class SocialService {
     }
     groups.sort((a, b) => a.name.localeCompare(b.name));
 
-    return { posts, groups };
+    const enrichedPosts = await this.withPostAppreciationMeta(posts, viewerId);
+    return { posts: enrichedPosts, groups };
+  }
+
+  private async appreciationMetaForPosts(
+    postIds: string[],
+    viewerId: string | null,
+  ) {
+    const map = new Map<
+      string,
+      { appreciationCount: number; viewerAppreciated: boolean }
+    >();
+    for (const id of postIds) {
+      map.set(id, { appreciationCount: 0, viewerAppreciated: false });
+    }
+    if (postIds.length === 0) return map;
+
+    const counts = await this.appreciations
+      .createQueryBuilder('a')
+      .select('a.postId', 'postId')
+      .addSelect('COUNT(*)', 'cnt')
+      .where('a.postId IN (:...postIds)', { postIds })
+      .groupBy('a.postId')
+      .getRawMany<{ postId: string; cnt: string }>();
+    for (const row of counts) {
+      map.set(row.postId, {
+        appreciationCount: Number(row.cnt) || 0,
+        viewerAppreciated: false,
+      });
+    }
+    if (viewerId) {
+      const mine = await this.appreciations.find({
+        where: { userId: viewerId, postId: In(postIds) },
+        select: { postId: true },
+      });
+      for (const row of mine) {
+        const current = map.get(row.postId) ?? {
+          appreciationCount: 0,
+          viewerAppreciated: false,
+        };
+        map.set(row.postId, { ...current, viewerAppreciated: true });
+      }
+    }
+    return map;
+  }
+
+  private async withPostAppreciationMeta<
+    T extends { id: string },
+  >(posts: T[], viewerId: string | null) {
+    const meta = await this.appreciationMetaForPosts(
+      posts.map((post) => post.id),
+      viewerId,
+    );
+    return posts.map((post) => {
+      const row = meta.get(post.id) ?? {
+        appreciationCount: 0,
+        viewerAppreciated: false,
+      };
+      return { ...post, ...row };
+    });
   }
 
   private async assertCanViewPost(

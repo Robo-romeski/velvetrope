@@ -1,30 +1,54 @@
 'use client';
 
 import { useAuth } from '@/lib/auth';
+import {
+  Alert,
+  Card,
+  LoadingState,
+  PageHeader,
+  PageShell,
+  TextLink,
+} from '@/app/components/ui';
 
 export default function ProtectedPage() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="p-6 text-sm">Loading…</div>;
+    return (
+      <PageShell>
+        <LoadingState />
+      </PageShell>
+    );
   }
 
   if (!user) {
     return (
-      <div className="p-6 space-y-2">
-        <h1 className="text-2xl font-bold">Protected</h1>
-        <p className="text-sm">Log in to see this page.</p>
-      </div>
+      <PageShell>
+        <PageHeader
+          eyebrow="Private area"
+          title="Protected"
+          description="Log in to view this diagnostic page."
+        />
+        <Alert tone="info">
+          This page is available only to authenticated members.
+        </Alert>
+        <TextLink href="/auth/login">Log in</TextLink>
+      </PageShell>
     );
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Protected</h1>
-      <p className="mt-2">Signed in as {user.email}.</p>
-      <pre className="mt-4 text-xs bg-gray-100 text-black p-2 rounded w-full overflow-auto">
-        {JSON.stringify(user, null, 2)}
-      </pre>
-    </div>
+    <PageShell>
+      <PageHeader
+        eyebrow="Private area"
+        title="Protected"
+        description={`Signed in as ${user.email}.`}
+      />
+      <Card>
+        <pre className="w-full overflow-auto border border-border bg-surface-subtle p-3 text-xs">
+          {JSON.stringify(user, null, 2)}
+        </pre>
+      </Card>
+    </PageShell>
   );
 }

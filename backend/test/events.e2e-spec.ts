@@ -114,6 +114,43 @@ describe('Events (e2e)', () => {
       .expect(403);
   });
 
+  it('keeps explicitly hidden published events out of public discovery', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/events')
+      .set(hostAuth('host-hidden'))
+      .send({
+        title: 'Internal preview',
+        date: new Date().toISOString(),
+        capacity: 5,
+        isDiscoveryVisible: false,
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/events/${created.body.id}/publish`)
+      .set(hostAuth('host-hidden'))
+      .expect(201);
+
+    const publicEvents = await request(app.getHttpServer())
+      .get('/events')
+      .expect(200);
+    expect(
+      publicEvents.body.find(
+        (event: { id: string }) => event.id === created.body.id,
+      ),
+    ).toBeFalsy();
+
+    const hostEvents = await request(app.getHttpServer())
+      .get('/events/mine')
+      .set(hostAuth('host-hidden'))
+      .expect(200);
+    expect(
+      hostEvents.body.find(
+        (event: { id: string }) => event.id === created.body.id,
+      ),
+    ).toMatchObject({ isDiscoveryVisible: false });
+  });
+
   it('GET /events/mine requires a host and returns only that host events', async () => {
     await request(app.getHttpServer()).get('/events/mine').expect(401);
 

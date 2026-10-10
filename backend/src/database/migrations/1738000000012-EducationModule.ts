@@ -1,4 +1,10 @@
-import { MigrationInterface, QueryRunner, Table, TableColumn, TableIndex } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableColumn,
+  TableIndex,
+} from 'typeorm';
 import {
   applyPostgresUuidIdDefaults,
   migrationDateTimeType,
@@ -66,7 +72,12 @@ export class EducationModule1738000000012 implements MigrationInterface {
           { name: 'sortOrder', type: 'integer', isNullable: false, default: 0 },
           { name: 'title', type: 'text', isNullable: false },
           { name: 'body', type: 'text', isNullable: false },
-          { name: 'isPreview', type: 'boolean', isNullable: false, default: false },
+          {
+            name: 'isPreview',
+            type: 'boolean',
+            isNullable: false,
+            default: false,
+          },
           { name: 'createdAt', type: dateTime, isNullable: false },
           { name: 'updatedAt', type: dateTime, isNullable: false },
         ],

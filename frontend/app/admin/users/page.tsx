@@ -2,6 +2,15 @@
 
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { apiGetAuth, apiPatchAuth } from '@/lib/api';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Input,
+  Section,
+} from '@/app/components/ui';
 
 type AdminUser = {
   id: string;
@@ -97,110 +106,112 @@ export default function AdminUsersPage() {
   const pages = Math.max(1, Math.ceil(total / 20));
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Users</h1>
+    <Section
+      title="Users"
+      description="Review account access, roles, identity status, and suspensions."
+    >
       <form onSubmit={onSearch} className="flex gap-2">
-        <input
+        <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search email or name"
-          className="border rounded px-3 py-2 bg-transparent flex-1"
+          className="flex-1"
         />
-        <button className="px-4 py-2 border rounded" type="submit">
-          Search
-        </button>
+        <Button variant="secondary" type="submit">Search</Button>
       </form>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <Alert tone="danger" role="alert">{error}</Alert>}
       <div className="space-y-3">
         {items.map((user) => (
-          <div key={user.id} className="border rounded p-3 text-sm space-y-2">
+          <Card key={user.id} className="space-y-3 text-sm">
             <div className="flex flex-wrap justify-between gap-2">
               <div>
-                <div className="font-medium">{user.email}</div>
-                <div className="text-xs text-gray-500">
+                <div className="font-semibold">{user.email}</div>
+                <div className="mt-1 text-xs text-muted">
                   {user.name || 'No name'} · {user.roles.join(', ')}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-muted">
                   Identity: {user.identityStatus.replaceAll('_', ' ')}
                 </div>
               </div>
-              <span
-                className={
-                  user.accountStatus === 'suspended'
-                    ? 'text-red-600'
-                    : 'text-green-700 dark:text-green-400'
-                }
+              <Badge
+                tone={user.accountStatus === 'suspended' ? 'danger' : 'success'}
               >
                 {user.accountStatus}
-              </span>
+              </Badge>
             </div>
             {user.suspensionReason && (
-              <p className="text-xs text-red-600">
+              <p className="text-xs text-danger">
                 Reason: {user.suspensionReason}
               </p>
             )}
             <div className="flex flex-wrap gap-2">
-              <button
+              <Button
                 type="button"
+                size="sm"
+                variant="secondary"
                 disabled={busyId === user.id}
                 onClick={() => toggleRole(user, 'host')}
-                className="px-2 py-1 border rounded disabled:opacity-50"
               >
                 {user.roles.includes('host') ? 'Remove host' : 'Grant host'}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                size="sm"
+                variant="secondary"
                 disabled={busyId === user.id}
                 onClick={() => toggleRole(user, 'admin')}
-                className="px-2 py-1 border rounded disabled:opacity-50"
               >
                 {user.roles.includes('admin') ? 'Remove admin' : 'Grant admin'}
-              </button>
+              </Button>
               {user.accountStatus === 'active' ? (
-                <button
+                <Button
                   type="button"
+                  size="sm"
+                  variant="danger"
                   disabled={busyId === user.id}
                   onClick={() => suspend(user)}
-                  className="px-2 py-1 border border-red-600 text-red-700 dark:text-red-400 rounded disabled:opacity-50"
                 >
                   Suspend
-                </button>
+                </Button>
               ) : (
-                <button
+                <Button
                   type="button"
+                  size="sm"
+                  variant="secondary"
                   disabled={busyId === user.id}
                   onClick={() => void update(user, { accountStatus: 'active' })}
-                  className="px-2 py-1 border rounded disabled:opacity-50"
                 >
                   Reactivate
-                </button>
+                </Button>
               )}
             </div>
-          </div>
+          </Card>
         ))}
         {items.length === 0 && (
-          <p className="text-sm text-gray-500">No users found.</p>
+          <EmptyState title="No users found" description="Try a different search." />
         )}
       </div>
       <div className="flex items-center gap-3 text-sm">
-        <button
+        <Button
+          size="sm"
+          variant="secondary"
           disabled={page <= 1}
           onClick={() => setPage((value) => value - 1)}
-          className="px-2 py-1 border rounded disabled:opacity-50"
         >
           Previous
-        </button>
+        </Button>
         <span>
           Page {page} / {pages}
         </span>
-        <button
+        <Button
+          size="sm"
+          variant="secondary"
           disabled={page >= pages}
           onClick={() => setPage((value) => value + 1)}
-          className="px-2 py-1 border rounded disabled:opacity-50"
         >
           Next
-        </button>
+        </Button>
       </div>
-    </div>
+    </Section>
   );
 }

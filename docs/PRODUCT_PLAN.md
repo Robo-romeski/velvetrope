@@ -1,6 +1,6 @@
-# VelvetKey Platform Plan
+# epicsexual Platform Plan
 
-**Product:** VelvetKey (epicsexual.com)  
+**Product:** epicsexual (epicsexual.com)
 **Positioning:** A knowledge-centered social community for adults exploring ENM, polyamory, swinging, and kink. Community-led discovery, learning, and gatherings—not a dating or matchmaking product.  
 **Stack (confirmed):** Next.js App Router, NestJS, TypeORM, PostgreSQL (local demo + production target), JWT auth, optional Stripe Connect for test/local demo.  
 **Last updated:** 2026-10-05
@@ -373,4 +373,4 @@ Each phase is independently shippable. **Not** a single big-bang launch.
 
 ## 12. Summary
 
-VelvetKey evolves from a **proven event operations core** into a **community and learning platform** where gatherings are one module among profiles, groups, education, and positive kudos—explicitly **not** a dating product. The existing Next.js/NestJS/PostgreSQL investment is preserved; new work is modular, phased, and gated by clear acceptance criteria, with payments and production monetization blocked on provider approval rather than assumed.
+epicsexual evolves from a **proven event operations core** into a **community and learning platform** where gatherings are one module among profiles, groups, education, and positive kudos—explicitly **not** a dating product. The existing Next.js/NestJS/PostgreSQL investment is preserved; new work is modular, phased, and gated by clear acceptance criteria, with payments and production monetization blocked on provider approval rather than assumed.

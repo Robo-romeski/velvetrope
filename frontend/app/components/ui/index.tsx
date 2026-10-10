@@ -66,16 +66,16 @@ export function PageHeader({
     >
       <div className="max-w-2xl">
         {eyebrow && (
-          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-accent">
+          <div className="mb-3 text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-accent">
             {eyebrow}
           </div>
         )}
         <h1
           className={cn(
-            'font-semibold tracking-[-0.04em] text-foreground',
+            'font-display font-semibold tracking-[-0.035em] text-foreground',
             size === 'display'
-              ? 'text-4xl leading-[1.05] sm:text-5xl'
-              : 'text-3xl sm:text-4xl',
+              ? 'text-4xl leading-[0.98] sm:text-6xl'
+              : 'text-3xl leading-[1.02] sm:text-4xl',
           )}
         >
           {title}
@@ -93,11 +93,11 @@ export function PageHeader({
 
 const buttonVariants = {
   primary:
-    'border border-accent bg-accent text-accent-foreground hover:border-accent-hover hover:bg-accent-hover',
+    'border border-action bg-action text-action-foreground hover:border-action-hover hover:bg-action-hover',
   secondary:
-    'border border-border-strong bg-surface text-foreground hover:border-foreground/30 hover:bg-surface-subtle',
+    'border border-border-strong bg-surface text-foreground hover:border-foreground/45 hover:bg-surface-subtle',
   ghost:
-    'border border-transparent bg-transparent text-foreground hover:bg-surface-subtle',
+    'border border-transparent bg-transparent text-foreground underline-offset-4 hover:text-accent hover:underline',
   danger:
     'border border-danger bg-danger text-white hover:opacity-90 dark:text-background',
 } as const;
@@ -117,7 +117,7 @@ export function buttonStyles({
   className?: string;
 } = {}) {
   return cn(
-    'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors disabled:pointer-events-none disabled:opacity-50',
+    'inline-flex items-center justify-center gap-2 rounded-md font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50',
     buttonVariants[variant],
     buttonSizes[size],
     className,
@@ -174,7 +174,7 @@ export function TextLink({
     <Link
       href={href}
       className={cn(
-        'font-medium text-accent underline decoration-accent/35 underline-offset-4 transition-colors hover:text-accent-hover hover:decoration-accent-hover',
+        'font-semibold text-accent underline decoration-accent/40 underline-offset-4 transition-colors hover:text-accent-hover hover:decoration-accent-hover',
         className,
       )}
     >
@@ -217,7 +217,7 @@ export function Section({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             {title && (
-              <h2 className="text-lg font-semibold tracking-[-0.02em]">
+              <h2 className="font-display text-2xl font-semibold tracking-[-0.025em]">
                 {title}
               </h2>
             )}
@@ -319,7 +319,7 @@ export function Alert({
     <div
       role={role}
       className={cn(
-        'rounded-xl border px-4 py-3 text-sm leading-6',
+        'rounded-md border px-4 py-3 text-sm leading-6',
         alertTones[tone],
         className,
       )}
@@ -350,7 +350,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold capitalize tracking-wide',
+        'inline-flex items-center rounded-sm px-2.5 py-1 text-xs font-semibold capitalize tracking-wide',
         badgeTones[tone],
         className,
       )}
@@ -374,7 +374,7 @@ export function MetricTile({
   return (
     <div
       className={cn(
-        'rounded-2xl border border-border bg-surface px-4 py-4',
+        'rounded-card border border-border bg-surface px-4 py-4',
         className,
       )}
     >
@@ -409,7 +409,7 @@ export function EmptyState({
 }) {
   return (
     <div className="rounded-card border border-dashed border-border-strong bg-surface/60 px-6 py-10 text-center">
-      <div className="font-semibold">{title}</div>
+      <div className="font-display text-xl font-semibold">{title}</div>
       {description && (
         <div className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
           {description}

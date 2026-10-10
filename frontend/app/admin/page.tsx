@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { apiGetAuth } from '@/lib/api';
+import {
+  Alert,
+  LoadingState,
+  MetricTile,
+  Section,
+} from '@/app/components/ui';
 
 type AdminSummary = {
   users: number;
@@ -33,10 +39,12 @@ export default function AdminOverviewPage() {
   }, []);
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Admin overview</h1>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {!summary && !error && <p className="text-sm">Loading…</p>}
+    <Section
+      title="Platform overview"
+      description="Current operational counts across accounts, events, and reports."
+    >
+      {error && <Alert tone="danger" role="alert">{error}</Alert>}
+      {!summary && !error && <LoadingState />}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {[
@@ -46,13 +54,10 @@ export default function AdminOverviewPage() {
             ['Cancelled', summary.cancelledEvents],
             ['Open reports', summary.openReports],
           ].map(([label, value]) => (
-            <div key={label} className="border rounded p-3">
-              <div className="text-xs text-gray-500">{label}</div>
-              <div className="text-xl font-semibold">{value}</div>
-            </div>
+            <MetricTile key={label} label={label} value={value} />
           ))}
         </div>
       )}
-    </div>
+    </Section>
   );
 }

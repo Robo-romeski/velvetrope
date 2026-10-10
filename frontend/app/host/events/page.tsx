@@ -26,6 +26,7 @@ type HostEvent = {
   date: string;
   capacity: number;
   status: 'draft' | 'published' | 'cancelled';
+  isDiscoveryVisible: boolean;
   approvedCount: number;
   pendingCount: number;
 };
@@ -194,17 +195,22 @@ export default function HostEventsPage() {
                   {new Date(event.date).toLocaleString()}
                 </div>
               </div>
-              <Badge
-                tone={
-                  event.status === 'published'
-                    ? 'success'
-                    : event.status === 'cancelled'
-                      ? 'danger'
-                      : 'neutral'
-                }
-              >
-                {event.status}
-              </Badge>
+              <div className="flex flex-wrap justify-end gap-2">
+                {!event.isDiscoveryVisible && (
+                  <Badge tone="neutral">Hidden from discovery</Badge>
+                )}
+                <Badge
+                  tone={
+                    event.status === 'published'
+                      ? 'success'
+                      : event.status === 'cancelled'
+                        ? 'danger'
+                        : 'neutral'
+                  }
+                >
+                  {event.status}
+                </Badge>
+              </div>
             </div>
             {event.description && (
               <p className="line-clamp-2 text-sm leading-6 text-muted">

@@ -69,7 +69,7 @@ export default function LoginPage() {
     <PageShell size="narrow" className="space-y-7">
       <PageHeader
         eyebrow="Welcome back"
-        title="Log in to VelvetKey"
+        title="Log in to epicsexual"
         description="Continue to your applications, tickets, and event spaces."
       />
       <Card className="p-6 sm:p-8">

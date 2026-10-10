@@ -1,9 +1,4 @@
-import {
-  Controller,
-  ForbiddenException,
-  Param,
-  Post,
-} from '@nestjs/common';
+import { Controller, ForbiddenException, Param, Post } from '@nestjs/common';
 import { CommerceService } from './commerce.service';
 
 @Controller('commerce')

@@ -5,16 +5,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { MembersService } from '../members/members.service';
 import { GroupEntity, GroupPrivacy } from './group.entity';
 import {
   GroupMemberRole,
   GroupMembershipEntity,
 } from './group-membership.entity';
-import { GroupPostEntity } from './group-post.entity';
+import { GroupPostEntity, PostAudience } from './group-post.entity';
 import { PostCommentEntity } from './post-comment.entity';
 import { uniqueSlug } from '../members/slug.util';
+import { SocialActivityReadEntity } from './social-activity-read.entity';
 
 @Injectable()
 export class SocialService {
@@ -27,6 +28,8 @@ export class SocialService {
     private readonly posts: Repository<GroupPostEntity>,
     @InjectRepository(PostCommentEntity)
     private readonly comments: Repository<PostCommentEntity>,
+    @InjectRepository(SocialActivityReadEntity)
+    private readonly activityReads: Repository<SocialActivityReadEntity>,
     private readonly members: MembersService,
   ) {}
 
@@ -45,9 +48,7 @@ export class SocialService {
         if (member) visible.push(group);
       }
     }
-    return Promise.all(
-      visible.map((g) => this.toGroupSummary(g, viewerId)),
-    );
+    return Promise.all(visible.map((g) => this.toGroupSummary(g, viewerId)));
   }
 
   async createGroup(
@@ -117,7 +118,9 @@ export class SocialService {
     });
     if (!membership) return { left: true };
     if (membership.role === 'owner') {
-      throw new ForbiddenException('Owners cannot leave; transfer ownership first');
+      throw new ForbiddenException(
+        'Owners cannot leave; transfer ownership first',
+      );
     }
     await this.memberships.delete({ id: membership.id });
     return { left: true };
@@ -131,7 +134,17 @@ export class SocialService {
       order: { createdAt: 'DESC' },
       take: 100,
     });
-    return Promise.all(rows.map((p) => this.toPost(p, viewerId)));
+    const visible = [];
+    for (const post of rows) {
+      if (
+        viewerId &&
+        (await this.members.isBlockedEitherWay(viewerId, post.authorId))
+      ) {
+        continue;
+      }
+      visible.push(await this.toPost(post, viewerId));
+    }
+    return visible;
   }
 
   async createPost(
@@ -151,6 +164,8 @@ export class SocialService {
         authorId,
         title: input.title?.trim().slice(0, 200) || null,
         body: body.slice(0, 20_000),
+        audience: 'group',
+        linkUrl: null,
       }),
     );
     return this.toPost(post, authorId);
@@ -159,25 +174,33 @@ export class SocialService {
   async listComments(postId: string, viewerId: string | null) {
     const post = await this.posts.findOne({ where: { id: postId } });
     if (!post) throw new NotFoundException('Post not found');
-    const group = await this.groups.findOne({ where: { id: post.groupId } });
-    if (!group) throw new NotFoundException('Post not found');
-    await this.assertCanViewGroup(group, viewerId);
+    await this.assertCanViewPost(post, viewerId);
     const rows = await this.comments.find({
       where: { postId },
       order: { createdAt: 'ASC' },
       take: 200,
     });
-    return Promise.all(rows.map((c) => this.toComment(c, viewerId)));
+    const visible = [];
+    for (const comment of rows) {
+      if (
+        viewerId &&
+        (await this.members.isBlockedEitherWay(viewerId, comment.authorId))
+      ) {
+        continue;
+      }
+      visible.push(await this.toComment(comment, viewerId));
+    }
+    return visible;
   }
 
-  async createComment(
-    postId: string,
-    authorId: string,
-    bodyInput: string,
-  ) {
+  async createComment(postId: string, authorId: string, bodyInput: string) {
     const post = await this.posts.findOne({ where: { id: postId } });
     if (!post) throw new NotFoundException('Post not found');
-    await this.assertIsMember(post.groupId, authorId);
+    if (post.groupId) {
+      await this.assertIsMember(post.groupId, authorId);
+    } else {
+      await this.assertCanViewPost(post, authorId);
+    }
     const body = (bodyInput ?? '').trim();
     if (!body) throw new ForbiddenException('Comment is required');
     const comment = await this.comments.save(
@@ -188,6 +211,237 @@ export class SocialService {
       }),
     );
     return this.toComment(comment, authorId);
+  }
+
+  async createMemberPost(
+    authorId: string,
+    input: {
+      body?: string;
+      linkUrl?: string | null;
+      audience?: PostAudience;
+    },
+  ) {
+    await this.members.ensureProfileForUser(authorId);
+    const body = (input.body ?? '').trim();
+    if (!body) throw new BadRequestException('Post body is required');
+    const audience: PostAudience =
+      input.audience === 'followers' ? 'followers' : 'members';
+    const linkUrl = this.normalizeLink(input.linkUrl);
+    const post = await this.posts.save(
+      this.posts.create({
+        groupId: null,
+        authorId,
+        title: null,
+        body: body.slice(0, 20_000),
+        audience,
+        linkUrl,
+      }),
+    );
+    return this.toPost(post, authorId);
+  }
+
+  async listFeed(
+    viewerId: string,
+    scope: 'following' | 'discover' = 'following',
+  ) {
+    await this.members.ensureProfileForUser(viewerId);
+    const followingIds = new Set(await this.members.getFollowingIds(viewerId));
+    const rows = await this.posts.find({
+      order: { createdAt: 'DESC' },
+      take: 200,
+    });
+    const visible = [];
+    for (const post of rows) {
+      if (await this.members.isBlockedEitherWay(viewerId, post.authorId)) {
+        continue;
+      }
+      if (!(await this.canViewPost(post, viewerId))) continue;
+
+      if (scope === 'following') {
+        const followsAuthor =
+          post.authorId === viewerId || followingIds.has(post.authorId);
+        const joinedGroup = post.groupId
+          ? await this.isGroupMember(post.groupId, viewerId)
+          : false;
+        if (!followsAuthor && !joinedGroup) continue;
+      }
+
+      visible.push(await this.toPost(post, viewerId));
+      if (visible.length >= 50) break;
+    }
+    return visible;
+  }
+
+  async discover(viewerId: string, query = '') {
+    const needle = query.trim().toLowerCase().slice(0, 80);
+    const members = await this.members.searchMembers(viewerId, needle);
+    const allGroups = await this.groups.find({
+      where: { privacy: 'public' },
+      order: { createdAt: 'DESC' },
+      take: 100,
+    });
+    const groups = [];
+    for (const group of allGroups) {
+      const haystack = `${group.name} ${group.description ?? ''}`.toLowerCase();
+      if (needle && !haystack.includes(needle)) continue;
+      if (await this.members.isBlockedEitherWay(viewerId, group.ownerId)) {
+        continue;
+      }
+      groups.push(await this.toGroupSummary(group, viewerId));
+      if (groups.length >= 12) break;
+    }
+    return { members, groups };
+  }
+
+  async listNotifications(userId: string) {
+    const read = await this.activityReads.findOne({ where: { userId } });
+    const lastReadAt = read?.lastReadAt ?? null;
+    const items: Array<{
+      id: string;
+      type: 'follow' | 'comment';
+      createdAt: Date;
+      unread: boolean;
+      text: string;
+      href: string;
+      actor: {
+        userId: string;
+        slug: string;
+        displayName: string | null;
+        avatarUrl: string | null;
+      };
+    }> = [];
+
+    const followers = await this.members.listRecentFollowerActivity(userId);
+    for (const row of followers) {
+      items.push({
+        id: `follow:${row.id}`,
+        type: 'follow',
+        createdAt: row.createdAt,
+        unread: !lastReadAt || row.createdAt > lastReadAt,
+        text: 'followed you',
+        href: `/members/${row.actor.slug}`,
+        actor: row.actor,
+      });
+    }
+
+    const ownPosts = await this.posts.find({
+      where: { authorId: userId },
+      order: { createdAt: 'DESC' },
+      take: 100,
+    });
+    if (ownPosts.length > 0) {
+      const postMap = new Map(ownPosts.map((post) => [post.id, post]));
+      const comments = await this.comments.find({
+        where: { postId: In(ownPosts.map((post) => post.id)) },
+        order: { createdAt: 'DESC' },
+        take: 100,
+      });
+      for (const comment of comments) {
+        if (comment.authorId === userId) continue;
+        if (await this.members.isBlockedEitherWay(userId, comment.authorId)) {
+          continue;
+        }
+        try {
+          const actor = await this.members.getPublicProfile(
+            comment.authorId,
+            userId,
+          );
+          const post = postMap.get(comment.postId);
+          const group = post?.groupId
+            ? await this.groups.findOne({ where: { id: post.groupId } })
+            : null;
+          items.push({
+            id: `comment:${comment.id}`,
+            type: 'comment',
+            createdAt: comment.createdAt,
+            unread: !lastReadAt || comment.createdAt > lastReadAt,
+            text: 'commented on your post',
+            href: group
+              ? `/community/groups/${group.slug}?post=${comment.postId}`
+              : `/community?post=${comment.postId}`,
+            actor: {
+              userId: actor.userId,
+              slug: actor.slug,
+              displayName: actor.displayName,
+              avatarUrl: actor.avatarUrl ?? null,
+            },
+          });
+        } catch {
+          // Skip blocked, suspended, or missing members.
+        }
+      }
+    }
+
+    items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const limited = items.slice(0, 50).map((item) => ({
+      ...item,
+      createdAt: item.createdAt.toISOString(),
+    }));
+    return {
+      unreadCount: limited.filter((item) => item.unread).length,
+      items: limited,
+    };
+  }
+
+  async markNotificationsRead(userId: string) {
+    const now = new Date();
+    let row = await this.activityReads.findOne({ where: { userId } });
+    if (!row) {
+      row = this.activityReads.create({ userId, lastReadAt: now });
+    } else {
+      row.lastReadAt = now;
+    }
+    await this.activityReads.save(row);
+    return { readAt: now.toISOString() };
+  }
+
+  private async assertCanViewPost(
+    post: GroupPostEntity,
+    viewerId: string | null,
+  ) {
+    if (post.groupId) {
+      const group = await this.groups.findOne({ where: { id: post.groupId } });
+      if (!group) throw new NotFoundException('Post not found');
+      await this.assertCanViewGroup(group, viewerId);
+      return;
+    }
+    if (!viewerId) {
+      throw new ForbiddenException('Log in to view member posts');
+    }
+    if (await this.members.isBlockedEitherWay(viewerId, post.authorId)) {
+      throw new NotFoundException('Post not found');
+    }
+    if (
+      post.audience === 'followers' &&
+      post.authorId !== viewerId &&
+      !(await this.members.getFollowingIds(viewerId)).includes(post.authorId)
+    ) {
+      throw new ForbiddenException('This post is for followers');
+    }
+  }
+
+  private async canViewPost(post: GroupPostEntity, viewerId: string) {
+    try {
+      await this.assertCanViewPost(post, viewerId);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async isGroupMember(groupId: string, userId: string) {
+    return Boolean(
+      await this.memberships.findOne({ where: { groupId, userId } }),
+    );
+  }
+
+  private normalizeLink(input?: string | null): string | null {
+    const link = (input ?? '').trim();
+    if (!link) return null;
+    if (!/^https?:\/\//i.test(link)) {
+      throw new BadRequestException('Post links must use http(s)');
+    }
+    return link.slice(0, 2048);
   }
 
   private async resolveGroup(key: string): Promise<GroupEntity> {
@@ -259,12 +513,19 @@ export class SocialService {
     const authorProfile = viewerId
       ? await this.members.getPublicProfile(post.authorId, viewerId)
       : null;
-    const commentCount = await this.comments.count({ where: { postId: post.id } });
+    const commentCount = await this.comments.count({
+      where: { postId: post.id },
+    });
+    const group = post.groupId
+      ? await this.groups.findOne({ where: { id: post.groupId } })
+      : null;
     return {
       id: post.id,
       groupId: post.groupId,
       title: post.title,
       body: post.body,
+      audience: post.audience ?? 'group',
+      linkUrl: post.linkUrl ?? null,
       createdAt: post.createdAt,
       author: authorProfile
         ? {
@@ -275,6 +536,15 @@ export class SocialService {
           }
         : { userId: post.authorId, slug: post.authorId, displayName: 'Member' },
       commentCount,
+      group: group
+        ? {
+            slug: group.slug,
+            name: group.name,
+            isMember: viewerId
+              ? await this.isGroupMember(group.id, viewerId)
+              : false,
+          }
+        : null,
     };
   }
 

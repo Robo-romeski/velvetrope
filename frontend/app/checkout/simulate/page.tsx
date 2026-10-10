@@ -109,7 +109,7 @@ function SimulatedCheckoutContent() {
         <PageHeader
           eyebrow="Checkout"
           title="Log in to continue"
-          description="This checkout session belongs to your VelvetKey account."
+          description="This checkout session belongs to your epicsexual account."
         />
         <Card className="flex flex-col gap-3 sm:flex-row">
           <ButtonLink href={`/auth/login?next=${encodeURIComponent(next)}`}>
@@ -129,7 +129,7 @@ function SimulatedCheckoutContent() {
   return (
     <PageShell size="narrow" className="space-y-7">
       <PageHeader
-        eyebrow="VelvetKey checkout"
+        eyebrow="epicsexual checkout"
         title="Complete payment"
         description="Simulated checkout — same order and entitlement flow as live Stripe. No card is charged."
       />

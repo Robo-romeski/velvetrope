@@ -269,7 +269,7 @@ export default function ApplyToEventPage() {
                 className="font-medium text-accent underline underline-offset-4"
                 target="_blank"
               >
-                VelvetKey code of conduct
+                epicsexual code of conduct
               </Link>
               .
             </span>

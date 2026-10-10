@@ -21,6 +21,7 @@ interface CreateEventDto {
   description?: string;
   date: string;
   capacity: number;
+  isDiscoveryVisible?: boolean;
   ticketPriceCents?: number;
   requirePhotoCheckin?: boolean;
   requireIdentityVerification?: boolean;

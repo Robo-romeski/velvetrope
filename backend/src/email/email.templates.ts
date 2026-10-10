@@ -7,16 +7,16 @@ export function passwordResetEmail(input: { resetToken: string }): {
 } {
   const base = resolveAppBaseUrl();
   const url = `${base}/auth/reset-password?token=${encodeURIComponent(input.resetToken)}`;
-  const subject = 'Reset your VelvetKey password';
+  const subject = 'Reset your epicsexual password';
   const text = [
-    'You requested a password reset for your VelvetKey account.',
+    'You requested a password reset for your epicsexual account.',
     '',
     `Open this link to choose a new password (valid for 1 hour):`,
     url,
     '',
     'If you did not request this, you can ignore this email.',
   ].join('\n');
-  const html = `<p>You requested a password reset for your VelvetKey account.</p>
+  const html = `<p>You requested a password reset for your epicsexual account.</p>
 <p><a href="${url}">Reset your password</a> (link valid for 1 hour).</p>
 <p>If you did not request this, you can ignore this email.</p>`;
   return { subject, text, html };

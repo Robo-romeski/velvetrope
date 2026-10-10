@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { getAuthUser } from '../auth/request-user';
@@ -35,5 +28,4 @@ export class SimulatedCheckoutController {
     const { sub } = getAuthUser(req);
     return await this.simulated.completeSession(sessionId, sub);
   }
-
 }

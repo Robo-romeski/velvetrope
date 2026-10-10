@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "motion": "^14.0.0",
     "next": "^16.3.6",
     "persona": "^5.9.0",
     "react": "19.1.0",

@@ -1,17 +1,17 @@
 {
-  "name": "VelvetKey",
-  "short_name": "VelvetKey",
+  "name": "epicsexual",
+  "short_name": "epicsexual",
   "start_url": "/",
   "display": "standalone",
   "scope": "/",
-  "background_color": "#111827",
-  "theme_color": "#111827",
-  "description": "Trust-first events platform.",
+  "background_color": "#F7F4FA",
+  "theme_color": "#005FCF",
+  "description": "An independent community journal for ENM learning, conversation, and private gatherings.",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/epicsexual-logo.png",
+      "sizes": "32x32",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

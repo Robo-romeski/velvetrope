@@ -1,9 +1,22 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
-import Link from 'next/link';
 import { apiPostAuth } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import {
+  Alert,
+  Button,
+  ButtonLink,
+  Card,
+  FormField,
+  Input,
+  LoadingState,
+  PageHeader,
+  PageShell,
+  Select,
+  Textarea,
+  TextLink,
+} from '@/app/components/ui';
 
 export default function TrustReportPage() {
   const { user, loading } = useAuth();
@@ -35,55 +48,53 @@ export default function TrustReportPage() {
   };
 
   if (loading) {
-    return (
-      <div className="max-w-xl mx-auto p-6 text-sm">Loading…</div>
-    );
+    return <PageShell size="narrow"><LoadingState /></PageShell>;
   }
 
   if (!user) {
     return (
-      <div className="max-w-xl mx-auto p-6 space-y-3">
-        <h1 className="text-2xl font-semibold">Report a concern</h1>
-        <p className="text-sm">Log in to submit a safety report.</p>
-        <Link href="/auth/login" className="text-blue-600 underline text-sm">
-          Login
-        </Link>
-      </div>
+      <PageShell size="narrow" className="space-y-6">
+        <PageHeader
+          eyebrow="Trust and safety"
+          title="Report a concern"
+          description="Log in to submit a confidential report for platform review."
+        />
+        <ButtonLink href="/auth/login">Log in</ButtonLink>
+      </PageShell>
     );
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Report a concern</h1>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Reports are reviewed by platform admins. For emergencies, contact local services first.
-      </p>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <label className="block text-sm space-y-1">
-          <span>Subject type</span>
-          <select
-            className="w-full border rounded px-3 py-2 bg-transparent"
+    <PageShell size="narrow" className="space-y-7">
+      <PageHeader
+        eyebrow="Trust and safety"
+        title="Report a concern"
+        description="Reports are reviewed by platform administrators. For emergencies, contact local services first."
+      />
+      <Card className="p-6 sm:p-8">
+        <form onSubmit={onSubmit} className="space-y-5">
+          <FormField label="Subject type" htmlFor="report-subject-type">
+            <Select
+              id="report-subject-type"
             value={subjectType}
             onChange={(e) => setSubjectType(e.target.value as 'event' | 'user')}
           >
             <option value="event">Event</option>
             <option value="user">User</option>
-          </select>
-        </label>
-        <label className="block text-sm space-y-1">
-          <span>Subject ID</span>
-          <input
-            required
-            className="w-full border rounded px-3 py-2 bg-transparent"
-            value={subjectId}
-            onChange={(e) => setSubjectId(e.target.value)}
-            placeholder="Event or user id"
-          />
-        </label>
-        <label className="block text-sm space-y-1">
-          <span>Category</span>
-          <select
-            className="w-full border rounded px-3 py-2 bg-transparent"
+            </Select>
+          </FormField>
+          <FormField label="Subject ID" htmlFor="report-subject-id">
+            <Input
+              id="report-subject-id"
+              required
+              value={subjectId}
+              onChange={(e) => setSubjectId(e.target.value)}
+              placeholder="Event or user id"
+            />
+          </FormField>
+          <FormField label="Category" htmlFor="report-category">
+            <Select
+              id="report-category"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
@@ -91,31 +102,29 @@ export default function TrustReportPage() {
             <option value="harassment">Harassment</option>
             <option value="spam">Spam</option>
             <option value="other">Other</option>
-          </select>
-        </label>
-        <label className="block text-sm space-y-1">
-          <span>Details</span>
-          <textarea
-            required
-            minLength={10}
-            rows={5}
-            className="w-full border rounded px-3 py-2 bg-transparent"
-            value={details}
-            onChange={(e) => setDetails(e.target.value)}
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-        >
-          {submitting ? 'Submitting…' : 'Submit report'}
-        </button>
-      </form>
-      {message && <p className="text-sm">{message}</p>}
-      <Link href="/trust/code-of-conduct" className="text-sm text-blue-600 underline block">
-        Code of conduct
-      </Link>
-    </div>
+            </Select>
+          </FormField>
+          <FormField
+            label="Details"
+            htmlFor="report-details"
+            hint="Include enough context for a reviewer to understand what happened."
+          >
+            <Textarea
+              id="report-details"
+              required
+              minLength={10}
+              rows={5}
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+            />
+          </FormField>
+          {message && <Alert tone="info" role="status">{message}</Alert>}
+          <Button type="submit" disabled={submitting}>
+            {submitting ? 'Submitting…' : 'Submit report'}
+          </Button>
+        </form>
+      </Card>
+      <TextLink href="/trust/code-of-conduct">Read the code of conduct</TextLink>
+    </PageShell>
   );
 }

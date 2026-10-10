@@ -3,6 +3,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiGetAuth, apiPatchAuth } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  FormField,
+  Section,
+  Textarea,
+} from '@/app/components/ui';
 
 type Report = {
   id: string;
@@ -65,27 +75,30 @@ export default function AdminReportsPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Trust reports</h1>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+    <Section
+      title="Trust reports"
+      description="Confidential reports remain separate from public feedback and kudos."
+    >
+      {error && <Alert tone="danger" role="alert">{error}</Alert>}
       <div className="space-y-3">
         {items.map((report) => (
-          <div key={report.id} className="border rounded p-3 text-sm space-y-3">
+          <Card key={report.id} className="space-y-4 text-sm">
             <div className="flex flex-wrap justify-between gap-2">
               <span>
                 <strong>{report.category}</strong> · {report.subjectType}{' '}
                 {report.subjectId}
               </span>
-              <span>{report.status}</span>
+              <Badge tone={report.status === 'open' ? 'warning' : 'success'}>
+                {report.status}
+              </Badge>
             </div>
             <p className="whitespace-pre-wrap">{report.details}</p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted">
               Assigned: {report.assignedToAdminId ?? 'unassigned'} · Created{' '}
               {new Date(report.createdAt).toLocaleString()}
             </p>
-            <label className="block space-y-1">
-              <span className="text-xs">Private admin notes</span>
-              <textarea
+            <FormField label="Private admin notes">
+              <Textarea
                 value={notes[report.id] ?? ''}
                 maxLength={5000}
                 rows={3}
@@ -95,53 +108,54 @@ export default function AdminReportsPage() {
                     [report.id]: event.target.value,
                   }))
                 }
-                className="w-full border rounded px-2 py-1 bg-transparent"
               />
-            </label>
+            </FormField>
             <div className="flex flex-wrap gap-2">
-              <button
+              <Button
                 type="button"
+                size="sm"
+                variant="secondary"
                 disabled={busyId === report.id}
                 onClick={() =>
                   void review(report, {
                     assignedToAdminId: user?.id ?? null,
                   })
                 }
-                className="px-2 py-1 border rounded disabled:opacity-50"
               >
                 Assign to me
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                size="sm"
+                variant="secondary"
                 disabled={busyId === report.id}
                 onClick={() =>
                   void review(report, {
                     adminNotes: notes[report.id]?.trim() || null,
                   })
                 }
-                className="px-2 py-1 border rounded disabled:opacity-50"
               >
                 Save notes
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                size="sm"
                 disabled={busyId === report.id}
                 onClick={() =>
                   void review(report, {
                     status: report.status === 'open' ? 'resolved' : 'open',
                   })
                 }
-                className="px-2 py-1 border rounded disabled:opacity-50"
               >
                 {report.status === 'open' ? 'Resolve' : 'Reopen'}
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         ))}
         {items.length === 0 && (
-          <p className="text-sm text-gray-500">No reports yet.</p>
+          <EmptyState title="No reports yet" description="New concerns will appear here for review." />
         )}
       </div>
-    </div>
+    </Section>
   );
 }

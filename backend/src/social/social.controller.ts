@@ -86,5 +86,4 @@ export class SocialController {
       body: body.body ?? '',
     });
   }
-
 }

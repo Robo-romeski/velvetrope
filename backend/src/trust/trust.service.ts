@@ -309,7 +309,7 @@ export class TrustService {
     try {
       await this.email.send({
         to: notifyEmail,
-        subject: `[VelvetKey] New trust report (${report.category})`,
+        subject: `[epicsexual] New trust report (${report.category})`,
         text: [
           `Report id: ${report.id}`,
           `Category: ${report.category}`,

@@ -252,7 +252,7 @@ export default function EventTicketPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'velvetkey-ticket.svg';
+    link.download = 'epicsexual-ticket.svg';
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -407,7 +407,7 @@ export default function EventTicketPage() {
           <div className="flex flex-col items-center gap-5 p-6 text-center sm:p-8">
             <div
               id="ticket-qr-wrap"
-              className="inline-block rounded-2xl bg-white p-5 shadow-sm"
+              className="inline-block rounded-md border border-border bg-white p-5"
             >
               <QRCode value={token} size={200} />
             </div>

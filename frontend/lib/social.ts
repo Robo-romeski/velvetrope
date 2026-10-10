@@ -58,3 +58,8 @@ export type SocialNotifications = {
   unreadCount: number;
   items: SocialNotification[];
 };
+
+export type MemberWall = {
+  posts: SocialPost[];
+  groups: GroupSummary[];
+};

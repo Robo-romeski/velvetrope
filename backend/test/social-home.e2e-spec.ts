@@ -177,6 +177,60 @@ describe('Social home (e2e)', () => {
     expect(read.body.unreadCount).toBe(0);
   });
 
+  it('returns member wall posts and respects follower audience', async () => {
+    const profile = await request(app.getHttpServer())
+      .get('/members/me/profile')
+      .set('Authorization', `Bearer ${tokenB}`)
+      .expect(200);
+
+    const beforeFollow = await request(app.getHttpServer())
+      .get(`/members/${profile.body.slug}/wall`)
+      .set('Authorization', `Bearer ${tokenC}`)
+      .expect(200);
+    expect(
+      beforeFollow.body.posts.some(
+        (post: { body: string }) => post.body === 'A note for people who follow me.',
+      ),
+    ).toBe(false);
+    expect(
+      beforeFollow.body.posts.some(
+        (post: { id: string }) => post.id === membersPostId,
+      ),
+    ).toBe(true);
+
+    await request(app.getHttpServer())
+      .post(`/members/${userBId}/follow`)
+      .set('Authorization', `Bearer ${tokenC}`)
+      .expect(201);
+
+    const afterFollow = await request(app.getHttpServer())
+      .get(`/members/${profile.body.slug}/wall`)
+      .set('Authorization', `Bearer ${tokenC}`)
+      .expect(200);
+    expect(
+      afterFollow.body.posts.some(
+        (post: { body: string }) => post.body === 'A note for people who follow me.',
+      ),
+    ).toBe(true);
+  });
+
+  it('hides member wall from blocked viewers', async () => {
+    const profile = await request(app.getHttpServer())
+      .get('/members/me/profile')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .post(`/members/${userBId}/block`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .get(`/members/${profile.body.slug}/wall`)
+      .set('Authorization', `Bearer ${tokenB}`)
+      .expect(404);
+  });
+
   it('removes blocked authors from feeds and discovery', async () => {
     await request(app.getHttpServer())
       .post(`/members/${userAId}/block`)

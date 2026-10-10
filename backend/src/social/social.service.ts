@@ -395,6 +395,57 @@ export class SocialService {
     return { readAt: now.toISOString() };
   }
 
+  async getMemberWall(key: string, viewerId: string | null) {
+    const profile = await this.members.getPublicProfile(key, viewerId);
+    const targetId = profile.userId;
+
+    const rows = await this.posts.find({
+      where: { authorId: targetId },
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
+    const posts = [];
+    for (const post of rows) {
+      if (
+        viewerId &&
+        (await this.members.isBlockedEitherWay(viewerId, post.authorId))
+      ) {
+        continue;
+      }
+      if (!(await this.canViewPost(post, viewerId))) continue;
+      posts.push(await this.toPost(post, viewerId));
+      if (posts.length >= 15) break;
+    }
+
+    const memberships = await this.memberships.find({
+      where: { userId: targetId },
+    });
+    const groups = [];
+    for (const membership of memberships) {
+      const group = await this.groups.findOne({
+        where: { id: membership.groupId },
+      });
+      if (!group) continue;
+      if (
+        viewerId &&
+        (await this.members.isBlockedEitherWay(viewerId, group.ownerId))
+      ) {
+        continue;
+      }
+      if (group.privacy === 'private') {
+        if (!viewerId) continue;
+        const viewerIsMember = await this.isGroupMember(group.id, viewerId);
+        if (viewerId !== targetId && !viewerIsMember) continue;
+      } else if (!viewerId) {
+        continue;
+      }
+      groups.push(await this.toGroupSummary(group, viewerId));
+    }
+    groups.sort((a, b) => a.name.localeCompare(b.name));
+
+    return { posts, groups };
+  }
+
   private async assertCanViewPost(
     post: GroupPostEntity,
     viewerId: string | null,
@@ -420,7 +471,7 @@ export class SocialService {
     }
   }
 
-  private async canViewPost(post: GroupPostEntity, viewerId: string) {
+  private async canViewPost(post: GroupPostEntity, viewerId: string | null) {
     try {
       await this.assertCanViewPost(post, viewerId);
       return true;

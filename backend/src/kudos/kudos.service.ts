@@ -154,7 +154,10 @@ export class KudosService {
     );
   }
 
-  async approve(kudoId: string, recipientId: string): Promise<MemberKudoEntity> {
+  async approve(
+    kudoId: string,
+    recipientId: string,
+  ): Promise<MemberKudoEntity> {
     const row = await this.kudos.findOne({ where: { id: kudoId } });
     if (!row) throw new NotFoundException('Kudo not found');
     if (row.recipientId !== recipientId) {
@@ -168,10 +171,7 @@ export class KudosService {
     return await this.kudos.save(row);
   }
 
-  async hide(
-    kudoId: string,
-    actorId: string,
-  ): Promise<MemberKudoEntity> {
+  async hide(kudoId: string, actorId: string): Promise<MemberKudoEntity> {
     const row = await this.kudos.findOne({ where: { id: kudoId } });
     if (!row) throw new NotFoundException('Kudo not found');
     if (row.giverId === actorId) {
@@ -244,7 +244,11 @@ export class KudosService {
   ): { contextType: KudoContextType; contextId: string } {
     const id = contextId.trim();
     if (!id) throw new BadRequestException('Invalid context');
-    if (contextType === 'event' || contextType === 'course' || contextType === 'group') {
+    if (
+      contextType === 'event' ||
+      contextType === 'course' ||
+      contextType === 'group'
+    ) {
       return { contextType, contextId: id };
     }
     throw new BadRequestException('Invalid context type');
@@ -324,8 +328,7 @@ export class KudosService {
       recipientUser?.email?.split('@')[0] ||
       'Member';
 
-    const isParty =
-      viewerId === row.giverId || viewerId === row.recipientId;
+    const isParty = viewerId === row.giverId || viewerId === row.recipientId;
     const showStatus = isParty;
 
     return {

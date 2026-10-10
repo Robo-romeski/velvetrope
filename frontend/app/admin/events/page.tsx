@@ -2,6 +2,16 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { apiGetAuth, apiPostAuth } from '@/lib/api';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Input,
+  Section,
+  Select,
+} from '@/app/components/ui';
 
 type AdminEvent = {
   id: string;
@@ -58,40 +68,52 @@ export default function AdminEventsPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Events</h1>
+    <Section
+      title="Events"
+      description="Review published, draft, and cancelled gatherings."
+    >
       <div className="flex flex-wrap gap-2">
-        <input
+        <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search event title"
-          className="border rounded px-3 py-2 bg-transparent flex-1 min-w-52"
+          className="min-w-52 flex-1"
         />
-        <select
+        <Select
           value={status}
           onChange={(event) => setStatus(event.target.value)}
-          className="border rounded px-3 py-2 bg-transparent"
+          className="sm:max-w-52"
         >
           <option value="all">All statuses</option>
           <option value="draft">Draft</option>
           <option value="published">Published</option>
           <option value="cancelled">Cancelled</option>
-        </select>
+        </Select>
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <Alert tone="danger" role="alert">{error}</Alert>}
       <div className="space-y-3">
         {items.map((event) => (
-          <div key={event.id} className="border rounded p-3 text-sm space-y-2">
+          <Card key={event.id} className="space-y-3 text-sm">
             <div className="flex flex-wrap justify-between gap-2">
               <div>
-                <div className="font-medium">{event.title}</div>
-                <div className="text-xs text-gray-500">
+                <div className="font-display text-xl font-semibold">{event.title}</div>
+                <div className="mt-1 text-xs text-muted">
                   Host {event.hostId} · {new Date(event.date).toLocaleString()}
                 </div>
               </div>
-              <span className="capitalize">{event.status}</span>
+              <Badge
+                tone={
+                  event.status === 'published'
+                    ? 'success'
+                    : event.status === 'cancelled'
+                      ? 'danger'
+                      : 'neutral'
+                }
+              >
+                {event.status}
+              </Badge>
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-muted">
               Capacity {event.capacity} ·{' '}
               {(event.ticketPriceCents / 100).toLocaleString(undefined, {
                 style: 'currency',
@@ -99,21 +121,22 @@ export default function AdminEventsPage() {
               })}
             </div>
             {event.status !== 'cancelled' && (
-              <button
+              <Button
                 type="button"
+                size="sm"
+                variant="danger"
                 disabled={busyId === event.id}
                 onClick={() => void cancel(event)}
-                className="px-2 py-1 border border-red-600 text-red-700 dark:text-red-400 rounded disabled:opacity-50"
               >
                 Cancel event
-              </button>
+              </Button>
             )}
-          </div>
+          </Card>
         ))}
         {items.length === 0 && (
-          <p className="text-sm text-gray-500">No events found.</p>
+          <EmptyState title="No events found" description="Adjust the search or status filter." />
         )}
       </div>
-    </div>
+    </Section>
   );
 }

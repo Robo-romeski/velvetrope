@@ -1,12 +1,12 @@
 # Local MVP Demo
 
-This runbook demonstrates VelvetKey's core paid-event journey on one Mac:
+This runbook demonstrates epicsexual's core paid-event journey on one Mac:
 
 1. A host publishes an invite-only event.
 2. An attendee applies with an invite code.
 3. The host approves the application.
 4. The attendee completes a Stripe test payment.
-5. VelvetKey issues a QR ticket.
+5. epicsexual issues a QR ticket.
 6. The host checks the attendee in and views updated analytics.
 
 Persona, photo check-in, real email delivery, admin moderation, and public
@@ -80,7 +80,7 @@ Use the same two accounts for rehearsals. If the host is not connected:
 2. Open **Payments**.
 3. Start Connect — with simulation, finish on **Simulated payout setup**; with
    Stripe keys, complete Stripe Connect test onboarding.
-4. Return to VelvetKey and confirm the page reports the account as connected.
+4. Return to epicsexual and confirm the page reports the account as connected.
 
 Never enter real identity, bank, or card data in this demo.
 
@@ -89,7 +89,7 @@ Never enter real identity, bank, or card data in this demo.
 As the host:
 
 1. Open **Host dashboard** and create a draft.
-2. Use a clear title such as `VelvetKey Demo Night`.
+2. Use a clear title such as `epicsexual Demo Night`.
 3. Set the start time between now and 48 hours from now so chat is available.
 4. Set capacity to `20`.
 5. Edit the event and set **Ticket price** to `1.00`.
@@ -133,7 +133,7 @@ will not satisfy checkout for that event.
    - CVC: any three digits
    - Postal code: any valid postal code
 4. Complete the test payment.
-5. Confirm VelvetKey returns to the event and displays one QR ticket.
+5. Confirm epicsexual returns to the event and displays one QR ticket.
 
 The return page verifies the Checkout Session with Stripe before recording the
 payment or issuing the ticket. Refreshing the return page must not create a

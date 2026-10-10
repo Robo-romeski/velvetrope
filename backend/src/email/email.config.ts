@@ -6,7 +6,7 @@ export function resolveResendApiKey(): string | undefined {
 export function resolveEmailFrom(): string {
   const from = process.env.EMAIL_FROM?.trim();
   if (from) return from;
-  return 'VelvetKey <onboarding@resend.dev>';
+  return 'epicsexual <onboarding@resend.dev>';
 }
 
 export function resolveAppBaseUrl(): string {

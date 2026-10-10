@@ -27,6 +27,9 @@ import { OrderLineEntity } from '../commerce/order-line.entity';
 import { EntitlementEntity } from '../commerce/entitlement.entity';
 import { RefundEntity } from '../commerce/refund.entity';
 import { MemberKudoEntity } from '../kudos/member-kudo.entity';
+import { DirectConversationEntity } from '../messages/direct-conversation.entity';
+import { DirectMessageEntity } from '../messages/direct-message.entity';
+import { SocialActivityReadEntity } from '../social/social-activity-read.entity';
 
 export const entities = [
   EventEntity,
@@ -58,4 +61,7 @@ export const entities = [
   EntitlementEntity,
   RefundEntity,
   MemberKudoEntity,
+  DirectConversationEntity,
+  DirectMessageEntity,
+  SocialActivityReadEntity,
 ];

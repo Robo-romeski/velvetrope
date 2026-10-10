@@ -1,9 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { apiGetAuth, apiPatchAuth } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  LoadingState,
+  PageHeader,
+  PageShell,
+  TextLink,
+} from '@/app/components/ui';
 
 type Report = {
   id: string;
@@ -56,49 +66,67 @@ export default function AdminReportsPage() {
   };
 
   if (loading) {
-    return <div className="max-w-3xl mx-auto p-6 text-sm">Loading…</div>;
+    return (
+      <PageShell size="wide">
+        <LoadingState />
+      </PageShell>
+    );
   }
 
   if (!user || !isAdmin) {
     return (
-      <div className="max-w-xl mx-auto p-6 space-y-2">
-        <h1 className="text-2xl font-semibold">Trust reports</h1>
-        <p className="text-sm">Admin access required.</p>
-        <Link href="/" className="text-blue-600 underline text-sm">
-          Home
-        </Link>
-      </div>
+      <PageShell>
+        <PageHeader
+          eyebrow="Trust and safety"
+          title="Trust reports"
+          description="Admin access is required to review confidential reports."
+        />
+        <TextLink href="/">Return home</TextLink>
+      </PageShell>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Trust reports</h1>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {items.length === 0 && <p className="text-sm text-gray-500">No reports yet.</p>}
+    <PageShell size="wide">
+      <PageHeader
+        eyebrow="Trust and safety"
+        title="Trust reports"
+        description="Confidential reports requiring administrative review."
+      />
+      {error && <Alert tone="danger" role="alert">{error}</Alert>}
+      {items.length === 0 && (
+        <EmptyState
+          title="No reports yet"
+          description="New concerns will appear here for review."
+        />
+      )}
       <ul className="space-y-3">
         {items.map((r) => (
-          <li key={r.id} className="border rounded p-3 text-sm space-y-2">
-            <div className="flex flex-wrap gap-2 justify-between">
-              <span>
-                <strong>{r.category}</strong> · {r.subjectType} {r.subjectId}
-              </span>
-              <span className="text-gray-500">{r.status}</span>
-            </div>
-            <p className="whitespace-pre-wrap">{r.details}</p>
-            {r.status === 'open' && (
-              <button
-                type="button"
-                disabled={busyId === r.id}
-                onClick={() => resolve(r.id)}
-                className="px-3 py-1 border rounded text-xs disabled:opacity-50"
-              >
-                Mark resolved
-              </button>
-            )}
+          <li key={r.id}>
+            <Card className="space-y-3 text-sm">
+              <div className="flex flex-wrap gap-2 justify-between">
+                <span>
+                  <strong>{r.category}</strong> · {r.subjectType} {r.subjectId}
+                </span>
+                <Badge tone={r.status === 'open' ? 'warning' : 'success'}>
+                  {r.status}
+                </Badge>
+              </div>
+              <p className="whitespace-pre-wrap">{r.details}</p>
+              {r.status === 'open' && (
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={busyId === r.id}
+                  onClick={() => resolve(r.id)}
+                >
+                  Mark resolved
+                </Button>
+              )}
+            </Card>
           </li>
         ))}
       </ul>
-    </div>
+    </PageShell>
   );
 }

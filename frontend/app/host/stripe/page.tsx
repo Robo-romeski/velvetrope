@@ -104,7 +104,7 @@ export default function HostStripeOnboardingPage() {
         {status?.connected && status.stripeConfigured !== false && (
           <p className="text-sm leading-6 text-muted">
             Stripe securely manages payment details, payouts, and account
-            verification. VelvetKey never stores card information.
+            verification. epicsexual never stores card information.
           </p>
         )}
         {readyForPaidEvents && (

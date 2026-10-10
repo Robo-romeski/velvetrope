@@ -1,9 +1,19 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { apiGetAuth, apiPostAuth } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import {
+  Alert,
+  Badge,
+  Button,
+  ButtonLink,
+  Card,
+  LoadingState,
+  PageHeader,
+  PageShell,
+  TextLink,
+} from '@/app/components/ui';
 
 type IdentityStatus =
   | 'not_started'
@@ -86,72 +96,74 @@ export default function IdentityVerificationPage() {
   };
 
   if (authLoading) {
-    return <div className="max-w-xl mx-auto p-6 text-sm">Loading…</div>;
+    return <PageShell size="narrow"><LoadingState /></PageShell>;
   }
   if (!user) {
     return (
-      <div className="max-w-xl mx-auto p-6 space-y-3">
-        <h1 className="text-2xl font-semibold">Identity verification</h1>
-        <p className="text-sm">Log in before starting Persona verification.</p>
-        <Link href="/auth/login" className="text-blue-600 underline">
-          Login
-        </Link>
-      </div>
+      <PageShell size="narrow" className="space-y-6">
+        <PageHeader
+          eyebrow="Identity"
+          title="Identity verification"
+          description="Log in before starting Persona verification."
+        />
+        <ButtonLink href="/auth/login">Log in</ButtonLink>
+      </PageShell>
     );
   }
 
   return (
-    <div className="max-w-xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Identity verification</h1>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Persona verifies your identity. VelvetKey stores only the inquiry ID
-        and decision status—not your identity documents.
-      </p>
+    <PageShell size="narrow" className="space-y-7">
+      <PageHeader
+        eyebrow="Identity"
+        title="Identity verification"
+        description="Persona verifies your identity. epicsexual stores only the inquiry ID and decision status—not your identity documents."
+      />
       {status && (
-        <div className="border rounded p-4 text-sm space-y-1">
-          <p>
-            Status:{' '}
-            <strong className="capitalize">
+        <Card className="space-y-3 p-6">
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-sm font-semibold">Verification status</span>
+            <Badge
+              tone={status.status === 'approved' ? 'success' : 'neutral'}
+            >
               {status.status.replaceAll('_', ' ')}
-            </strong>
-          </p>
+            </Badge>
+          </div>
           {status.verifiedAt && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted">
               Verified {new Date(status.verifiedAt).toLocaleString()}
             </p>
           )}
           {!status.configured && (
-            <p className="text-amber-700 dark:text-amber-400">
+            <Alert tone="warning">
               Persona is not configured on this deployment.
-            </p>
+            </Alert>
           )}
-        </div>
+        </Card>
       )}
-      {status?.status !== 'approved' && status?.status !== 'needs_review' && (
-        <button
+      <div className="flex flex-wrap items-center gap-3">
+        {status?.status !== 'approved' && status?.status !== 'needs_review' && (
+          <Button
+            type="button"
+            onClick={start}
+            disabled={loading || status?.configured === false}
+          >
+            {loading
+              ? 'Starting…'
+              : status?.status === 'pending'
+                ? 'Resume verification'
+                : 'Start verification'}
+          </Button>
+        )}
+        <Button
           type="button"
-          onClick={start}
-          disabled={loading || status?.configured === false}
-          className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+          variant="secondary"
+          onClick={() => void loadStatus()}
         >
-          {loading
-            ? 'Starting…'
-            : status?.status === 'pending'
-              ? 'Resume verification'
-              : 'Start verification'}
-        </button>
-      )}
-      <button
-        type="button"
-        onClick={() => void loadStatus()}
-        className="block text-sm underline"
-      >
-        Refresh status
-      </button>
-      {message && <p className="text-sm">{message}</p>}
-      <Link href="/applications" className="text-sm text-blue-600 underline">
-        My applications
-      </Link>
-    </div>
+          Refresh status
+        </Button>
+      </div>
+      {message && <Alert tone="info" role="status">{message}</Alert>}
+      <TextLink href="/applications">My applications</TextLink>
+    </PageShell>
   );
 }

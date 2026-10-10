@@ -3167,8 +3167,32 @@
         "dependencies": [
           "1"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Paginated unified feed API",
+            "description": "Cursor pagination; merge followed + joined-group posts",
+            "dependencies": [],
+            "details": "listFeed returns { items, nextCursor }; batch query",
+            "status": "done",
+            "testStrategy": "social-home e2e updated",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Feed UI load-more and badges",
+            "description": "Load more button; Group / Members / Followers badges",
+            "dependencies": [
+              "1"
+            ],
+            "details": "frontend/app/feed/page.tsx",
+            "status": "done",
+            "testStrategy": "Frontend build",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-10-10T19:30:00.000Z"
       },
       {
         "id": "4",
@@ -3180,8 +3204,30 @@
         "dependencies": [
           "3"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Joined groups API and feed sidebar",
+            "description": "GET /social/joined-groups; Your groups on /feed",
+            "dependencies": [],
+            "details": "social.service listJoinedGroups",
+            "status": "done",
+            "testStrategy": "social-home joined-groups assertion",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Group page feed cross-links",
+            "description": "Link from group detail back to community feed",
+            "dependencies": [],
+            "details": "community/groups/[slug]/page.tsx",
+            "status": "done",
+            "testStrategy": "Manual",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-10-10T19:30:00.000Z"
       },
       {
         "id": "5",
@@ -3270,9 +3316,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-10-10T21:15:00.000Z",
+      "lastModified": "2026-10-10T19:30:00.000Z",
       "taskCount": 10,
-      "completedCount": 2,
+      "completedCount": 4,
       "tags": [
         "platform-social-v2"
       ]

@@ -76,7 +76,7 @@ describe('Social home (e2e)', () => {
       .get('/social/feed?scope=following')
       .set('Authorization', `Bearer ${tokenA}`)
       .expect(200);
-    expect(beforeFollow.body).toHaveLength(0);
+    expect(beforeFollow.body.items).toHaveLength(0);
 
     await request(app.getHttpServer())
       .post(`/members/${userBId}/follow`)
@@ -87,15 +87,15 @@ describe('Social home (e2e)', () => {
       .get('/social/feed?scope=following')
       .set('Authorization', `Bearer ${tokenA}`)
       .expect(200);
-    expect(followingFeed.body).toHaveLength(1);
-    expect(followingFeed.body[0].body).toContain('people who follow me');
+    expect(followingFeed.body.items).toHaveLength(1);
+    expect(followingFeed.body.items[0].body).toContain('people who follow me');
 
     const outsiderFeed = await request(app.getHttpServer())
       .get('/social/feed?scope=discover')
       .set('Authorization', `Bearer ${tokenC}`)
       .expect(200);
     expect(
-      outsiderFeed.body.find(
+      outsiderFeed.body.items.find(
         (post: { id: string }) => post.id === created.body.id,
       ),
     ).toBeUndefined();
@@ -117,7 +117,9 @@ describe('Social home (e2e)', () => {
       .set('Authorization', `Bearer ${tokenC}`)
       .expect(200);
     expect(
-      discover.body.find((post: { id: string }) => post.id === membersPostId),
+      discover.body.items.find(
+        (post: { id: string }) => post.id === membersPostId,
+      ),
     ).toBeDefined();
 
     await request(app.getHttpServer())
@@ -132,6 +134,50 @@ describe('Social home (e2e)', () => {
       .expect(200);
     expect(comments.body).toHaveLength(1);
     expect(comments.body[0].body).toBe('A thoughtful reply.');
+  });
+
+  it('includes joined group posts in the following feed without following the author', async () => {
+    const group = await request(app.getHttpServer())
+      .post('/groups')
+      .set('Authorization', `Bearer ${tokenB}`)
+      .send({ name: 'Feed Merge Circle', privacy: 'public' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/groups/${group.body.slug}/join`)
+      .set('Authorization', `Bearer ${tokenC}`)
+      .expect(201);
+
+    const groupPost = await request(app.getHttpServer())
+      .post(`/groups/${group.body.slug}/posts`)
+      .set('Authorization', `Bearer ${tokenB}`)
+      .send({ body: 'Discussion inside our topic group.' })
+      .expect(201);
+
+    const following = await request(app.getHttpServer())
+      .get('/social/feed?scope=following')
+      .set('Authorization', `Bearer ${tokenC}`)
+      .expect(200);
+    expect(
+      following.body.items.find(
+        (post: { id: string }) => post.id === groupPost.body.id,
+      ),
+    ).toBeDefined();
+    expect(
+      following.body.items.find(
+        (post: { id: string }) => post.id === groupPost.body.id,
+      )?.group?.slug,
+    ).toBe(group.body.slug);
+
+    const joinedGroups = await request(app.getHttpServer())
+      .get('/social/joined-groups')
+      .set('Authorization', `Bearer ${tokenC}`)
+      .expect(200);
+    expect(
+      joinedGroups.body.some(
+        (row: { slug: string }) => row.slug === group.body.slug,
+      ),
+    ).toBe(true);
   });
 
   it('discovers members and groups without exposing blocked profiles', async () => {
@@ -242,7 +288,7 @@ describe('Social home (e2e)', () => {
       .set('Authorization', `Bearer ${tokenA}`)
       .expect(200);
     expect(
-      feed.body.some(
+      feed.body.items.some(
         (post: { author: { userId: string } }) =>
           post.author.userId === userBId,
       ),

@@ -63,3 +63,8 @@ export type MemberWall = {
   posts: SocialPost[];
   groups: GroupSummary[];
 };
+
+export type SocialFeedPage = {
+  items: SocialPost[];
+  nextCursor: string | null;
+};

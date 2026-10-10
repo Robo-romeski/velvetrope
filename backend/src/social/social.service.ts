@@ -243,33 +243,112 @@ export class SocialService {
   async listFeed(
     viewerId: string,
     scope: 'following' | 'discover' = 'following',
+    options?: { cursor?: string | null; limit?: number },
   ) {
     await this.members.ensureProfileForUser(viewerId);
+    const limit = Math.min(Math.max(options?.limit ?? 25, 1), 50);
     const followingIds = new Set(await this.members.getFollowingIds(viewerId));
-    const rows = await this.posts.find({
-      order: { createdAt: 'DESC' },
-      take: 200,
+    const joinedGroupIds = new Set(
+      (
+        await this.memberships.find({
+          where: { userId: viewerId },
+          select: { groupId: true },
+        })
+      ).map((row) => row.groupId),
+    );
+
+    const items: Awaited<ReturnType<SocialService['toPost']>>[] = [];
+    let cursor = options?.cursor?.trim() || null;
+    let exhausted = false;
+
+    while (items.length < limit && !exhausted) {
+      const batch = await this.fetchFeedBatch(cursor, 80);
+      if (batch.length === 0) {
+        exhausted = true;
+        break;
+      }
+      for (const post of batch) {
+        cursor = this.encodeFeedCursor(post.createdAt, post.id);
+        if (await this.members.isBlockedEitherWay(viewerId, post.authorId)) {
+          continue;
+        }
+        if (!(await this.canViewPost(post, viewerId))) continue;
+
+        if (scope === 'following') {
+          const followsAuthor =
+            post.authorId === viewerId || followingIds.has(post.authorId);
+          const inJoinedGroup =
+            post.groupId != null && joinedGroupIds.has(post.groupId);
+          if (!followsAuthor && !inJoinedGroup) continue;
+        }
+
+        items.push(await this.toPost(post, viewerId));
+        if (items.length >= limit) break;
+      }
+      if (batch.length < 80) exhausted = true;
+    }
+
+    const nextCursor =
+      items.length >= limit && !exhausted
+        ? this.encodeFeedCursor(
+            new Date(items[items.length - 1]!.createdAt),
+            items[items.length - 1]!.id,
+          )
+        : null;
+
+    return { items, nextCursor };
+  }
+
+  async listJoinedGroups(viewerId: string) {
+    await this.members.ensureProfileForUser(viewerId);
+    const memberships = await this.memberships.find({
+      where: { userId: viewerId },
+      order: { joinedAt: 'DESC' },
+      take: 50,
     });
+    if (memberships.length === 0) return [];
+    const groupIds = memberships.map((m) => m.groupId);
+    const groups = await this.groups.find({ where: { id: In(groupIds) } });
+    const byId = new Map(groups.map((g) => [g.id, g]));
     const visible = [];
-    for (const post of rows) {
-      if (await this.members.isBlockedEitherWay(viewerId, post.authorId)) {
+    for (const membership of memberships) {
+      const group = byId.get(membership.groupId);
+      if (!group) continue;
+      if (await this.members.isBlockedEitherWay(viewerId, group.ownerId)) {
         continue;
       }
-      if (!(await this.canViewPost(post, viewerId))) continue;
-
-      if (scope === 'following') {
-        const followsAuthor =
-          post.authorId === viewerId || followingIds.has(post.authorId);
-        const joinedGroup = post.groupId
-          ? await this.isGroupMember(post.groupId, viewerId)
-          : false;
-        if (!followsAuthor && !joinedGroup) continue;
-      }
-
-      visible.push(await this.toPost(post, viewerId));
-      if (visible.length >= 50) break;
+      visible.push(await this.toGroupSummary(group, viewerId));
     }
     return visible;
+  }
+
+  private encodeFeedCursor(createdAt: Date, id: string) {
+    return `${createdAt.toISOString()}|${id}`;
+  }
+
+  private parseFeedCursor(cursor: string): { createdAt: Date; id: string } | null {
+    const pipe = cursor.indexOf('|');
+    if (pipe <= 0) return null;
+    const createdAt = new Date(cursor.slice(0, pipe));
+    const id = cursor.slice(pipe + 1);
+    if (Number.isNaN(createdAt.getTime()) || !id) return null;
+    return { createdAt, id };
+  }
+
+  private async fetchFeedBatch(cursor: string | null, take: number) {
+    const parsed = cursor ? this.parseFeedCursor(cursor) : null;
+    const qb = this.posts
+      .createQueryBuilder('post')
+      .orderBy('post.createdAt', 'DESC')
+      .addOrderBy('post.id', 'DESC')
+      .take(take);
+    if (parsed) {
+      qb.andWhere(
+        '(post.createdAt < :createdAt OR (post.createdAt = :createdAt AND post.id < :id))',
+        { createdAt: parsed.createdAt, id: parsed.id },
+      );
+    }
+    return qb.getMany();
   }
 
   async discover(viewerId: string, query = '') {

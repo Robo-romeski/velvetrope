@@ -152,7 +152,10 @@ export default function GroupPage() {
 
   return (
     <PageShell size="narrow" className="space-y-6">
-      <TextLink href="/community">← Community</TextLink>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+        <TextLink href="/feed">← Community feed</TextLink>
+        <TextLink href="/community">All groups</TextLink>
+      </div>
       <PageHeader
         title={group.name}
         description={group.description ?? `${group.memberCount} members · ${group.privacy}`}

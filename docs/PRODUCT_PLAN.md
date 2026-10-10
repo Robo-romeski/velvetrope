@@ -3,7 +3,7 @@
 **Product:** epicsexual (epicsexual.com)
 **Positioning:** A knowledge-centered social community for adults exploring ENM, polyamory, swinging, and kink. Community-led discovery, learning, and gatherings—not a dating or matchmaking product.  
 **Stack (confirmed):** Next.js App Router, NestJS, TypeORM, PostgreSQL (local demo + production target), JWT auth, optional Stripe Connect for test/local demo.  
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-10
 
 ---
 
@@ -50,15 +50,21 @@ Review of `main` as of the merged MVP event loop. **Extend** where noted; **new 
 | Admin moderation + audit log | Shipped | `admin/` |
 | Persona IDV (optional per event) | Shipped, optional | `identity/` — fails safe when unconfigured |
 | Email (Resend-ready, outbox) | Partial | `email/` — templates exist; production optional |
-| Member profile (bio, interests, avatar, visibility) | **New** | Only `name`, `email` on user today |
-| Connections / follows / blocks | **New** | Blocking may extend trust; no graph yet |
-| Groups, forums, posts, feed | **New** | |
-| DMs / member messaging | **New** | Reuse chat auth patterns |
-| Education catalog, lessons, entitlements | **New** | |
-| Member kudos | **New** | Distinct from event feedback ratings |
-| Course reviews | **New** | Distinct from kudos and reports |
-| Payment abstraction (provider-agnostic orders) | **Partial** | Event payments tied to Stripe; needs `Order` / `Entitlement` layer |
-| Community discovery of events | **Partial** | Public event list; no group-scoped or social graph discovery |
+| Member profile (bio, interests, avatar, visibility) | Shipped | `members/` — `MemberProfileEntity`, `/settings/profile` |
+| Follows, blocks, message permissions | Shipped | `members/` — feed + discovery respect block graph |
+| Groups, group posts, comments | Shipped | `social/` — `/community`, `/community/groups/[slug]` |
+| Community feed (following + discover) | Shipped | `social/` — `/feed`, cursor pagination, group merge |
+| Member profile social hub | Shipped | `/members/[key]`, `GET /members/:key/wall` |
+| Post appreciations (“thanks”) | Shipped | `post_appreciations`, toggle API, no leaderboard |
+| Gathering-linked share posts | Shipped | Optional `eventId` on member posts; linkable-events API |
+| DMs / member messaging | Shipped | `messages/` — conversations, unread in Messages nav |
+| Social notifications | Shipped | Follow, comment, thanks, joined-group activity; see `docs/SOCIAL_NOTIFICATIONS.md` |
+| Education catalog, lessons, entitlements | Shipped | `education/`, `commerce/` — paid entitlements |
+| Member kudos | Shipped | `kudos/` — approval flow; distinct from event feedback |
+| Trust reports on posts/comments | Shipped | `trust/` — `subjectType` `post` \| `comment` |
+| Payment abstraction (provider-agnostic orders) | Shipped | `commerce/` — orders, entitlements; event checkout integrated |
+| Community discovery of events | Shipped | Public `/events` list respects `isDiscoveryVisible`; social can link gatherings |
+| Course reviews | **Partial** | Event feedback shipped; dedicated course reviews TBD |
 
 ---
 
@@ -69,21 +75,21 @@ NestJS modules should stay cohesive; frontend mirrors these as route groups.
 ```
 platform/
 ├── identity/          # auth, account, roles, session (existing auth + extend profile)
-├── members/           # NEW: profile, preferences, visibility, blocks
-├── social/            # NEW: connections, groups, posts, discussions, media refs
-├── messaging/         # NEW: DMs; may share infra with chat/ (adapters)
-├── education/         # NEW: creators, content, lessons, progress, course reviews
-├── commerce/          # NEW: orders, entitlements, refunds; adapters/stripe (events migrate in)
+├── members/           # profile, follows, blocks, visibility
+├── social/            # groups, posts, feed, appreciations, notifications activity
+├── messages/          # DMs (unread separate from social notifications)
+├── education/         # catalog, lessons, progress
+├── commerce/          # orders, entitlements, refunds; Stripe adapter
 ├── events/            # EXISTING: lifecycle, invites, applications (unchanged contract)
 ├── events-payments/   # EXISTING stripe checkout for tickets → delegates to commerce over time
 ├── checkin/           # EXISTING
-├── kudos/             # NEW: positive recognition only
+├── kudos/             # positive recognition (approval flow)
 ├── trust/             # EXISTING: reports, CoC, export, delete
 ├── feedback/          # EXISTING: event feedback (keep name; do not merge with kudos)
 ├── admin/             # EXISTING: extend for content + kudos moderation
 ├── analytics/         # EXISTING: extend dashboards per module
 ├── chat/              # EXISTING: event rooms; optional split later
-└── notifications/     # FUTURE: email + in-app
+└── notifications/     # in-app social activity (messages stay in messages/)
 ```
 
 **Integration rules**

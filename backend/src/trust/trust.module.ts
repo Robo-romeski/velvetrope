@@ -14,6 +14,8 @@ import { CheckinModule } from '../checkin/checkin.module';
 import { ChatMessageEntity } from '../chat/chat-message.entity';
 import { EventFeedbackEntity } from '../feedback/event-feedback.entity';
 import { IdentityModule } from '../identity/identity.module';
+import { GroupPostEntity } from '../social/group-post.entity';
+import { PostCommentEntity } from '../social/post-comment.entity';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { IdentityModule } from '../identity/identity.module';
       AdminAuditEntity,
       ChatMessageEntity,
       EventFeedbackEntity,
+      GroupPostEntity,
+      PostCommentEntity,
     ]),
     CheckinModule,
     IdentityModule,

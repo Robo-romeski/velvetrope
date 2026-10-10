@@ -21,7 +21,8 @@ export function AppNav() {
   const reduceMotion = useReducedMotion();
   const isHost = user?.roles?.includes('host') === true;
   const isAdmin = user?.roles?.includes('admin') === true;
-  const next = pathname?.startsWith('/') ? pathname : '/';
+  const next = pathname?.startsWith('/') ? pathname : '/feed';
+  const homeHref = user ? '/feed' : '/';
   const loginHref = `/auth/login?next=${encodeURIComponent(next)}`;
   const registerHref = `/auth/register?next=${encodeURIComponent(next)}`;
   const hostRegisterHref = '/auth/register?next=%2Fhost%2Fevents&host=1';
@@ -93,7 +94,8 @@ export function AppNav() {
     pathname === '/' || pathname?.startsWith('/events/') === true;
   const communityActive =
     pathname?.startsWith('/community') === true ||
-    pathname?.startsWith('/feed') === true;
+    pathname?.startsWith('/feed') === true ||
+    pathname?.startsWith('/notifications') === true;
   const learnActive = pathname?.startsWith('/learn') === true;
 
   const navLinkClass = (active: boolean) =>
@@ -187,7 +189,7 @@ export function AppNav() {
       <div className="mx-auto flex min-h-[4.75rem] max-w-7xl flex-wrap items-center justify-between gap-3 px-4 sm:px-6">
         <div className="flex items-center gap-7">
           <Link
-            href="/"
+            href={homeHref}
             className="group flex items-center gap-2.5 font-display text-lg font-semibold tracking-[-0.025em]"
             onClick={closeMenu}
           >
@@ -202,15 +204,6 @@ export function AppNav() {
             <span>epicsexual</span>
           </Link>
           <Link
-            href="/#gatherings"
-            className={cn(
-              navLinkClass(eventsActive),
-              'hidden md:inline-flex',
-            )}
-          >
-            Gatherings
-          </Link>
-          <Link
             href="/feed"
             className={cn(
               navLinkClass(communityActive),
@@ -218,6 +211,15 @@ export function AppNav() {
             )}
           >
             Community
+          </Link>
+          <Link
+            href="/#gatherings"
+            className={cn(
+              navLinkClass(eventsActive),
+              'hidden md:inline-flex',
+            )}
+          >
+            Gatherings
           </Link>
           <Link
             href="/learn"
@@ -373,18 +375,18 @@ export function AppNav() {
           >
             <div className="flex flex-col gap-1">
               <Link
-                href="/#gatherings"
-                onClick={closeMenu}
-                className={navLinkClass(eventsActive)}
-              >
-                Gatherings
-              </Link>
-              <Link
                 href="/feed"
                 onClick={closeMenu}
                 className={navLinkClass(communityActive)}
               >
                 Community
+              </Link>
+              <Link
+                href="/#gatherings"
+                onClick={closeMenu}
+                className={navLinkClass(eventsActive)}
+              >
+                Gatherings
               </Link>
               <Link
                 href="/learn"

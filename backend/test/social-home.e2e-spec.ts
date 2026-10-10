@@ -137,6 +137,35 @@ describe('Social home (e2e)', () => {
     expect(comments.body[0].body).toBe('A thoughtful reply.');
   });
 
+  it('ranks discovery search by slug and interests', async () => {
+    await request(app.getHttpServer())
+      .patch('/members/me/profile')
+      .set('Authorization', `Bearer ${tokenB}`)
+      .send({ interests: ['rope-workshop'] })
+      .expect(200);
+
+    const discovery = await request(app.getHttpServer())
+      .get('/social/discovery?q=rope-workshop')
+      .set('Authorization', `Bearer ${tokenA}`)
+      .expect(200);
+    expect(discovery.body.members[0]?.userId).toBe(userBId);
+  });
+
+  it('accepts trust reports for community posts', async () => {
+    const report = await request(app.getHttpServer())
+      .post('/trust/reports')
+      .set('Authorization', `Bearer ${tokenC}`)
+      .send({
+        subjectType: 'post',
+        subjectId: membersPostId,
+        category: 'spam',
+        details: 'This post looks like automated spam content.',
+      })
+      .expect(201);
+    expect(report.body.subjectType).toBe('post');
+    expect(report.body.subjectId).toBe(membersPostId);
+  });
+
   it('toggles post appreciation per member and blocks self-appreciation', async () => {
     const appreciate = await request(app.getHttpServer())
       .post(`/posts/${membersPostId}/appreciate`)
@@ -165,6 +194,23 @@ describe('Social home (e2e)', () => {
       .post(`/posts/${membersPostId}/appreciate`)
       .set('Authorization', `Bearer ${tokenB}`)
       .expect(400);
+  });
+
+  it('notifies post authors when someone thanks their post', async () => {
+    await request(app.getHttpServer())
+      .post(`/posts/${membersPostId}/appreciate`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .expect(201);
+
+    const notifications = await request(app.getHttpServer())
+      .get('/social/notifications')
+      .set('Authorization', `Bearer ${tokenB}`)
+      .expect(200);
+    expect(
+      notifications.body.items.some(
+        (item: { type: string }) => item.type === 'appreciation',
+      ),
+    ).toBe(true);
   });
 
   it('links member posts to published gatherings when allowed', async () => {

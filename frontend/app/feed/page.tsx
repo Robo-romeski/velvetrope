@@ -479,6 +479,12 @@ export default function FeedPage() {
                             : ''}
                         </button>
                       )}
+                      <Link
+                        href={`/trust/report?subjectType=post&subjectId=${encodeURIComponent(post.id)}`}
+                        className="font-semibold hover:text-accent"
+                      >
+                        Report
+                      </Link>
                     </footer>
 
                     {expandedPost === post.id && (

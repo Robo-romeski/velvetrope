@@ -82,7 +82,7 @@ export default function NotificationsPage() {
       <PageHeader
         eyebrow="Community"
         title="Notifications"
-        description="New followers and replies to your posts. Private-message unread state remains in Messages."
+        description="Follows, replies, thanks, and activity in your groups. Message unread counts stay in Messages only."
         actions={
           <Link href="/feed" className="text-sm font-semibold text-accent">
             Back to feed
@@ -95,7 +95,7 @@ export default function NotificationsPage() {
       ) : !data || data.items.length === 0 ? (
         <EmptyState
           title="Nothing new yet"
-          description="Follows and replies to your posts will appear here."
+          description="Social activity from people and groups you follow will appear here."
         />
       ) : (
         <section aria-label="Notifications" className="border-t border-border-strong">

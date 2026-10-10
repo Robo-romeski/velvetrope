@@ -3313,8 +3313,20 @@
         "dependencies": [
           "6"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Appreciation and group activity notifications",
+            "description": "Extend listNotifications types and hrefs",
+            "dependencies": [],
+            "details": "social.service listNotifications; docs/SOCIAL_NOTIFICATIONS.md",
+            "status": "done",
+            "testStrategy": "social-home appreciation notification e2e",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-10-10T22:00:00.000Z"
       },
       {
         "id": "8",
@@ -3326,8 +3338,20 @@
         "dependencies": [
           "3"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Ranked member and group discovery",
+            "description": "Score slug, name, interests in search",
+            "dependencies": [],
+            "details": "members.service searchMembers; social discover groups",
+            "status": "done",
+            "testStrategy": "social-home interests discovery e2e",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-10-10T22:00:00.000Z"
       },
       {
         "id": "9",
@@ -3340,8 +3364,20 @@
           "3",
           "7"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Trust reports for posts",
+            "description": "subjectType post/comment validation and feed Report link",
+            "dependencies": [],
+            "details": "trust.service; /trust/report query params",
+            "status": "done",
+            "testStrategy": "social-home post report e2e",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-10-10T22:00:00.000Z"
       },
       {
         "id": "10",
@@ -3358,15 +3394,27 @@
           "8",
           "9"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Regression and docs",
+            "description": "Full e2e, frontend build, PRODUCT_PLAN inventory",
+            "dependencies": [],
+            "details": "80 backend e2e tests; docs/PRODUCT_PLAN.md updated",
+            "status": "done",
+            "testStrategy": "npm run test:e2e; next build",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-10-10T22:00:00.000Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-10-10T21:00:00.000Z",
+      "lastModified": "2026-10-10T22:00:00.000Z",
       "taskCount": 10,
-      "completedCount": 6,
+      "completedCount": 10,
       "tags": [
         "platform-social-v2"
       ]

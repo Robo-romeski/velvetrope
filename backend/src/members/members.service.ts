@@ -330,27 +330,56 @@ export class MembersService {
     const needle = query.trim().toLowerCase().slice(0, 80);
     const rows = await this.profiles.find({
       order: { updatedAt: 'DESC' },
-      take: 100,
+      take: 200,
     });
-    const results: PublicProfile[] = [];
+    const ranked: Array<{ score: number; userId: string }> = [];
     for (const row of rows) {
       if (row.userId === viewerId) continue;
-      const haystack = [
-        row.displayName ?? '',
-        row.slug,
-        ...(row.interests ?? []),
-      ]
-        .join(' ')
-        .toLowerCase();
-      if (needle && !haystack.includes(needle)) continue;
+      const score = this.memberSearchScore(row, needle);
+      if (needle && score <= 0) continue;
+      ranked.push({ score, userId: row.userId });
+    }
+    ranked.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return 0;
+    });
+
+    const results: PublicProfile[] = [];
+    for (const entry of ranked) {
       try {
-        results.push(await this.getPublicProfile(row.userId, viewerId));
+        results.push(await this.getPublicProfile(entry.userId, viewerId));
       } catch {
         // Skip blocked, suspended, or missing members.
       }
       if (results.length >= 20) break;
     }
     return results;
+  }
+
+  private memberSearchScore(
+    row: {
+      slug: string;
+      displayName?: string | null;
+      interests?: string[] | null;
+      updatedAt: Date;
+    },
+    needle: string,
+  ) {
+    if (!needle) return row.updatedAt.getTime();
+    const slug = row.slug.toLowerCase();
+    const name = (row.displayName ?? '').toLowerCase();
+    const interests = (row.interests ?? []).map((tag) => tag.toLowerCase());
+    if (slug === needle) return 1000;
+    if (slug.startsWith(needle)) return 800;
+    if (name.startsWith(needle)) return 700;
+    if (interests.some((tag) => tag === needle || tag.startsWith(needle))) {
+      return 650;
+    }
+    if (slug.includes(needle)) return 500;
+    if (name.includes(needle)) return 400;
+    if (interests.some((tag) => tag.includes(needle))) return 350;
+    const haystack = [name, slug, ...interests].join(' ');
+    return haystack.includes(needle) ? 100 : 0;
   }
 
   async listRecentFollowerActivity(userId: string) {

@@ -1,6 +1,7 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { apiPostAuth } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import {
@@ -18,14 +19,39 @@ import {
   TextLink,
 } from '@/app/components/ui';
 
-export default function TrustReportPage() {
+type ReportSubjectType =
+  | 'event'
+  | 'user'
+  | 'post'
+  | 'comment'
+  | 'message'
+  | 'content';
+
+function TrustReportForm() {
   const { user, loading } = useAuth();
-  const [subjectType, setSubjectType] = useState<'event' | 'user'>('event');
+  const searchParams = useSearchParams();
+  const [subjectType, setSubjectType] = useState<ReportSubjectType>('event');
   const [subjectId, setSubjectId] = useState('');
   const [category, setCategory] = useState('safety');
   const [details, setDetails] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const type = searchParams?.get('subjectType');
+    const id = searchParams?.get('subjectId');
+    if (
+      type === 'event' ||
+      type === 'user' ||
+      type === 'post' ||
+      type === 'comment' ||
+      type === 'message' ||
+      type === 'content'
+    ) {
+      setSubjectType(type);
+    }
+    if (id?.trim()) setSubjectId(id.trim());
+  }, [searchParams]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -76,11 +102,17 @@ export default function TrustReportPage() {
           <FormField label="Subject type" htmlFor="report-subject-type">
             <Select
               id="report-subject-type"
-            value={subjectType}
-            onChange={(e) => setSubjectType(e.target.value as 'event' | 'user')}
-          >
-            <option value="event">Event</option>
-            <option value="user">User</option>
+              value={subjectType}
+              onChange={(e) =>
+                setSubjectType(e.target.value as ReportSubjectType)
+              }
+            >
+              <option value="event">Event</option>
+              <option value="user">User</option>
+              <option value="post">Community post</option>
+              <option value="comment">Post comment</option>
+              <option value="message">Message</option>
+              <option value="content">Other content</option>
             </Select>
           </FormField>
           <FormField label="Subject ID" htmlFor="report-subject-id">
@@ -95,13 +127,13 @@ export default function TrustReportPage() {
           <FormField label="Category" htmlFor="report-category">
             <Select
               id="report-category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option value="safety">Safety</option>
-            <option value="harassment">Harassment</option>
-            <option value="spam">Spam</option>
-            <option value="other">Other</option>
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="safety">Safety</option>
+              <option value="harassment">Harassment</option>
+              <option value="spam">Spam</option>
+              <option value="other">Other</option>
             </Select>
           </FormField>
           <FormField
@@ -126,5 +158,19 @@ export default function TrustReportPage() {
       </Card>
       <TextLink href="/trust/code-of-conduct">Read the code of conduct</TextLink>
     </PageShell>
+  );
+}
+
+export default function TrustReportPage() {
+  return (
+    <Suspense
+      fallback={
+        <PageShell size="narrow">
+          <LoadingState />
+        </PageShell>
+      }
+    >
+      <TrustReportForm />
+    </Suspense>
   );
 }

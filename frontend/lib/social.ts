@@ -60,7 +60,7 @@ export type SocialDiscovery = {
 
 export type SocialNotification = {
   id: string;
-  type: 'follow' | 'comment';
+  type: 'follow' | 'comment' | 'appreciation' | 'group_post';
   createdAt: string;
   unread: boolean;
   text: string;

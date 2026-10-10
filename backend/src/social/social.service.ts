@@ -384,6 +384,16 @@ export class SocialService {
     return visible;
   }
 
+  private postNotificationHref(
+    post: GroupPostEntity,
+    group: GroupEntity | null,
+  ) {
+    if (group) {
+      return `/community/groups/${group.slug}?post=${post.id}`;
+    }
+    return `/feed#post-${post.id}`;
+  }
+
   private encodeFeedCursor(createdAt: Date, id: string) {
     return `${createdAt.toISOString()}|${id}`;
   }
@@ -421,17 +431,36 @@ export class SocialService {
       order: { createdAt: 'DESC' },
       take: 100,
     });
-    const groups = [];
+    const ranked: Array<{ score: number; group: GroupEntity }> = [];
     for (const group of allGroups) {
-      const haystack = `${group.name} ${group.description ?? ''}`.toLowerCase();
-      if (needle && !haystack.includes(needle)) continue;
       if (await this.members.isBlockedEitherWay(viewerId, group.ownerId)) {
         continue;
       }
-      groups.push(await this.toGroupSummary(group, viewerId));
+      const score = this.groupSearchScore(group, needle);
+      if (needle && score <= 0) continue;
+      ranked.push({ score, group });
+    }
+    ranked.sort((a, b) => b.score - a.score);
+    const groups = [];
+    for (const entry of ranked) {
+      groups.push(await this.toGroupSummary(entry.group, viewerId));
       if (groups.length >= 12) break;
     }
     return { members, groups };
+  }
+
+  private groupSearchScore(group: GroupEntity, needle: string) {
+    if (!needle) return group.createdAt.getTime();
+    const slug = group.slug.toLowerCase();
+    const name = group.name.toLowerCase();
+    const description = (group.description ?? '').toLowerCase();
+    if (slug === needle) return 1000;
+    if (slug.startsWith(needle)) return 800;
+    if (name.startsWith(needle)) return 700;
+    if (name.includes(needle)) return 500;
+    if (slug.includes(needle)) return 450;
+    if (description.includes(needle)) return 300;
+    return `${name} ${slug} ${description}`.includes(needle) ? 100 : 0;
   }
 
   async listNotifications(userId: string) {
@@ -439,7 +468,7 @@ export class SocialService {
     const lastReadAt = read?.lastReadAt ?? null;
     const items: Array<{
       id: string;
-      type: 'follow' | 'comment';
+      type: 'follow' | 'comment' | 'appreciation' | 'group_post';
       createdAt: Date;
       unread: boolean;
       text: string;
@@ -488,7 +517,8 @@ export class SocialService {
             userId,
           );
           const post = postMap.get(comment.postId);
-          const group = post?.groupId
+          if (!post) continue;
+          const group = post.groupId
             ? await this.groups.findOne({ where: { id: post.groupId } })
             : null;
           items.push({
@@ -497,9 +527,92 @@ export class SocialService {
             createdAt: comment.createdAt,
             unread: !lastReadAt || comment.createdAt > lastReadAt,
             text: 'commented on your post',
-            href: group
-              ? `/community/groups/${group.slug}?post=${comment.postId}`
-              : `/community?post=${comment.postId}`,
+            href: this.postNotificationHref(post, group),
+            actor: {
+              userId: actor.userId,
+              slug: actor.slug,
+              displayName: actor.displayName,
+              avatarUrl: actor.avatarUrl ?? null,
+            },
+          });
+        } catch {
+          // Skip blocked, suspended, or missing members.
+        }
+      }
+
+      const appreciationRows = await this.appreciations.find({
+        where: { postId: In(ownPosts.map((post) => post.id)) },
+        order: { createdAt: 'DESC' },
+        take: 100,
+      });
+      for (const appreciation of appreciationRows) {
+        if (appreciation.userId === userId) continue;
+        if (
+          await this.members.isBlockedEitherWay(userId, appreciation.userId)
+        ) {
+          continue;
+        }
+        try {
+          const actor = await this.members.getPublicProfile(
+            appreciation.userId,
+            userId,
+          );
+          const post = postMap.get(appreciation.postId);
+          if (!post) continue;
+          const group = post.groupId
+            ? await this.groups.findOne({ where: { id: post.groupId } })
+            : null;
+          items.push({
+            id: `appreciation:${appreciation.id}`,
+            type: 'appreciation',
+            createdAt: appreciation.createdAt,
+            unread: !lastReadAt || appreciation.createdAt > lastReadAt,
+            text: 'thanked your post',
+            href: this.postNotificationHref(post, group),
+            actor: {
+              userId: actor.userId,
+              slug: actor.slug,
+              displayName: actor.displayName,
+              avatarUrl: actor.avatarUrl ?? null,
+            },
+          });
+        } catch {
+          // Skip blocked, suspended, or missing members.
+        }
+      }
+    }
+
+    const memberships = await this.memberships.find({
+      where: { userId },
+    });
+    const joinedGroupIds = memberships.map((row) => row.groupId);
+    if (joinedGroupIds.length > 0) {
+      const groupPosts = await this.posts.find({
+        where: { groupId: In(joinedGroupIds) },
+        order: { createdAt: 'DESC' },
+        take: 40,
+      });
+      for (const post of groupPosts) {
+        if (post.authorId === userId) continue;
+        if (await this.members.isBlockedEitherWay(userId, post.authorId)) {
+          continue;
+        }
+        const group = post.groupId
+          ? await this.groups.findOne({ where: { id: post.groupId } })
+          : null;
+        if (!group) continue;
+        try {
+          const actor = await this.members.getPublicProfile(
+            post.authorId,
+            userId,
+          );
+          items.push({
+            id: `group_post:${post.id}`,
+            type: 'group_post',
+            createdAt: post.createdAt,
+            unread: !lastReadAt || post.createdAt > lastReadAt,
+            text: `posted in ${group.name}`,
+            href: `/community/groups/${group.slug}?post=${post.id}`,
             actor: {
               userId: actor.userId,
               slug: actor.slug,

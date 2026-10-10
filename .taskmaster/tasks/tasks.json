@@ -3062,5 +3062,196 @@
       ],
       "description": "Archived 2025 PRD task list. Original plan used Auth0/FastAPI. Current product uses local JWT (AUTH_SECRET) + NestJS. Do not implement from this tag."
     }
+  },
+  "platform-social-v2": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Post-login routing and social-first navigation",
+        "description": "Make Community (/feed) the default logged-in home and align primary nav with social-first IA (Gatherings, Learn secondary).",
+        "details": "See .taskmaster/docs/platform-social-v2-prd.txt §1. Preserve existing routes. Update auth redirect targets, AppNav labels/order, and any dashboard stubs. No dating copy.",
+        "testStrategy": "Manual: login lands on /feed; nav order matches PRD; e2e auth flows still pass.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Shared post-auth redirect helper",
+            "description": "Default member landing to /feed with safe next validation",
+            "dependencies": [],
+            "details": "frontend/lib/post-auth-redirect.ts — safePostAuthPath maps missing or / to /feed",
+            "status": "done",
+            "testStrategy": "Frontend build; manual login without next query",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Login and register redirects",
+            "description": "Wire auth pages to safePostAuthPath and update login copy",
+            "dependencies": ["1"],
+            "details": "frontend/app/auth/login/page.tsx, register/page.tsx",
+            "status": "done",
+            "testStrategy": "Login with next=/feed or bare login → /feed",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Social-first AppNav",
+            "description": "Community before Gatherings; signed-in logo → /feed; notifications under Community active state",
+            "dependencies": [],
+            "details": "frontend/app/components/AppNav.tsx",
+            "status": "done",
+            "testStrategy": "Visual desktop/mobile nav order",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Protected page login next",
+            "description": "Preserve return path for /protected diagnostic route",
+            "dependencies": [],
+            "details": "frontend/app/protected/page.tsx",
+            "status": "done",
+            "testStrategy": "Manual login from protected page",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-10-10T16:35:00.000Z"
+      },
+      {
+        "id": 2,
+        "title": "Member profile social hub",
+        "description": "Enrich /members/[key] with recent member-visible posts, groups, approved kudos, follow/message CTAs respecting permissions.",
+        "details": "PRD §2. Reuse existing APIs; add aggregation endpoints only if needed. Empty states; block graph enforced.",
+        "testStrategy": "e2e or extend social-home: blocked user cannot view; follower sees followers-only posts when allowed.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Unified following feed composition",
+        "description": "Merge followed member posts and joined-group posts in chronological following feed with pagination and audience badges.",
+        "details": "PRD §3–4. Extend social.service feed query; frontend /feed Following tab. Badges: Members / Followers / Group name.",
+        "testStrategy": "social-home.e2e-spec extended: member in group sees group post in following feed.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Groups and feed cross-linking",
+        "description": "Wire group pages and /community directory to feed composer and sidebar; show member groups on feed.",
+        "details": "PRD §4. Post-to-group from group context; discovery sidebar lists joined groups.",
+        "testStrategy": "Manual + e2e: post in group appears on group page and eligible feeds.",
+        "priority": "medium",
+        "dependencies": [
+          "3"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Gatherings in social context",
+        "description": "Allow event-linked share posts (link field + optional event reference) without changing apply/check-in flows.",
+        "details": "PRD §5. Optional eventId on member post or documented link-only v2. Hide non-discoverable test events from public lists.",
+        "testStrategy": "events.e2e + manual feed post with event link; discovery flag respected.",
+        "priority": "medium",
+        "dependencies": [
+          "3"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Lightweight post appreciation",
+        "description": "Single non-scored reaction per member per post with rate limits; no leaderboard.",
+        "details": "PRD §6. New entity or reuse pattern; separate from kudos and event feedback.",
+        "testStrategy": "e2e: appreciate once; rate limit; blocked users excluded.",
+        "priority": "medium",
+        "dependencies": [
+          "3"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Notifications v2",
+        "description": "Extend social notifications (e.g. group activity, appreciation) while keeping DM unread in Messages.",
+        "details": "PRD §7. Extend social-activity-read; nav badge rules documented.",
+        "testStrategy": "Two-user e2e: trigger notification; badge clears on /notifications visit.",
+        "priority": "medium",
+        "dependencies": [
+          "6"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Discovery and search improvements",
+        "description": "Improve member/group search ranking (name, slug, interests) and public homepage previews from real APIs.",
+        "details": "PRD §8. No fabricated counts or testimonials.",
+        "testStrategy": "e2e discovery query returns expected member; homepage shows only API-backed previews.",
+        "priority": "medium",
+        "dependencies": [
+          "3"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Safety and moderation for posts",
+        "description": "Report post/comment via trust pipeline; admin visibility; block coverage on new surfaces.",
+        "details": "PRD §9. subjectType for posts/comments if missing.",
+        "testStrategy": "trust e2e or manual report flow; block hides post author content.",
+        "priority": "high",
+        "dependencies": [
+          "3",
+          "7"
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Verify social v2 and sync PRODUCT_PLAN",
+        "description": "Full backend e2e, frontend build, mobile smoke on feed/profile; update docs/PRODUCT_PLAN.md inventory.",
+        "details": "PRD §10–12. Run migrations on Postgres profile; document in DEMO if needed.",
+        "testStrategy": "lint:ci, test:e2e, next build; git diff --check.",
+        "priority": "high",
+        "dependencies": [
+          "2",
+          "4",
+          "5",
+          "7",
+          "8",
+          "9"
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-10-10T16:35:00.000Z",
+      "taskCount": 10,
+      "completedCount": 1,
+      "tags": [
+        "platform-social-v2"
+      ],
+      "created": "2026-10-10T16:31:08.565Z",
+      "description": "FetLife-style social core v2; education remains add-on. Source: .taskmaster/docs/platform-social-v2-prd.txt"
+    }
   }
 }

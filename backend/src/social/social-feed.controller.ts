@@ -23,11 +23,20 @@ export class SocialFeedController {
   async feed(
     @Req() req: Request,
     @Query('scope') scope?: 'following' | 'discover',
+    @Query('cursor') cursor?: string,
+    @Query('limit') limitRaw?: string,
   ) {
+    const limit = limitRaw ? Number.parseInt(limitRaw, 10) : undefined;
     return await this.social.listFeed(
       getAuthUser(req).sub,
       scope === 'discover' ? 'discover' : 'following',
+      { cursor: cursor ?? null, limit },
     );
+  }
+
+  @Get('joined-groups')
+  async joinedGroups(@Req() req: Request) {
+    return await this.social.listJoinedGroups(getAuthUser(req).sub);
   }
 
   @Post('posts')
@@ -38,9 +47,15 @@ export class SocialFeedController {
       body?: string;
       linkUrl?: string | null;
       audience?: PostAudience;
+      eventId?: string | null;
     },
   ) {
     return await this.social.createMemberPost(getAuthUser(req).sub, body);
+  }
+
+  @Get('linkable-events')
+  async linkableEvents(@Req() req: Request) {
+    return await this.social.listLinkableEvents(getAuthUser(req).sub);
   }
 
   @Get('discovery')

@@ -1,0 +1,110 @@
+# epicsexual — Platform Social v2 (FetLife-style core, education add-on)
+
+## Context (already on origin/main as of 2026-10-10)
+
+Do NOT rebuild. Extend the shipped NestJS + Next.js stack.
+
+**Shipped social foundation (PR #7 and earlier):**
+- JWT auth, member profiles (bio, interests, avatar URL, visibility, message permissions)
+- Groups: create/join, group posts, comments
+- Social home: `/feed` with following + discover tabs, member posts (audiences: members, followers, group), optional link
+- Follow/unfollow, block filtering across feed and discovery
+- Direct messaging: conversations, unread counts, profile/message permission gates
+- Notifications: new follower, comment on own post; mark-read
+- Kudos module with approval flow (separate from event feedback)
+- Education catalog + paid entitlements via commerce module
+- Events module unchanged: apply, invites, check-in, Stripe test checkout
+- Host-controlled `isDiscoveryVisible` on events for public listings
+- Branding: epicsexual logo, editorial homepage, Source Serif/Sans design tokens
+
+**Regression contract:** backend e2e suites including `social-home.e2e-spec.ts`, `messages.e2e-spec.ts`, `journey.e2e-spec.ts`, kudos, commerce, events must stay green.
+
+## Product direction
+
+epicsexual is a **community-first** ENM/kink social platform (profiles, feed, groups, gatherings, DMs). **Learn/education is an add-on**, not the primary navigation story.
+
+Explicitly **NOT** a dating product: no swipe deck, no "match" algorithm, no "find dates near you" primary UX.
+
+## Goals for Social v2
+
+Make logged-in members feel they are in a **coherent social product** (FetLife-like participation) while preserving safety, privacy, and the event demo path.
+
+## Requirements
+
+### 1. Logged-in home and navigation
+- Default post-login destination should be the community feed (`/feed`), not a generic dashboard.
+- Primary nav emphasizes: Community (feed), Gatherings (events), Learn (secondary), Messages, Notifications.
+- `/community` remains the groups directory but cross-links feed prominently.
+
+### 2. Member profile as social hub
+- Public/member profile pages show: bio, interests, approved kudos, recent member-visible posts, joined groups (respecting visibility), link to message (if permitted), follow state.
+- Profile owner sees edit/settings links; blocked users cannot view or interact.
+- No fabricated activity; empty states when no posts/kudos.
+
+### 3. Feed composition upgrades
+- Following feed includes: posts from followed members (respect audience) AND posts from groups the member belongs to (merge chronologically, paginated).
+- Discover feed: member posts + suggested members/groups (existing discovery API extended as needed).
+- Inline expand comments (keep); consider thread depth limit of 1 level for v2.
+- Show post context badge: Members / Followers / Group name.
+
+### 4. Groups ↔ feed integration
+- Posting to a group appears in group page AND in followers' following feed when policy allows.
+- Group discovery on feed sidebar: show member's groups + link to browse all.
+
+### 5. Gatherings in social context (not replacing event module)
+- Feed may include **host-authored announcement posts** tied to a published event (optional v2: event_id on post or dedicated post type).
+- Event cards on homepage and gather discovery unchanged; do not expose test/demo events marked non-discoverable.
+- Attendees can share experience posts that link to an event URL (link field only in v2 unless schema extended).
+
+### 6. Engagement (non-dating)
+- Optional lightweight **post appreciation** (e.g. single reaction or "thanks") — not a popularity leaderboard; rate-limited; no global scores.
+- Kudos remain separate; do not merge event star ratings into profiles.
+
+### 7. Notifications v2
+- Extend notifications for: group post in joined group (optional digest or single), mention if @handle added later (defer @mentions if scope heavy).
+- Keep message unread in Messages, not duplicated confusingly in social notifications.
+- Unread badge in nav; mark read on notifications page visit (existing behavior preserved).
+
+### 8. Discovery and search
+- Member/group search from feed (existing) — improve relevance: match display name, slug, interests tags.
+- Public homepage: show real published groups preview and learn items where APIs already allow; no fake testimonials or user counts.
+
+### 9. Privacy, safety, and permissions
+- Reuse block graph everywhere new surfaces appear.
+- Respect profile visibility and message permission enums on all new CTAs.
+- Report post/comment flows hook into existing trust report pipeline (subject types as appropriate).
+- Admin moderation queue can list reported posts if not already covered.
+
+### 10. UI and accessibility
+- Continue epicsexual editorial design system (warm ivory, espresso text, oxblood actions); no generic SaaS template.
+- Motion: subtle transitions only; respect `prefers-reduced-motion`.
+- Desktop and mobile layouts for feed, profile hub, notifications; keyboard focus on composer and tabs.
+
+### 11. Data and migrations
+- TypeORM migrations only; no synchronize in production.
+- Extend existing entities (`group_posts`, etc.) before new tables where possible.
+- SQLite e2e in CI; Postgres docker profile documented in DEMO.md.
+
+### 12. Testing and documentation
+- New e2e coverage for: following feed includes group posts; profile hub shows posts; block hides content; notification for new engagement type if added.
+- Update `docs/PRODUCT_PLAN.md` section 2 inventory to reflect shipped follow/feed/DM/kudos (doc lag fix).
+
+## Out of scope for this PRD phase
+
+- Photo/video upload pipeline and moderation (URL links only unless small extension approved)
+- Redis chat adapter (task 12 deferred)
+- Dating/matching/discovery by location
+- Rewriting event payment or Persona IDV flows
+- Merging backup branch `backup/local-main-pre-pr4-squash-20261003`
+
+## Tech stack (fixed)
+
+- Backend: NestJS, TypeORM, existing module layout (`social`, `messages`, `members`, `kudos`, `events`, `trust`, `admin`)
+- Frontend: Next.js App Router, `frontend/lib/social.ts`, `frontend/lib/messages.ts`, shared UI components
+- Tests: Jest e2e in `backend/test/`
+
+## Success criteria
+
+- A member can log in, land on feed, see followed + group activity, visit a rich profile hub, message where allowed, and receive notifications — without using Learn as the primary path.
+- All existing backend e2e tests pass; new tests cover feed composition and profile hub.
+- No dating mechanics introduced; product copy reinforces community-not-dating positioning.

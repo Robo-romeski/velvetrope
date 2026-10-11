@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, MoreThan, Repository } from 'typeorm';
 import { MembersService } from '../members/members.service';
 import { GroupEntity, GroupPrivacy } from './group.entity';
 import {
@@ -16,6 +16,9 @@ import { GroupPostEntity, PostAudience } from './group-post.entity';
 import { PostCommentEntity } from './post-comment.entity';
 import { uniqueSlug } from '../members/slug.util';
 import { SocialActivityReadEntity } from './social-activity-read.entity';
+import { EventsService } from '../events/events.service';
+import { PostAppreciationEntity } from './post-appreciation.entity';
+import { MAX_POST_APPRECIATIONS_PER_DAY } from './post-appreciation.constants';
 
 @Injectable()
 export class SocialService {
@@ -30,8 +33,15 @@ export class SocialService {
     private readonly comments: Repository<PostCommentEntity>,
     @InjectRepository(SocialActivityReadEntity)
     private readonly activityReads: Repository<SocialActivityReadEntity>,
+    @InjectRepository(PostAppreciationEntity)
+    private readonly appreciations: Repository<PostAppreciationEntity>,
     private readonly members: MembersService,
+    private readonly events: EventsService,
   ) {}
+
+  async listLinkableEvents(userId: string) {
+    return await this.events.listLinkableForMember(userId);
+  }
 
   async listGroups(viewerId: string | null) {
     const all = await this.groups.find({ order: { createdAt: 'DESC' } });
@@ -219,6 +229,7 @@ export class SocialService {
       body?: string;
       linkUrl?: string | null;
       audience?: PostAudience;
+      eventId?: string | null;
     },
   ) {
     await this.members.ensureProfileForUser(authorId);
@@ -227,6 +238,12 @@ export class SocialService {
     const audience: PostAudience =
       input.audience === 'followers' ? 'followers' : 'members';
     const linkUrl = this.normalizeLink(input.linkUrl);
+    const eventIdRaw = (input.eventId ?? '').trim();
+    let eventId: string | null = null;
+    if (eventIdRaw) {
+      await this.events.assertMemberCanLinkEvent(authorId, eventIdRaw);
+      eventId = eventIdRaw;
+    }
     const post = await this.posts.save(
       this.posts.create({
         groupId: null,
@@ -235,41 +252,175 @@ export class SocialService {
         body: body.slice(0, 20_000),
         audience,
         linkUrl,
+        eventId,
       }),
     );
-    return this.toPost(post, authorId);
+    const created = await this.toPost(post, authorId);
+    const [enriched] = await this.withPostAppreciationMeta([created], authorId);
+    return enriched ?? created;
   }
 
   async listFeed(
     viewerId: string,
     scope: 'following' | 'discover' = 'following',
+    options?: { cursor?: string | null; limit?: number },
   ) {
     await this.members.ensureProfileForUser(viewerId);
+    const limit = Math.min(Math.max(options?.limit ?? 25, 1), 50);
     const followingIds = new Set(await this.members.getFollowingIds(viewerId));
-    const rows = await this.posts.find({
-      order: { createdAt: 'DESC' },
-      take: 200,
+    const joinedGroupIds = new Set(
+      (
+        await this.memberships.find({
+          where: { userId: viewerId },
+          select: { groupId: true },
+        })
+      ).map((row) => row.groupId),
+    );
+
+    const items: Awaited<ReturnType<SocialService['toPost']>>[] = [];
+    let cursor = options?.cursor?.trim() || null;
+    let exhausted = false;
+
+    while (items.length < limit && !exhausted) {
+      const batch = await this.fetchFeedBatch(cursor, 80);
+      if (batch.length === 0) {
+        exhausted = true;
+        break;
+      }
+      for (const post of batch) {
+        cursor = this.encodeFeedCursor(post.createdAt, post.id);
+        if (await this.members.isBlockedEitherWay(viewerId, post.authorId)) {
+          continue;
+        }
+        if (!(await this.canViewPost(post, viewerId))) continue;
+
+        if (scope === 'following') {
+          const followsAuthor =
+            post.authorId === viewerId || followingIds.has(post.authorId);
+          const inJoinedGroup =
+            post.groupId != null && joinedGroupIds.has(post.groupId);
+          if (!followsAuthor && !inJoinedGroup) continue;
+        }
+
+        items.push(await this.toPost(post, viewerId));
+        if (items.length >= limit) break;
+      }
+      if (batch.length < 80) exhausted = true;
+    }
+
+    const nextCursor =
+      items.length >= limit && !exhausted
+        ? this.encodeFeedCursor(
+            new Date(items[items.length - 1]!.createdAt),
+            items[items.length - 1]!.id,
+          )
+        : null;
+
+    const enriched = await this.withPostAppreciationMeta(items, viewerId);
+    return { items: enriched, nextCursor };
+  }
+
+  async togglePostAppreciation(postId: string, userId: string) {
+    await this.members.ensureProfileForUser(userId);
+    const post = await this.posts.findOne({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Post not found');
+    await this.assertCanViewPost(post, userId);
+    if (post.authorId === userId) {
+      throw new BadRequestException('You cannot appreciate your own post');
+    }
+    if (await this.members.isBlockedEitherWay(userId, post.authorId)) {
+      throw new ForbiddenException('Cannot appreciate this post');
+    }
+
+    const existing = await this.appreciations.findOne({
+      where: { postId, userId },
     });
+    if (existing) {
+      await this.appreciations.delete({ id: existing.id });
+    } else {
+      const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const sentToday = await this.appreciations.count({
+        where: { userId, createdAt: MoreThan(dayAgo) },
+      });
+      if (sentToday >= MAX_POST_APPRECIATIONS_PER_DAY) {
+        throw new BadRequestException('Daily appreciation limit reached');
+      }
+      await this.appreciations.save(
+        this.appreciations.create({ postId, userId }),
+      );
+    }
+
+    const meta = await this.appreciationMetaForPosts([postId], userId);
+    const row = meta.get(postId) ?? {
+      appreciationCount: 0,
+      viewerAppreciated: false,
+    };
+    return {
+      appreciated: row.viewerAppreciated,
+      appreciationCount: row.appreciationCount,
+    };
+  }
+
+  async listJoinedGroups(viewerId: string) {
+    await this.members.ensureProfileForUser(viewerId);
+    const memberships = await this.memberships.find({
+      where: { userId: viewerId },
+      order: { joinedAt: 'DESC' },
+      take: 50,
+    });
+    if (memberships.length === 0) return [];
+    const groupIds = memberships.map((m) => m.groupId);
+    const groups = await this.groups.find({ where: { id: In(groupIds) } });
+    const byId = new Map(groups.map((g) => [g.id, g]));
     const visible = [];
-    for (const post of rows) {
-      if (await this.members.isBlockedEitherWay(viewerId, post.authorId)) {
+    for (const membership of memberships) {
+      const group = byId.get(membership.groupId);
+      if (!group) continue;
+      if (await this.members.isBlockedEitherWay(viewerId, group.ownerId)) {
         continue;
       }
-      if (!(await this.canViewPost(post, viewerId))) continue;
-
-      if (scope === 'following') {
-        const followsAuthor =
-          post.authorId === viewerId || followingIds.has(post.authorId);
-        const joinedGroup = post.groupId
-          ? await this.isGroupMember(post.groupId, viewerId)
-          : false;
-        if (!followsAuthor && !joinedGroup) continue;
-      }
-
-      visible.push(await this.toPost(post, viewerId));
-      if (visible.length >= 50) break;
+      visible.push(await this.toGroupSummary(group, viewerId));
     }
     return visible;
+  }
+
+  private postNotificationHref(
+    post: GroupPostEntity,
+    group: GroupEntity | null,
+  ) {
+    if (group) {
+      return `/community/groups/${group.slug}?post=${post.id}`;
+    }
+    return `/feed#post-${post.id}`;
+  }
+
+  private encodeFeedCursor(createdAt: Date, id: string) {
+    return `${createdAt.toISOString()}|${id}`;
+  }
+
+  private parseFeedCursor(cursor: string): { createdAt: Date; id: string } | null {
+    const pipe = cursor.indexOf('|');
+    if (pipe <= 0) return null;
+    const createdAt = new Date(cursor.slice(0, pipe));
+    const id = cursor.slice(pipe + 1);
+    if (Number.isNaN(createdAt.getTime()) || !id) return null;
+    return { createdAt, id };
+  }
+
+  private async fetchFeedBatch(cursor: string | null, take: number) {
+    const parsed = cursor ? this.parseFeedCursor(cursor) : null;
+    const qb = this.posts
+      .createQueryBuilder('post')
+      .orderBy('post.createdAt', 'DESC')
+      .addOrderBy('post.id', 'DESC')
+      .take(take);
+    if (parsed) {
+      qb.andWhere(
+        '(post.createdAt < :createdAt OR (post.createdAt = :createdAt AND post.id < :id))',
+        { createdAt: parsed.createdAt, id: parsed.id },
+      );
+    }
+    return qb.getMany();
   }
 
   async discover(viewerId: string, query = '') {
@@ -280,17 +431,36 @@ export class SocialService {
       order: { createdAt: 'DESC' },
       take: 100,
     });
-    const groups = [];
+    const ranked: Array<{ score: number; group: GroupEntity }> = [];
     for (const group of allGroups) {
-      const haystack = `${group.name} ${group.description ?? ''}`.toLowerCase();
-      if (needle && !haystack.includes(needle)) continue;
       if (await this.members.isBlockedEitherWay(viewerId, group.ownerId)) {
         continue;
       }
-      groups.push(await this.toGroupSummary(group, viewerId));
+      const score = this.groupSearchScore(group, needle);
+      if (needle && score <= 0) continue;
+      ranked.push({ score, group });
+    }
+    ranked.sort((a, b) => b.score - a.score);
+    const groups = [];
+    for (const entry of ranked) {
+      groups.push(await this.toGroupSummary(entry.group, viewerId));
       if (groups.length >= 12) break;
     }
     return { members, groups };
+  }
+
+  private groupSearchScore(group: GroupEntity, needle: string) {
+    if (!needle) return group.createdAt.getTime();
+    const slug = group.slug.toLowerCase();
+    const name = group.name.toLowerCase();
+    const description = (group.description ?? '').toLowerCase();
+    if (slug === needle) return 1000;
+    if (slug.startsWith(needle)) return 800;
+    if (name.startsWith(needle)) return 700;
+    if (name.includes(needle)) return 500;
+    if (slug.includes(needle)) return 450;
+    if (description.includes(needle)) return 300;
+    return `${name} ${slug} ${description}`.includes(needle) ? 100 : 0;
   }
 
   async listNotifications(userId: string) {
@@ -298,7 +468,7 @@ export class SocialService {
     const lastReadAt = read?.lastReadAt ?? null;
     const items: Array<{
       id: string;
-      type: 'follow' | 'comment';
+      type: 'follow' | 'comment' | 'appreciation' | 'group_post';
       createdAt: Date;
       unread: boolean;
       text: string;
@@ -347,7 +517,8 @@ export class SocialService {
             userId,
           );
           const post = postMap.get(comment.postId);
-          const group = post?.groupId
+          if (!post) continue;
+          const group = post.groupId
             ? await this.groups.findOne({ where: { id: post.groupId } })
             : null;
           items.push({
@@ -356,9 +527,92 @@ export class SocialService {
             createdAt: comment.createdAt,
             unread: !lastReadAt || comment.createdAt > lastReadAt,
             text: 'commented on your post',
-            href: group
-              ? `/community/groups/${group.slug}?post=${comment.postId}`
-              : `/community?post=${comment.postId}`,
+            href: this.postNotificationHref(post, group),
+            actor: {
+              userId: actor.userId,
+              slug: actor.slug,
+              displayName: actor.displayName,
+              avatarUrl: actor.avatarUrl ?? null,
+            },
+          });
+        } catch {
+          // Skip blocked, suspended, or missing members.
+        }
+      }
+
+      const appreciationRows = await this.appreciations.find({
+        where: { postId: In(ownPosts.map((post) => post.id)) },
+        order: { createdAt: 'DESC' },
+        take: 100,
+      });
+      for (const appreciation of appreciationRows) {
+        if (appreciation.userId === userId) continue;
+        if (
+          await this.members.isBlockedEitherWay(userId, appreciation.userId)
+        ) {
+          continue;
+        }
+        try {
+          const actor = await this.members.getPublicProfile(
+            appreciation.userId,
+            userId,
+          );
+          const post = postMap.get(appreciation.postId);
+          if (!post) continue;
+          const group = post.groupId
+            ? await this.groups.findOne({ where: { id: post.groupId } })
+            : null;
+          items.push({
+            id: `appreciation:${appreciation.id}`,
+            type: 'appreciation',
+            createdAt: appreciation.createdAt,
+            unread: !lastReadAt || appreciation.createdAt > lastReadAt,
+            text: 'thanked your post',
+            href: this.postNotificationHref(post, group),
+            actor: {
+              userId: actor.userId,
+              slug: actor.slug,
+              displayName: actor.displayName,
+              avatarUrl: actor.avatarUrl ?? null,
+            },
+          });
+        } catch {
+          // Skip blocked, suspended, or missing members.
+        }
+      }
+    }
+
+    const memberships = await this.memberships.find({
+      where: { userId },
+    });
+    const joinedGroupIds = memberships.map((row) => row.groupId);
+    if (joinedGroupIds.length > 0) {
+      const groupPosts = await this.posts.find({
+        where: { groupId: In(joinedGroupIds) },
+        order: { createdAt: 'DESC' },
+        take: 40,
+      });
+      for (const post of groupPosts) {
+        if (post.authorId === userId) continue;
+        if (await this.members.isBlockedEitherWay(userId, post.authorId)) {
+          continue;
+        }
+        const group = post.groupId
+          ? await this.groups.findOne({ where: { id: post.groupId } })
+          : null;
+        if (!group) continue;
+        try {
+          const actor = await this.members.getPublicProfile(
+            post.authorId,
+            userId,
+          );
+          items.push({
+            id: `group_post:${post.id}`,
+            type: 'group_post',
+            createdAt: post.createdAt,
+            unread: !lastReadAt || post.createdAt > lastReadAt,
+            text: `posted in ${group.name}`,
+            href: `/community/groups/${group.slug}?post=${post.id}`,
             actor: {
               userId: actor.userId,
               slug: actor.slug,
@@ -395,6 +649,116 @@ export class SocialService {
     return { readAt: now.toISOString() };
   }
 
+  async getMemberWall(key: string, viewerId: string | null) {
+    const profile = await this.members.getPublicProfile(key, viewerId);
+    const targetId = profile.userId;
+
+    const rows = await this.posts.find({
+      where: { authorId: targetId },
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
+    const posts = [];
+    for (const post of rows) {
+      if (
+        viewerId &&
+        (await this.members.isBlockedEitherWay(viewerId, post.authorId))
+      ) {
+        continue;
+      }
+      if (!(await this.canViewPost(post, viewerId))) continue;
+      posts.push(await this.toPost(post, viewerId));
+      if (posts.length >= 15) break;
+    }
+
+    const memberships = await this.memberships.find({
+      where: { userId: targetId },
+    });
+    const groups = [];
+    for (const membership of memberships) {
+      const group = await this.groups.findOne({
+        where: { id: membership.groupId },
+      });
+      if (!group) continue;
+      if (
+        viewerId &&
+        (await this.members.isBlockedEitherWay(viewerId, group.ownerId))
+      ) {
+        continue;
+      }
+      if (group.privacy === 'private') {
+        if (!viewerId) continue;
+        const viewerIsMember = await this.isGroupMember(group.id, viewerId);
+        if (viewerId !== targetId && !viewerIsMember) continue;
+      } else if (!viewerId) {
+        continue;
+      }
+      groups.push(await this.toGroupSummary(group, viewerId));
+    }
+    groups.sort((a, b) => a.name.localeCompare(b.name));
+
+    const enrichedPosts = await this.withPostAppreciationMeta(posts, viewerId);
+    return { posts: enrichedPosts, groups };
+  }
+
+  private async appreciationMetaForPosts(
+    postIds: string[],
+    viewerId: string | null,
+  ) {
+    const map = new Map<
+      string,
+      { appreciationCount: number; viewerAppreciated: boolean }
+    >();
+    for (const id of postIds) {
+      map.set(id, { appreciationCount: 0, viewerAppreciated: false });
+    }
+    if (postIds.length === 0) return map;
+
+    const counts = await this.appreciations
+      .createQueryBuilder('a')
+      .select('a.postId', 'postId')
+      .addSelect('COUNT(*)', 'cnt')
+      .where('a.postId IN (:...postIds)', { postIds })
+      .groupBy('a.postId')
+      .getRawMany<{ postId: string; cnt: string }>();
+    for (const row of counts) {
+      map.set(row.postId, {
+        appreciationCount: Number(row.cnt) || 0,
+        viewerAppreciated: false,
+      });
+    }
+    if (viewerId) {
+      const mine = await this.appreciations.find({
+        where: { userId: viewerId, postId: In(postIds) },
+        select: { postId: true },
+      });
+      for (const row of mine) {
+        const current = map.get(row.postId) ?? {
+          appreciationCount: 0,
+          viewerAppreciated: false,
+        };
+        map.set(row.postId, { ...current, viewerAppreciated: true });
+      }
+    }
+    return map;
+  }
+
+  private async withPostAppreciationMeta<
+    T extends { id: string },
+  >(posts: T[], viewerId: string | null) {
+    const meta = await this.appreciationMetaForPosts(
+      posts.map((post) => post.id),
+      viewerId,
+    );
+    return posts.map((post) => {
+      const row = meta.get(post.id) ?? {
+        appreciationCount: 0,
+        viewerAppreciated: false,
+      };
+      return { ...post, ...row };
+    });
+  }
+
   private async assertCanViewPost(
     post: GroupPostEntity,
     viewerId: string | null,
@@ -420,7 +784,7 @@ export class SocialService {
     }
   }
 
-  private async canViewPost(post: GroupPostEntity, viewerId: string) {
+  private async canViewPost(post: GroupPostEntity, viewerId: string | null) {
     try {
       await this.assertCanViewPost(post, viewerId);
       return true;
@@ -519,6 +883,13 @@ export class SocialService {
     const group = post.groupId
       ? await this.groups.findOne({ where: { id: post.groupId } })
       : null;
+    const linkedEvent = post.eventId
+      ? await this.events.resolveLinkedEventForViewer(
+          post.eventId,
+          viewerId,
+          post.authorId,
+        )
+      : null;
     return {
       id: post.id,
       groupId: post.groupId,
@@ -526,6 +897,7 @@ export class SocialService {
       body: post.body,
       audience: post.audience ?? 'group',
       linkUrl: post.linkUrl ?? null,
+      linkedEvent,
       createdAt: post.createdAt,
       author: authorProfile
         ? {

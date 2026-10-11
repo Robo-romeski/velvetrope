@@ -25,8 +25,11 @@ import {
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import type {
+  GroupSummary,
   SocialComment,
   SocialDiscovery,
+  LinkableEvent,
+  SocialFeedPage,
   SocialPost,
 } from '@/lib/social';
 
@@ -54,32 +57,56 @@ export default function FeedPage() {
   const router = useRouter();
   const [scope, setScope] = useState<FeedScope>('following');
   const [posts, setPosts] = useState<SocialPost[]>([]);
+  const [feedCursor, setFeedCursor] = useState<string | null>(null);
+  const [joinedGroups, setJoinedGroups] = useState<GroupSummary[]>([]);
   const [discovery, setDiscovery] = useState<SocialDiscovery>({
     members: [],
     groups: [],
   });
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [postBody, setPostBody] = useState('');
   const [postLink, setPostLink] = useState('');
   const [postAudience, setPostAudience] =
     useState<'members' | 'followers'>('members');
+  const [postEventId, setPostEventId] = useState('');
+  const [linkableEvents, setLinkableEvents] = useState<LinkableEvent[]>([]);
   const [posting, setPosting] = useState(false);
   const [search, setSearch] = useState('');
   const [expandedPost, setExpandedPost] = useState<string | null>(null);
   const [comments, setComments] = useState<Record<string, SocialComment[]>>({});
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
 
+  const parseFeedPage = (feed: unknown): SocialFeedPage => {
+    if (feed && typeof feed === 'object' && 'items' in feed) {
+      const page = feed as SocialFeedPage;
+      return {
+        items: Array.isArray(page.items) ? page.items : [],
+        nextCursor: page.nextCursor ?? null,
+      };
+    }
+    return { items: Array.isArray(feed) ? (feed as SocialPost[]) : [], nextCursor: null };
+  };
+
   const load = useCallback(
     async (nextScope: FeedScope, query: string) => {
       setLoading(true);
       setError(null);
       try {
-        const [feed, found] = await Promise.all([
+        const [feed, found, mine, gatherings] = await Promise.all([
           apiGetAuth(`/social/feed?scope=${nextScope}`),
           apiGetAuth(`/social/discovery?q=${encodeURIComponent(query.trim())}`),
+          apiGetAuth('/social/joined-groups'),
+          apiGetAuth('/social/linkable-events'),
         ]);
-        setPosts(Array.isArray(feed) ? feed : []);
+        const page = parseFeedPage(feed);
+        setPosts(page.items);
+        setFeedCursor(page.nextCursor);
+        setJoinedGroups(Array.isArray(mine) ? (mine as GroupSummary[]) : []);
+        setLinkableEvents(
+          Array.isArray(gatherings) ? (gatherings as LinkableEvent[]) : [],
+        );
         setDiscovery(
           found && typeof found === 'object'
             ? (found as SocialDiscovery)
@@ -99,6 +126,30 @@ export default function FeedPage() {
     },
     [router],
   );
+
+  const loadMore = async () => {
+    if (!feedCursor || loadingMore) return;
+    setLoadingMore(true);
+    setError(null);
+    try {
+      const feed = await apiGetAuth(
+        `/social/feed?scope=${scope}&cursor=${encodeURIComponent(feedCursor)}`,
+      );
+      const page = parseFeedPage(feed);
+      setPosts((current) => [...current, ...page.items]);
+      setFeedCursor(page.nextCursor);
+    } catch (cause) {
+      if (isUnauthorized(cause)) {
+        router.replace('/auth/login?next=%2Ffeed');
+      } else {
+        setError(
+          cause instanceof Error ? cause.message : 'Could not load more posts',
+        );
+      }
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -124,9 +175,11 @@ export default function FeedPage() {
         body: postBody,
         linkUrl: postLink.trim() || null,
         audience: postAudience,
+        eventId: postEventId.trim() || null,
       });
       setPostBody('');
       setPostLink('');
+      setPostEventId('');
       setScope('following');
       await load('following', search);
     } catch (cause) {
@@ -166,6 +219,31 @@ export default function FeedPage() {
       setExpandedPost(postId);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not load comments');
+    }
+  };
+
+  const toggleAppreciation = async (post: SocialPost) => {
+    if (post.author.userId === user?.id) return;
+    try {
+      const result = (await apiPostAuth(
+        `/posts/${encodeURIComponent(post.id)}/appreciate`,
+        {},
+      )) as { appreciated: boolean; appreciationCount: number };
+      setPosts((current) =>
+        current.map((row) =>
+          row.id === post.id
+            ? {
+                ...row,
+                viewerAppreciated: result.appreciated,
+                appreciationCount: result.appreciationCount,
+              }
+            : row,
+        ),
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : 'Could not update thanks',
+      );
     }
   };
 
@@ -249,6 +327,21 @@ export default function FeedPage() {
                   </Select>
                 </FormField>
               </div>
+              {linkableEvents.length > 0 && (
+                <FormField label="Related gathering (optional)">
+                  <Select
+                    value={postEventId}
+                    onChange={(event) => setPostEventId(event.target.value)}
+                  >
+                    <option value="">None</option>
+                    {linkableEvents.map((event) => (
+                      <option key={event.id} value={event.id}>
+                        {event.title}
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+              )}
               <div className="flex items-center justify-between gap-4">
                 <p className="text-xs text-muted">
                   Text and links only. Blocks apply across the feed.
@@ -324,6 +417,14 @@ export default function FeedPage() {
                     <div className="mt-3 whitespace-pre-wrap text-[0.98rem] leading-7">
                       {post.body}
                     </div>
+                    {post.linkedEvent && (
+                      <Link
+                        href={`/events/${post.linkedEvent.id}`}
+                        className="mt-4 block border-l-2 border-accent bg-surface-subtle px-4 py-3 text-sm font-semibold text-accent hover:underline"
+                      >
+                        Gathering: {post.linkedEvent.title}
+                      </Link>
+                    )}
                     {post.linkUrl && (
                       <a
                         href={post.linkUrl}
@@ -336,12 +437,15 @@ export default function FeedPage() {
                     )}
                     <footer className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted">
                       {post.group ? (
-                        <Link
-                          href={`/community/groups/${post.group.slug}`}
-                          className="font-semibold text-accent"
-                        >
-                          {post.group.name}
-                        </Link>
+                        <>
+                          <Badge tone="neutral">Group</Badge>
+                          <Link
+                            href={`/community/groups/${post.group.slug}`}
+                            className="font-semibold text-accent"
+                          >
+                            {post.group.name}
+                          </Link>
+                        </>
                       ) : (
                         <Badge tone="neutral">
                           {post.audience === 'followers'
@@ -361,6 +465,26 @@ export default function FeedPage() {
                         {post.commentCount}{' '}
                         {post.commentCount === 1 ? 'comment' : 'comments'}
                       </button>
+                      {post.author.userId !== user?.id && (
+                        <button
+                          type="button"
+                          className={`font-semibold hover:text-accent ${
+                            post.viewerAppreciated ? 'text-accent' : ''
+                          }`}
+                          onClick={() => void toggleAppreciation(post)}
+                        >
+                          Thanks
+                          {post.appreciationCount > 0
+                            ? ` · ${post.appreciationCount}`
+                            : ''}
+                        </button>
+                      )}
+                      <Link
+                        href={`/trust/report?subjectType=post&subjectId=${encodeURIComponent(post.id)}`}
+                        className="font-semibold hover:text-accent"
+                      >
+                        Report
+                      </Link>
                     </footer>
 
                     {expandedPost === post.id && (
@@ -408,6 +532,19 @@ export default function FeedPage() {
                   </article>
                 );
               })}
+              {feedCursor && (
+                <div className="border-t border-border py-6 text-center">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={loadingMore}
+                    onClick={() => void loadMore()}
+                  >
+                    {loadingMore ? 'Loading…' : 'Load more'}
+                  </Button>
+                </div>
+              )}
             </section>
           )}
         </div>
@@ -462,8 +599,33 @@ export default function FeedPage() {
             </div>
           </section>
 
+          {joinedGroups.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="font-display text-xl font-semibold">Your groups</h2>
+              {joinedGroups.slice(0, 8).map((group) => (
+                <div key={group.id} className="border-b border-border pb-3">
+                  <Link
+                    href={`/community/groups/${group.slug}`}
+                    className="font-semibold hover:text-accent"
+                  >
+                    {group.name}
+                  </Link>
+                  <p className="mt-1 text-xs text-muted">
+                    {group.memberCount}{' '}
+                    {group.memberCount === 1 ? 'member' : 'members'}
+                  </p>
+                </div>
+              ))}
+              <Link href="/community" className="text-sm font-semibold text-accent">
+                Browse all groups →
+              </Link>
+            </section>
+          )}
+
           <section className="space-y-3">
-            <h2 className="font-display text-xl font-semibold">Topic groups</h2>
+            <h2 className="font-display text-xl font-semibold">
+              {joinedGroups.length > 0 ? 'Discover groups' : 'Topic groups'}
+            </h2>
             {discovery.groups.slice(0, 5).map((group) => (
               <div key={group.id} className="border-b border-border pb-3">
                 <Link

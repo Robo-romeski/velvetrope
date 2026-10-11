@@ -25,6 +25,16 @@ export class PostCommentsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post(':postId/appreciate')
+  async toggleAppreciation(
+    @Req() req: Request,
+    @Param('postId') postId: string,
+  ) {
+    const { sub } = getAuthUser(req);
+    return await this.social.togglePostAppreciation(postId, sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post(':postId/comments')
   async createComment(
     @Req() req: Request,

@@ -1,0 +1,1 @@
+export const MAX_POST_APPRECIATIONS_PER_DAY = 40;

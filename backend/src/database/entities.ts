@@ -30,6 +30,7 @@ import { MemberKudoEntity } from '../kudos/member-kudo.entity';
 import { DirectConversationEntity } from '../messages/direct-conversation.entity';
 import { DirectMessageEntity } from '../messages/direct-message.entity';
 import { SocialActivityReadEntity } from '../social/social-activity-read.entity';
+import { PostAppreciationEntity } from '../social/post-appreciation.entity';
 
 export const entities = [
   EventEntity,
@@ -64,4 +65,5 @@ export const entities = [
   DirectConversationEntity,
   DirectMessageEntity,
   SocialActivityReadEntity,
+  PostAppreciationEntity,
 ];

@@ -13,6 +13,7 @@ import {
   PageShell,
   TextLink,
 } from '@/app/components/ui';
+import { safePostAuthPath } from '@/lib/post-auth-redirect';
 
 function apiError(data: unknown, fallback: string) {
   if (data && typeof data === 'object' && 'message' in data) {
@@ -23,17 +24,13 @@ function apiError(data: unknown, fallback: string) {
   return fallback;
 }
 
-function safeNext(value: string | null) {
-  if (!value || !value.startsWith('/') || value.startsWith('//')) {
-    return '/';
-  }
-  return value;
-}
-
 export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = useMemo(() => safeNext(searchParams?.get('next') ?? null), [searchParams]);
+  const next = useMemo(
+    () => safePostAuthPath(searchParams?.get('next')),
+    [searchParams],
+  );
   const { refresh } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

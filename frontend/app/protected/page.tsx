@@ -32,7 +32,7 @@ export default function ProtectedPage() {
         <Alert tone="info">
           This page is available only to authenticated members.
         </Alert>
-        <TextLink href="/auth/login">Log in</TextLink>
+        <TextLink href="/auth/login?next=%2Fprotected">Log in</TextLink>
       </PageShell>
     );
   }

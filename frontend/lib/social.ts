@@ -15,10 +15,24 @@ export type SocialPost = {
   body: string;
   audience: 'group' | 'members' | 'followers';
   linkUrl: string | null;
+  linkedEvent: { id: string; title: string } | null;
   createdAt: string;
   author: SocialMember;
   commentCount: number;
+  appreciationCount: number;
+  viewerAppreciated: boolean;
   group: { slug: string; name: string; isMember: boolean } | null;
+};
+
+export type PostAppreciationState = {
+  appreciated: boolean;
+  appreciationCount: number;
+};
+
+export type LinkableEvent = {
+  id: string;
+  title: string;
+  date: string;
 };
 
 export type SocialComment = {
@@ -46,7 +60,7 @@ export type SocialDiscovery = {
 
 export type SocialNotification = {
   id: string;
-  type: 'follow' | 'comment';
+  type: 'follow' | 'comment' | 'appreciation' | 'group_post';
   createdAt: string;
   unread: boolean;
   text: string;
@@ -57,4 +71,14 @@ export type SocialNotification = {
 export type SocialNotifications = {
   unreadCount: number;
   items: SocialNotification[];
+};
+
+export type MemberWall = {
+  posts: SocialPost[];
+  groups: GroupSummary[];
+};
+
+export type SocialFeedPage = {
+  items: SocialPost[];
+  nextCursor: string | null;
 };

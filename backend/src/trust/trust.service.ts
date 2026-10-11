@@ -24,6 +24,8 @@ import { PhotoCheckinService } from '../checkin/photo-checkin.service';
 import { ChatMessageEntity } from '../chat/chat-message.entity';
 import { EventFeedbackEntity } from '../feedback/event-feedback.entity';
 import { PersonaService } from '../identity/persona.service';
+import { GroupPostEntity } from '../social/group-post.entity';
+import { PostCommentEntity } from '../social/post-comment.entity';
 
 const REPORT_CATEGORIES: ReportCategory[] = [
   'harassment',
@@ -55,6 +57,10 @@ export class TrustService {
     private readonly chatMessages: Repository<ChatMessageEntity>,
     @InjectRepository(EventFeedbackEntity)
     private readonly feedback: Repository<EventFeedbackEntity>,
+    @InjectRepository(GroupPostEntity)
+    private readonly groupPosts: Repository<GroupPostEntity>,
+    @InjectRepository(PostCommentEntity)
+    private readonly postComments: Repository<PostCommentEntity>,
     private readonly photoCheckin: PhotoCheckinService,
     private readonly persona: PersonaService,
     private readonly email: EmailService,
@@ -66,7 +72,13 @@ export class TrustService {
 
   async createReport(input: {
     reporterSub: string;
-    subjectType: 'event' | 'user' | 'message' | 'content';
+    subjectType:
+      | 'event'
+      | 'user'
+      | 'message'
+      | 'content'
+      | 'post'
+      | 'comment';
     subjectId: string;
     category: string;
     details: string;
@@ -85,6 +97,8 @@ export class TrustService {
     if (!REPORT_CATEGORIES.includes(category)) {
       throw new BadRequestException('Invalid report category');
     }
+
+    await this.assertReportSubjectExists(input.subjectType, subjectId);
 
     const saved = await this.reports.save(
       this.reports.create({
@@ -300,6 +314,34 @@ export class TrustService {
     await this.users.delete({ id: userId });
 
     return { ok: true };
+  }
+
+  private async assertReportSubjectExists(
+    subjectType: TrustReportEntity['subjectType'],
+    subjectId: string,
+  ) {
+    if (subjectType === 'post') {
+      const post = await this.groupPosts.findOne({ where: { id: subjectId } });
+      if (!post) throw new NotFoundException('Post not found');
+      return;
+    }
+    if (subjectType === 'comment') {
+      const comment = await this.postComments.findOne({
+        where: { id: subjectId },
+      });
+      if (!comment) throw new NotFoundException('Comment not found');
+      return;
+    }
+    if (subjectType === 'event') {
+      const event = await this.events.findOne({ where: { id: subjectId } });
+      if (!event) throw new NotFoundException('Event not found');
+      return;
+    }
+    if (subjectType === 'user') {
+      const user = await this.users.findOne({ where: { id: subjectId } });
+      if (!user) throw new NotFoundException('User not found');
+      return;
+    }
   }
 
   private async notifyAdmins(report: TrustReportEntity): Promise<void> {

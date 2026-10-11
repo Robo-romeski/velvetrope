@@ -11,6 +11,7 @@ import {
   getAccessTokenClient,
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import type { GroupSummary, MemberWall, SocialPost } from '@/lib/social';
 import {
   Alert,
   Badge,
@@ -25,6 +26,15 @@ import {
   Textarea,
   TextLink,
 } from '@/app/components/ui';
+
+function formatTime(iso: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(iso));
+}
 
 type PublicProfile = {
   userId: string;
@@ -73,6 +83,7 @@ export default function MemberProfilePage() {
   const [kudoSending, setKudoSending] = useState(false);
   const [kudoSent, setKudoSent] = useState(false);
   const [messageStarting, setMessageStarting] = useState(false);
+  const [wall, setWall] = useState<MemberWall | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -97,6 +108,16 @@ export default function MemberProfilePage() {
         setKudos(Array.isArray(list) ? list : []);
       } catch {
         setKudos([]);
+      }
+      try {
+        const wallData = token
+          ? ((await apiGetAuth(
+              `/members/${encodeURIComponent(key)}/wall`,
+            )) as MemberWall)
+          : ((await apiGet(`/members/${encodeURIComponent(key)}/wall`)) as MemberWall);
+        setWall(wallData);
+      } catch {
+        setWall(null);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Member not found');
@@ -190,8 +211,8 @@ export default function MemberProfilePage() {
     return (
       <PageShell size="narrow">
         <EmptyState title="Member not found" description={error ?? undefined} />
-        <TextLink href="/community" className="mt-4 inline-block">
-          Back to community
+        <TextLink href="/feed" className="mt-4 inline-block">
+          Back to community feed
         </TextLink>
       </PageShell>
     );
@@ -319,9 +340,127 @@ export default function MemberProfilePage() {
           </div>
         )}
       </Card>
+      {user && wall && (
+        <>
+          <section className="space-y-3">
+            <h2 className="font-display text-xl font-semibold tracking-tight">
+              Recent posts
+            </h2>
+            {wall.posts.length === 0 ? (
+              <EmptyState
+                title="No posts visible to you"
+                description={
+                  isSelf
+                    ? 'Share something from the community feed when you are ready.'
+                    : 'They may publish to followers only, or have not posted yet.'
+                }
+              />
+            ) : (
+              <ul className="space-y-0 border-t border-border">
+                {wall.posts.map((post: SocialPost) => (
+                  <li
+                    key={post.id}
+                    className="border-b border-border py-5"
+                  >
+                    <time
+                      dateTime={post.createdAt}
+                      className="text-xs text-muted"
+                    >
+                      {formatTime(post.createdAt)}
+                    </time>
+                    <p className="mt-2 whitespace-pre-wrap text-[0.98rem] leading-7">
+                      {post.body}
+                    </p>
+                    {post.linkUrl && (
+                      <a
+                        href={post.linkUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 block text-sm font-semibold text-accent hover:underline"
+                      >
+                        {post.linkUrl} ↗
+                      </a>
+                    )}
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted">
+                      {post.group ? (
+                        <Link
+                          href={`/community/groups/${post.group.slug}`}
+                          className="font-semibold text-accent"
+                        >
+                          {post.group.name}
+                        </Link>
+                      ) : (
+                        <Badge tone="neutral">
+                          {post.audience === 'followers' ? 'Followers' : 'Members'}
+                        </Badge>
+                      )}
+                      <span>
+                        {post.commentCount}{' '}
+                        {post.commentCount === 1 ? 'comment' : 'comments'}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {!isSelf && wall.posts.length > 0 && (
+              <TextLink href="/feed">View in community feed</TextLink>
+            )}
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="font-display text-xl font-semibold tracking-tight">
+              Topic groups
+            </h2>
+            {wall.groups.length === 0 ? (
+              <EmptyState
+                title="No groups shown"
+                description={
+                  isSelf
+                    ? 'Join or create a group from the community directory.'
+                    : 'Private groups stay hidden unless you share membership.'
+                }
+              />
+            ) : (
+              <ul className="divide-y divide-border border border-border">
+                {wall.groups.map((group: GroupSummary) => (
+                  <li key={group.id} className="px-4 py-3">
+                    <Link
+                      href={`/community/groups/${group.slug}`}
+                      className="font-semibold text-accent hover:underline"
+                    >
+                      {group.name}
+                    </Link>
+                    {group.description && (
+                      <p className="mt-1 text-sm text-muted line-clamp-2">
+                        {group.description}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-muted">
+                      {group.memberCount}{' '}
+                      {group.memberCount === 1 ? 'member' : 'members'}
+                      {group.privacy === 'private' ? ' · Private' : ''}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <TextLink href="/community">Browse all groups</TextLink>
+          </section>
+        </>
+      )}
+
+      {!user && (
+        <Alert tone="info">
+          Log in to see posts and groups this member shares with the community.
+        </Alert>
+      )}
+
       {kudos.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Kudos shared with them</h2>
+          <h2 className="font-display text-xl font-semibold tracking-tight">
+            Kudos shared with them
+          </h2>
           <ul className="space-y-3">
             {kudos.map((k) => (
               <Card key={k.id} className="p-4 text-sm space-y-1">

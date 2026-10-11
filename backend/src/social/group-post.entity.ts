@@ -34,6 +34,9 @@ export class GroupPostEntity {
   @Column({ type: 'text', nullable: true })
   linkUrl!: string | null;
 
+  @Column({ type: 'text', nullable: true })
+  eventId!: string | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 

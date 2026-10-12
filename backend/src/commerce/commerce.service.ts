@@ -49,6 +49,7 @@ export class CommerceService {
         providerRef: input.providerRef,
         currency: input.currency ?? 'usd',
         totalCents: input.totalCents,
+        createdAt: new Date(),
       }),
     );
     for (const line of input.lines) {
@@ -143,6 +144,7 @@ export class CommerceService {
           orderLineId: line.id,
           amountCents: line.amountCents,
           reason: reason ?? null,
+          createdAt: new Date(),
         }),
       );
       await this.entitlements.update(
@@ -194,6 +196,7 @@ export class CommerceService {
           productType: line.productType,
           productId: line.productId,
           orderLineId: line.id,
+          grantedAt: new Date(),
         }),
       );
     }

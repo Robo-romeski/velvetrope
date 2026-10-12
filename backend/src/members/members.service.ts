@@ -70,6 +70,7 @@ export class MembersService {
     const user = await this.users.findOne({ where: { id: userId } });
     const label =
       seedName?.trim() || user?.name?.trim() || user?.email || userId;
+    const now = new Date();
     const profile = this.profiles.create({
       userId,
       slug: uniqueSlug(label),
@@ -81,6 +82,8 @@ export class MembersService {
       visibility: MemberProfileEntity.defaultVisibility(),
       educator: false,
       messagePermission: 'following',
+      createdAt: now,
+      updatedAt: now,
     });
     return await this.profiles.save(profile);
   }

@@ -3419,5 +3419,127 @@
         "platform-social-v2"
       ]
     }
+  },
+  "m0-demo": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Preflight — Postgres Docker stack",
+        "description": "Run DEMO.md stack on Postgres profile; healthz OK; backend on DATABASE_URL not SQLite.",
+        "details": "docker compose -f docker-compose.yml -f docker-compose.postgres.yml --profile postgres up -d --build\ncurl -fsS http://localhost:3010/healthz",
+        "testStrategy": "docker exec backend printenv DATABASE_URL; curl healthz",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "2",
+        "title": "Preflight — Host payments connected",
+        "description": "Host account with host role; Payments shows connected (simulated or Stripe test).",
+        "details": "Register via Host an event; complete Payments onboarding before paid ticket demo.",
+        "testStrategy": "Manual host window; GET stripe/connect status or UI copy",
+        "priority": "high",
+        "dependencies": ["1"],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "3",
+        "title": "Demo script — Event setup",
+        "description": "Publish $1 invite-only demo event; home shows event; copy invite code.",
+        "details": "docs/DEMO.md §3. Persona and photo check-in OFF; start within 48h.",
+        "testStrategy": "Manual host flow; home page lists event",
+        "priority": "high",
+        "dependencies": ["2"],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "4",
+        "title": "Demo script — Apply and approve",
+        "description": "Attendee applies with invite; host approves; My applications shows states.",
+        "details": "docs/DEMO.md §4 apply + approve sections.",
+        "testStrategy": "Two browser profiles; applications e2e mirrors API",
+        "priority": "high",
+        "dependencies": ["3"],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "5",
+        "title": "Demo script — Pay, ticket, idempotent return",
+        "description": "Checkout $1.00; one QR ticket; refresh return URL does not duplicate ticket.",
+        "details": "Simulation or Stripe 4242; journey.e2e-spec.ts covers API idempotency.",
+        "testStrategy": "Manual attendee + journey e2e",
+        "priority": "high",
+        "dependencies": ["4"],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": "6",
+        "title": "Demo script — Check-in and analytics",
+        "description": "First check-in succeeds; second rejected; analytics counts update.",
+        "details": "docs/DEMO.md §4 check-in + analytics.",
+        "testStrategy": "Manual host + checkin.e2e-spec.ts",
+        "priority": "high",
+        "dependencies": ["5"],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "7",
+        "title": "Acceptance — Auth and navigation UX",
+        "description": "Signup roles, login next redirect, host vs attendee nav separation.",
+        "details": "docs/DEMO.md §5 checklist items 2–5.",
+        "testStrategy": "Manual two profiles",
+        "priority": "medium",
+        "dependencies": ["1"],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "8",
+        "title": "Acceptance — Responsive smoke",
+        "description": "Primary demo path at desktop and mobile widths.",
+        "details": "docs/DEMO.md §5 item 12.",
+        "testStrategy": "Browser resize or mobile emulation",
+        "priority": "medium",
+        "dependencies": ["6"],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "9",
+        "title": "Regression — Automated contract",
+        "description": "Backend e2e suite green (journey, stripe, checkin, applications, invites).",
+        "details": "cd backend && npm run test:e2e",
+        "testStrategy": "80/80 passing on main",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": "10",
+        "title": "Doc sync — M0 sign-off",
+        "description": "Check off M0 in PRODUCT_PLAN.md; log simulation vs Stripe in rehearsal notes.",
+        "details": "docs/PRODUCT_PLAN.md §8 M0 acceptance criteria.",
+        "testStrategy": "Review checklist with user",
+        "priority": "low",
+        "dependencies": ["6", "7", "8"],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2026-10-12T08:55:00.000Z",
+      "taskCount": 10,
+      "completedCount": 8,
+      "tags": ["m0-demo"],
+      "description": "M0 event demo checklist from docs/DEMO.md"
+    }
   }
 }

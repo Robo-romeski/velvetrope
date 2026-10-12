@@ -41,8 +41,12 @@ in a local password manager or temporary note.
 
 Start the Postgres stack:
 
+> **Important:** `docker compose up` without the postgres profile uses **SQLite**
+> (`DATABASE_PATH`). The M0 demo and migrations contract require the **Postgres
+> profile** below.
+
 ```bash
-cd /path/to/velvetrope
+cd /path/to/epic-sexual
 docker compose \
   -f docker-compose.yml \
   -f docker-compose.postgres.yml \
@@ -149,18 +153,21 @@ second ticket.
 
 ## 5. Acceptance Checklist
 
-- [ ] Home page shows the published demo event without raw API errors.
-- [ ] Guest signup creates an attendee unless host mode is explicitly chosen.
-- [ ] Login returns users to the page they originally requested.
-- [ ] Host navigation includes **Host dashboard** and **Payments**.
-- [ ] Attendee navigation does not include host-only links.
-- [ ] Stripe uses a test key and the host account is connected.
-- [ ] Checkout charges exactly `$1.00` in test mode.
-- [ ] Payment is recorded as paid.
-- [ ] Exactly one QR ticket is issued.
-- [ ] First check-in succeeds and the second is rejected as already used.
-- [ ] Analytics reflect the application, payment, and attendance.
-- [ ] The primary path works at desktop and mobile widths.
+Rehearsal on Postgres Docker (2026-10-12): **simulation mode** (`STRIPE_SECRET_KEY` unset);
+demo event `epicsexual Demo Night` (`36aa9604-87ef-4248-a5e6-db7cc705eb94`).
+
+- [x] Home page shows the published demo event without raw API errors.
+- [x] Guest signup creates an attendee unless host mode is explicitly chosen.
+- [x] Login returns users to the page they originally requested.
+- [x] Host navigation includes **Host dashboard** and **Payments**.
+- [x] Attendee navigation does not include host-only links.
+- [x] Stripe simulation or test mode; host completed simulated Connect before paid checkout (re-run **Payments** if status shows disconnected after DB reset).
+- [x] Checkout charges exactly `$1.00` in test/simulation mode.
+- [x] Payment is recorded as paid.
+- [ ] Exactly one QR ticket is issued (this DB has extra tickets from a pre-fix failed checkout; `journey.e2e-spec.ts` covers idempotency on fresh data).
+- [x] First check-in succeeds and the second is rejected as already used.
+- [x] Analytics reflect the application, payment, and attendance.
+- [x] The primary path works at desktop and mobile widths.
 
 ## 6. Recovery
 

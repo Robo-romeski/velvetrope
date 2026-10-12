@@ -1,0 +1,52 @@
+# M0 Demo Checklist — Product Requirements
+
+Source of truth: docs/DEMO.md. Goal: rehearseable paid-event journey on Postgres Docker profile for investors/hosts.
+
+## Task 1: Preflight — Postgres Docker stack
+- Start with docker compose -f docker-compose.yml -f docker-compose.postgres.yml --profile postgres up -d --build
+- curl http://localhost:3010/healthz returns ok
+- Backend uses DATABASE_URL Postgres (not SQLite DATABASE_PATH)
+- Document host/attendee account strategy in local notes only
+
+## Task 2: Preflight — Host payments connected
+- Host account registered via Host an event flow (host role)
+- Payments page shows connected (simulated Connect if no STRIPE_SECRET_KEY, else Stripe test onboarding)
+
+## Task 3: Demo script — Event setup
+- Host creates draft event (title, start within 48h, capacity 20, ticket $1.00)
+- Persona IDV and reference photo OFF
+- Publish event; home/discovery shows published event without API errors
+- Generate invite code on Invites tab
+
+## Task 4: Demo script — Apply and approve
+- Attendee applies with invite + CoC (Events apply OR redeem invite path)
+- My applications shows pending
+- Host approves on Applications page
+- Optional: invite conversion visible on Invites
+
+## Task 5: Demo script — Pay, ticket, idempotent return
+- Attendee opens Ticket from My applications after approval
+- Checkout charges exactly $1.00 (simulation or Stripe test card 4242...)
+- Payment recorded paid; exactly one QR ticket issued
+- Refreshing checkout return URL does not create second ticket
+
+## Task 6: Demo script — Check-in and analytics
+- Host verifies token from attendee QR on Check-in page
+- Second verify rejected (already used)
+- Analytics show application, payment, attendance counts updated
+
+## Task 7: Acceptance — Auth and navigation UX
+- Guest signup creates attendee unless host mode chosen
+- Login redirects to originally requested page (next param)
+- Host nav includes Host dashboard and Payments
+- Attendee nav excludes host-only links
+
+## Task 8: Acceptance — Responsive smoke
+- Primary demo path usable at desktop and mobile viewport widths
+
+## Task 9: Regression — Automated contract
+- cd backend && npm run test:e2e — all green (journey, stripe, checkin, applications, invites)
+
+## Task 10: Doc sync
+- Mark M0 items in docs/PRODUCT_PLAN.md when checklist complete
+- Note any DEMO.md deviations (simulation vs Stripe keys) in rehearsal log

@@ -18,7 +18,7 @@ TOKEN="$(
   curl -fsS "$API/auth/login" \
     -H 'Content-Type: application/json' \
     -d "{\"email\":\"$ATTENDEE_EMAIL\",\"password\":\"$ATTENDEE_PASSWORD\"}" \
-    | python3 -c 'import json,sys; print(json.load(sys.stdin)["accessToken"])'
+    | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("token") or d.get("accessToken",""))'
 )"
 
 auth() { curl -fsS "$@" -H "Authorization: Bearer $TOKEN"; }
@@ -27,7 +27,7 @@ echo "== feed =="
 auth "$API/social/feed?limit=3" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("items", len(d.get("items") or []))'
 
 echo "== groups discover =="
-auth "$API/social/discover?limit=3" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("groups", len(d.get("groups") or []))'
+auth "$API/social/discovery?limit=3" | python3 -c 'import json,sys; d=json.load(sys.stdin); g=d.get("groups") if isinstance(d,dict) else d; print("groups", len(g or []))'
 
 echo "== messages =="
 auth "$API/messages/conversations" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("conversations", len(d) if isinstance(d,list) else 0)'

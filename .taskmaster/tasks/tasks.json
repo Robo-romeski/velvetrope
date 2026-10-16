@@ -3474,7 +3474,7 @@
         "testStrategy": "Manual attendee + journey e2e",
         "priority": "high",
         "dependencies": ["4"],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       },
       {
@@ -3529,15 +3529,15 @@
         "testStrategy": "Review checklist with user",
         "priority": "low",
         "dependencies": ["6", "7", "8"],
-        "status": "pending",
+        "status": "done",
         "subtasks": []
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-10-12T08:55:00.000Z",
+      "lastModified": "2026-10-16T15:15:00.000Z",
       "taskCount": 10,
-      "completedCount": 8,
+      "completedCount": 10,
       "tags": ["m0-demo"],
       "description": "M0 event demo checklist from docs/DEMO.md"
     }

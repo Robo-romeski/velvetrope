@@ -6,6 +6,7 @@ const footerLinks = [
   { href: '/community', label: 'Conversation' },
   { href: '/learn', label: 'Learn' },
   { href: '/trust/code-of-conduct', label: 'Code of conduct' },
+  { href: '/contact', label: 'Contact' },
   { href: '/trust/report', label: 'Report a concern' },
 ] as const;
 

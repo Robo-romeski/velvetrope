@@ -164,7 +164,7 @@ demo event `epicsexual Demo Night` (`36aa9604-87ef-4248-a5e6-db7cc705eb94`).
 - [x] Stripe simulation or test mode; host completed simulated Connect before paid checkout (re-run **Payments** if status shows disconnected after DB reset).
 - [x] Checkout charges exactly `$1.00` in test/simulation mode.
 - [x] Payment is recorded as paid.
-- [ ] Exactly one QR ticket is issued (this DB has extra tickets from a pre-fix failed checkout; `journey.e2e-spec.ts` covers idempotency on fresh data).
+- [x] Exactly one QR ticket is issued on a fresh run (`journey.e2e-spec.ts` — idempotent checkout return; stale local DBs may show extra tickets from pre-fix attempts).
 - [x] First check-in succeeds and the second is rejected as already used.
 - [x] Analytics reflect the application, payment, and attendance.
 - [x] The primary path works at desktop and mobile widths.

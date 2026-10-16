@@ -47,6 +47,7 @@ services:
       - APP_BASE_URL=https://${DOMAIN}
       - API_SERVER_BASE_URL=http://backend:3010
       - NEXT_PUBLIC_API_BASE_URL=https://api.${DOMAIN}
+      - CONTACT_EMAIL=${CONTACT_EMAIL:-}
 
 volumes:
   caddy-data:

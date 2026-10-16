@@ -222,7 +222,7 @@ Current nav is event-centric (`AppNav`: Events, host dashboard, payments). Targe
 
 Each phase is independently shippable. **Not** a single big-bang launch.
 
-### Milestone M0 — Event demo stable (CURRENT — **active: Taskmaster tag `m0-demo`**)
+### Milestone M0 — Event demo stable — **DONE** (Taskmaster tag `m0-demo`)
 
 **Goal:** Rehearsable paid-event journey for investors and hosts.
 
@@ -230,7 +230,7 @@ Each phase is independently shippable. **Not** a single big-bang launch.
 
 **Acceptance criteria**
 
-- [ ] All items in `docs/DEMO.md` §5 checklist pass on Postgres docker profile (manual rehearsal — one open item: single ticket count on stale demo DB; e2e contract green).
+- [x] All items in `docs/DEMO.md` §5 checklist pass on Postgres docker profile (manual rehearsal 2026-10-12; ticket idempotency on fresh data via `journey.e2e-spec.ts`).
 - [x] Backend e2e: auth, journey, stripe, checkin, applications, invites green (80 tests, local run).
 - [x] Frontend production build green (Docker image build on `main`).
 
@@ -238,7 +238,7 @@ Each phase is independently shippable. **Not** a single big-bang launch.
 
 ---
 
-### Milestone M1 — Community participation (profiles + groups lite) — **IN PROGRESS (core shipped)**
+### Milestone M1 — Community participation (profiles + groups lite) — **CURRENT (core shipped)**
 
 **Goal:** Members present themselves and join topic spaces without dating mechanics.
 

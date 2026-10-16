@@ -116,6 +116,35 @@ ssh -i ~/.ssh/YOUR.pem ubuntu@STATIC_IP 'cd ~/epic-sexual && sudo docker compose
 
 Backend runs TypeORM migrations on startup when `DATABASE_URL` is set.
 
+### GitHub deploy key (recommended once)
+
+On the server:
+
+```bash
+ssh-keygen -t ed25519 -N "" -f ~/.ssh/github_velvetrope_deploy -C velvetkey-app
+cat ~/.ssh/github_velvetrope_deploy.pub
+```
+
+Add the public key in GitHub → **Robo-romeski/velvetrope** → Settings → Deploy keys → **Read-only**.
+
+Then configure git on the server:
+
+```bash
+cd ~/epic-sexual
+git remote set-url origin git@github-velvetrope:Robo-romeski/velvetrope.git
+mkdir -p ~/.ssh
+cat >> ~/.ssh/config <<'EOF'
+Host github-velvetrope
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/github_velvetrope_deploy
+  IdentitiesOnly yes
+EOF
+chmod 600 ~/.ssh/config ~/.ssh/github_velvetrope_deploy
+git fetch origin
+git pull --ff-only origin main
+```
+
 ## Cost sketch
 
 - Lightsail **medium** (~$24/mo) + static IP (included when attached) + domain registration (registrar).

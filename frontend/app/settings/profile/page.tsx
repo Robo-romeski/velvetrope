@@ -389,6 +389,12 @@ export default function ProfileSettingsPage() {
           <Link href="/settings/blocks" className="text-accent">
             Blocked members
           </Link>
+          <Link href="/settings/privacy" className="text-accent">
+            Privacy
+          </Link>
+          <Link href="/settings/payouts" className="text-accent">
+            Payouts
+          </Link>
         </div>
       </Card>
     </PageShell>

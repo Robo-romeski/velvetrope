@@ -326,6 +326,12 @@ export function AppNav() {
                 <Link href="/settings/kudos" className={navLinkClass(false)}>
                   Kudos
                 </Link>
+                <Link href="/settings/privacy" className={navLinkClass(false)}>
+                  Privacy
+                </Link>
+                <Link href="/settings/payouts" className={navLinkClass(false)}>
+                  Payouts
+                </Link>
                 <Link href="/messages" className={navLinkClass(false)}>
                   Messages
                 </Link>

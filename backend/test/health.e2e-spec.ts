@@ -33,4 +33,20 @@ describe('Health (e2e)', () => {
     const res = await request(app.getHttpServer()).get('/healthz').expect(200);
     expect(res.headers['x-content-type-options']).toBe('nosniff');
   });
+
+  it('/healthz/integrations (GET) returns integration flags', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/healthz/integrations')
+      .expect(200);
+    expect(res.body).toMatchObject({
+      database: expect.any(Boolean),
+      stripe: {
+        secretKey: expect.any(Boolean),
+        webhookSecret: expect.any(Boolean),
+        liveMode: expect.any(Boolean),
+      },
+      email: { resend: expect.any(Boolean), fromConfigured: expect.any(Boolean) },
+      s3: { bucket: expect.any(Boolean) },
+    });
+  });
 });

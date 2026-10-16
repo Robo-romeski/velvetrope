@@ -3,6 +3,7 @@ import { Geist_Mono, Source_Sans_3, Source_Serif_4 } from 'next/font/google';
 import Providers from './providers';
 import { AppNav } from './components/AppNav';
 import { AppFooter } from './components/AppFooter';
+import { AppMobileTabBar } from './components/AppMobileTabBar';
 import './globals.css';
 
 const sourceSans = Source_Sans_3({
@@ -52,7 +53,8 @@ export default function RootLayout({
       >
         <Providers>
           <AppNav />
-          <div className="flex-1">{children}</div>
+          <div className="flex-1 pb-14 md:pb-0">{children}</div>
+          <AppMobileTabBar />
           <AppFooter />
         </Providers>
       </body>

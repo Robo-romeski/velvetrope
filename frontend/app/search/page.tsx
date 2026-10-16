@@ -1,8 +1,8 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { apiGetAuth, isUnauthorized } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import {
@@ -30,31 +30,71 @@ type SearchResult = {
 };
 
 export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <PageShell size="narrow">
+          <LoadingState />
+        </PageShell>
+      }
+    >
+      <SearchPageContent />
+    </Suspense>
+  );
+}
+
+function SearchPageContent() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const loginNext = useMemo(() => {
+    const q = searchParams?.get('q')?.trim();
+    return q ? `/search?q=${encodeURIComponent(q)}` : '/search';
+  }, [searchParams]);
   const [query, setQuery] = useState('');
   const [result, setResult] = useState<SearchResult | null>(null);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const performSearch = useCallback(
+    async (rawQuery: string) => {
+      const trimmed = rawQuery.trim();
+      if (!trimmed) {
+        setResult(null);
+        return;
+      }
+      setSearching(true);
+      setError(null);
+      try {
+        const data = (await apiGetAuth(
+          `/search?q=${encodeURIComponent(trimmed)}`,
+        )) as SearchResult;
+        setResult(data);
+      } catch (e) {
+        if (isUnauthorized(e)) {
+          const next = `/search?q=${encodeURIComponent(trimmed)}`;
+          router.replace(`/auth/login?next=${encodeURIComponent(next)}`);
+        } else {
+          setError(e instanceof Error ? e.message : 'Search failed');
+        }
+      } finally {
+        setSearching(false);
+      }
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+    const q = searchParams?.get('q')?.trim() ?? '';
+    if (!q) return;
+    setQuery(q);
+    void performSearch(q);
+  }, [authLoading, user, searchParams, performSearch]);
+
   const runSearch = async (event?: FormEvent) => {
     event?.preventDefault();
-    setSearching(true);
-    setError(null);
-    try {
-      const data = (await apiGetAuth(
-        `/search?q=${encodeURIComponent(query.trim())}`,
-      )) as SearchResult;
-      setResult(data);
-    } catch (e) {
-      if (isUnauthorized(e)) {
-        router.replace(`/auth/login?next=${encodeURIComponent('/search')}`);
-      } else {
-        setError(e instanceof Error ? e.message : 'Search failed');
-      }
-    } finally {
-      setSearching(false);
-    }
+    await performSearch(query);
   };
 
   if (authLoading) {
@@ -69,7 +109,7 @@ export default function SearchPage() {
     return (
       <PageShell size="narrow">
         <Alert tone="info">
-          <Link href={`/auth/login?next=${encodeURIComponent('/search')}`}>
+          <Link href={`/auth/login?next=${encodeURIComponent(loginNext)}`}>
             Log in
           </Link>{' '}
           to search members, groups, learning, and events.

@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MembersService } from '../members/members.service';
@@ -110,6 +111,7 @@ export class EducationService {
     const contentType = input.contentType ?? 'guide';
     const now = new Date();
     const entity = this.contents.create({
+      id: randomUUID(),
       creatorId,
       slug: uniqueSlug(title),
       title,
@@ -283,6 +285,7 @@ export class EducationService {
     const now = new Date();
     const lesson = await this.lessons.save(
       this.lessons.create({
+        id: randomUUID(),
         contentId: content.id,
         sortOrder: (last?.sortOrder ?? -1) + 1,
         title: title.slice(0, 200),
@@ -341,6 +344,7 @@ export class EducationService {
     if (!existing) {
       await this.progress.save(
         this.progress.create({
+          id: randomUUID(),
           userId,
           contentId: content.id,
           lessonId,

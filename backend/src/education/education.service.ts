@@ -108,6 +108,7 @@ export class EducationService {
       throw new BadRequestException('Title is required');
     }
     const contentType = input.contentType ?? 'guide';
+    const now = new Date();
     const entity = this.contents.create({
       creatorId,
       slug: uniqueSlug(title),
@@ -119,6 +120,8 @@ export class EducationService {
       groupId: input.groupId?.trim() || null,
       externalUrl: this.optionalUrl(input.externalUrl),
       priceCents: 0,
+      createdAt: now,
+      updatedAt: now,
     });
     const saved = await this.contents.save(entity);
     return this.getDetail(saved.slug, creatorId);
@@ -277,6 +280,7 @@ export class EducationService {
       where: { contentId: content.id },
       order: { sortOrder: 'DESC' },
     });
+    const now = new Date();
     const lesson = await this.lessons.save(
       this.lessons.create({
         contentId: content.id,
@@ -284,6 +288,8 @@ export class EducationService {
         title: title.slice(0, 200),
         body: body.slice(0, 50_000),
         isPreview: input.isPreview === true,
+        createdAt: now,
+        updatedAt: now,
       }),
     );
     return lesson;
@@ -338,6 +344,7 @@ export class EducationService {
           userId,
           contentId: content.id,
           lessonId,
+          completedAt: new Date(),
         }),
       );
     }

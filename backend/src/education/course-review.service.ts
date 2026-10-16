@@ -55,6 +55,7 @@ export class CourseReviewService {
         'Review comment must be 2000 characters or fewer',
       );
     }
+    const now = new Date();
     return await this.reviews.save(
       this.reviews.create({
         contentId: content.id,
@@ -62,6 +63,8 @@ export class CourseReviewService {
         rating: input.rating,
         comment,
         anonymous: input.anonymous !== false,
+        createdAt: now,
+        updatedAt: now,
       }),
     );
   }

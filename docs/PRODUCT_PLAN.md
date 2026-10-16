@@ -238,7 +238,7 @@ Each phase is independently shippable. **Not** a single big-bang launch.
 
 ---
 
-### Milestone M1 — Community participation (profiles + groups lite) — **CURRENT (core shipped)**
+### Milestone M1 — Community participation (profiles + groups lite) — **SHIPPED (core)**
 
 **Goal:** Members present themselves and join topic spaces without dating mechanics.
 

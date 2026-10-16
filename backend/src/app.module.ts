@@ -31,6 +31,7 @@ import { CommerceModule } from './commerce/commerce.module';
 import { KudosModule } from './kudos/kudos.module';
 import { MessagesModule } from './messages/messages.module';
 import { MediaModule } from './media/media.module';
+import { SearchModule } from './search/search.module';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -77,6 +78,7 @@ const isTest = process.env.NODE_ENV === 'test';
     KudosModule,
     MessagesModule,
     MediaModule,
+    SearchModule,
   ],
   controllers: [AppController, HealthController, HostController],
   providers: [AppService, RolesGuard],

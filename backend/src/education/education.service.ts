@@ -48,6 +48,31 @@ export class EducationService {
     }
   }
 
+  async listByCreator(key: string, viewerId: string | null) {
+    const publicProfile = await this.members.getPublicProfile(key, viewerId);
+    const owned = await this.profiles.findOne({
+      where: { userId: publicProfile.userId },
+    });
+    const educator = owned?.educator === true;
+    const rows = educator
+      ? await this.contents.find({
+          where: { creatorId: publicProfile.userId, status: 'published' },
+          order: { publishedAt: 'DESC' },
+        })
+      : [];
+    return {
+      creator: {
+        userId: publicProfile.userId,
+        slug: publicProfile.slug,
+        displayName: publicProfile.displayName,
+        bio: publicProfile.bio ?? null,
+        avatarUrl: publicProfile.avatarUrl ?? null,
+        educator,
+      },
+      items: rows.map((row) => this.toSummary(row)),
+    };
+  }
+
   async listPublished(filters: { tag?: string; q?: string }) {
     const rows = await this.contents.find({
       where: { status: 'published' },

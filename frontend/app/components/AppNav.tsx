@@ -97,6 +97,7 @@ export function AppNav() {
     pathname?.startsWith('/feed') === true ||
     pathname?.startsWith('/notifications') === true;
   const learnActive = pathname?.startsWith('/learn') === true;
+  const searchActive = pathname?.startsWith('/search') === true;
 
   const navLinkClass = (active: boolean) =>
     cn(
@@ -227,6 +228,14 @@ export function AppNav() {
           >
             Learn
           </Link>
+          {user && (
+            <Link
+              href="/search"
+              className={cn(navLinkClass(searchActive), 'hidden md:inline-flex')}
+            >
+              Search
+            </Link>
+          )}
           <Link
             href="/#about"
             className={cn(navLinkClass(false), 'hidden lg:inline-flex')}
@@ -395,6 +404,15 @@ export function AppNav() {
               >
                 Learn
               </Link>
+              {user && (
+                <Link
+                  href="/search"
+                  onClick={closeMenu}
+                  className={navLinkClass(searchActive)}
+                >
+                  Search
+                </Link>
+              )}
               <Link
                 href="/#about"
                 onClick={closeMenu}

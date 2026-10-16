@@ -16,12 +16,14 @@ import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { getAuthUser, getOptionalAuthUser } from '../auth/request-user';
 import type { ContentType } from './educational-content.entity';
 import { EducationService } from './education.service';
+import { CourseReviewService } from './course-review.service';
 import { StripePaymentsService } from '../stripe/stripe-payments.service';
 
 @Controller('learn')
 export class EducationController {
   constructor(
     private readonly education: EducationService,
+    private readonly reviews: CourseReviewService,
     private readonly payments: StripePaymentsService,
   ) {}
 
@@ -43,6 +45,16 @@ export class EducationController {
   async enableEducator(@Req() req: Request) {
     const { sub } = getAuthUser(req);
     return await this.education.enableEducator(sub);
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get('creators/:key')
+  async creator(
+    @Req() req: Request,
+    @Param('key') key: string,
+  ) {
+    const viewer = getOptionalAuthUser(req);
+    return await this.education.listByCreator(key, viewer?.sub ?? null);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -71,10 +83,54 @@ export class EducationController {
   }
 
   @UseGuards(OptionalJwtAuthGuard)
+  @Get(':slug/reviews/summary')
+  async reviewSummary(@Param('slug') slug: string) {
+    return await this.reviews.getPublicSummary(slug);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':slug/reviews/mine')
+  async reviewMine(@Req() req: Request, @Param('slug') slug: string) {
+    const { sub } = getAuthUser(req);
+    return await this.reviews.getMine(slug, sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':slug/reviews/managed')
+  async reviewManaged(@Req() req: Request, @Param('slug') slug: string) {
+    const { sub } = getAuthUser(req);
+    return await this.reviews.getForCreator(slug, sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':slug/reviews')
+  async submitReview(
+    @Req() req: Request,
+    @Param('slug') slug: string,
+    @Body()
+    body: {
+      rating?: number;
+      comment?: string;
+      anonymous?: boolean;
+    },
+  ) {
+    const { sub } = getAuthUser(req);
+    return await this.reviews.submit({
+      contentSlug: slug,
+      userSub: sub,
+      rating: Number(body.rating),
+      comment: body.comment,
+      anonymous: body.anonymous,
+    });
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':slug')
   async detail(@Req() req: Request, @Param('slug') slug: string) {
     const viewer = getOptionalAuthUser(req);
-    return await this.education.getDetail(slug, viewer?.sub ?? null);
+    const detail = await this.education.getDetail(slug, viewer?.sub ?? null);
+    const reviews = await this.reviews.getPublicSummary(slug);
+    return { ...detail, reviews };
   }
 
   @UseGuards(JwtAuthGuard)

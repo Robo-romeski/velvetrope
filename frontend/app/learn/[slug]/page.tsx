@@ -37,6 +37,7 @@ type ContentDetail = {
   lessons: Lesson[];
   progress?: { completed: number; total: number } | null;
   groupId?: string | null;
+  reviews?: { count: number; averageRating: number };
 };
 
 export default function LearnDetailPage() {
@@ -156,6 +157,23 @@ export default function LearnDetailPage() {
           ) : null
         }
       />
+      <p className="text-sm text-muted">
+        Educator:{' '}
+        <Link href={`/creators/${content.creator.slug}`} className="text-accent">
+          {content.creator.displayName ?? content.creator.slug}
+        </Link>
+      </p>
+      {content.reviews && content.reviews.count > 0 && (
+        <p className="text-sm text-muted">
+          {content.reviews.averageRating.toFixed(1)} ★ · {content.reviews.count}{' '}
+          review{content.reviews.count === 1 ? '' : 's'}
+        </p>
+      )}
+      {user && content.status !== 'draft' && (
+        <ButtonLink href={`/learn/${slug}/review`} variant="secondary">
+          Leave a review
+        </ButtonLink>
+      )}
       {content.access?.required && content.access.status === 'pending' && user && (
         <Button type="button" onClick={() => void purchase()}>
           Purchase · ${((content.access.priceCents ?? 0) / 100).toFixed(2)}

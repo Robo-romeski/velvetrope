@@ -43,6 +43,30 @@ export class EventsService {
     });
   }
 
+  async searchPublished(query = ''): Promise<EventItem[]> {
+    const needle = query.trim().toLowerCase().slice(0, 80);
+    const rows = await this.listPublished();
+    if (!needle) return rows.slice(0, 12);
+    const scored = rows
+      .map((event) => ({
+        event,
+        score: this.eventSearchScore(event, needle),
+      }))
+      .filter((entry) => entry.score > 0)
+      .sort((a, b) => b.score - a.score);
+    return scored.slice(0, 12).map((entry) => entry.event);
+  }
+
+  private eventSearchScore(event: EventItem, needle: string): number {
+    const title = event.title.toLowerCase();
+    const description = (event.description ?? '').toLowerCase();
+    if (title === needle) return 1000;
+    if (title.startsWith(needle)) return 800;
+    if (title.includes(needle)) return 500;
+    if (description.includes(needle)) return 300;
+    return 0;
+  }
+
   async listByHost(hostId: string): Promise<HostEventItem[]> {
     const events = await this.repo.find({
       where: { hostId },

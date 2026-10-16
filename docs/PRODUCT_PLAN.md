@@ -64,7 +64,9 @@ Review of `main` as of the merged MVP event loop. **Extend** where noted; **new 
 | Trust reports on posts/comments | Shipped | `trust/` — `subjectType` `post` \| `comment` |
 | Payment abstraction (provider-agnostic orders) | Shipped | `commerce/` — orders, entitlements; event checkout integrated |
 | Community discovery of events | Shipped | Public `/events` list respects `isDiscoveryVisible`; social can link gatherings |
-| Course reviews | **Partial** | Event feedback shipped; dedicated course reviews TBD |
+| Course reviews | Shipped | `course_reviews`; `/learn/[slug]/review`; public summary on catalog |
+| Global search | Shipped | `GET /search`; `/search` (members, groups, learn, events) |
+| Creator pages | Shipped | `GET /learn/creators/:key`; `/creators/[key]` |
 
 ---
 

@@ -36,5 +36,6 @@ import { PostAppreciationEntity } from './post-appreciation.entity';
     MemberWallController,
   ],
   providers: [SocialService],
+  exports: [SocialService],
 })
 export class SocialModule {}

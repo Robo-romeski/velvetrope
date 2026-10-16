@@ -10,6 +10,8 @@ import { EducationService } from './education.service';
 import { LessonProgressEntity } from './lesson-progress.entity';
 import { CommerceModule } from '../commerce/commerce.module';
 import { StripeModule } from '../stripe/stripe.module';
+import { CourseReviewEntity } from './course-review.entity';
+import { CourseReviewService } from './course-review.service';
 
 @Module({
   imports: [
@@ -22,9 +24,11 @@ import { StripeModule } from '../stripe/stripe.module';
       EducationLessonEntity,
       LessonProgressEntity,
       MemberProfileEntity,
+      CourseReviewEntity,
     ]),
   ],
   controllers: [EducationController],
-  providers: [EducationService],
+  providers: [EducationService, CourseReviewService],
+  exports: [EducationService],
 })
 export class EducationModule {}

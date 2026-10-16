@@ -255,8 +255,8 @@ Each phase is independently shippable. **Not** a single big-bang launch.
 - [x] Edit profile; other members see fields per visibility rules (`/settings/profile`, `GET/PATCH /members/me/profile`).
 - [x] Create group, post, comment; private groups hidden from non-members (`/community`, `/groups/*`).
 - [x] Block prevents profile view and group join with blocked owner (`POST /members/:id/block`).
-- [ ] Follow graph surfaced in UI beyond profile pages (API shipped).
-- [ ] Event invite flow unchanged; event access still requires application path (unchanged; verify in regression).
+- [x] Follow graph surfaced in UI beyond profile pages (`/feed` sidebar, Discover, Account → Follows, profile counts → connections).
+- [x] Event invite flow unchanged; event access still requires application path (`invites.e2e-spec.ts`, `journey.e2e-spec.ts`, `applications.e2e-spec.ts`).
 
 **Dependencies:** M0.  
 **Extends:** `UserEntity` → `MemberProfile`; new `social` module.  

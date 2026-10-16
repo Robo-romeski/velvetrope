@@ -35,6 +35,12 @@ import type {
 
 type FeedScope = 'following' | 'discover';
 
+type FollowingPerson = {
+  userId: string;
+  slug: string;
+  displayName: string | null;
+};
+
 function formatTime(value: string) {
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
@@ -59,6 +65,7 @@ export default function FeedPage() {
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [feedCursor, setFeedCursor] = useState<string | null>(null);
   const [joinedGroups, setJoinedGroups] = useState<GroupSummary[]>([]);
+  const [followingPeople, setFollowingPeople] = useState<FollowingPerson[]>([]);
   const [discovery, setDiscovery] = useState<SocialDiscovery>({
     members: [],
     groups: [],
@@ -94,16 +101,20 @@ export default function FeedPage() {
       setLoading(true);
       setError(null);
       try {
-        const [feed, found, mine, gatherings] = await Promise.all([
+        const [feed, found, mine, gatherings, following] = await Promise.all([
           apiGetAuth(`/social/feed?scope=${nextScope}`),
           apiGetAuth(`/social/discovery?q=${encodeURIComponent(query.trim())}`),
           apiGetAuth('/social/joined-groups'),
           apiGetAuth('/social/linkable-events'),
+          apiGetAuth('/members/me/following'),
         ]);
         const page = parseFeedPage(feed);
         setPosts(page.items);
         setFeedCursor(page.nextCursor);
         setJoinedGroups(Array.isArray(mine) ? (mine as GroupSummary[]) : []);
+        setFollowingPeople(
+          Array.isArray(following) ? (following as FollowingPerson[]) : [],
+        );
         setLinkableEvents(
           Array.isArray(gatherings) ? (gatherings as LinkableEvent[]) : [],
         );
@@ -386,6 +397,25 @@ export default function FeedPage() {
                   ? 'Follow members or join groups to shape this feed—or publish the first post.'
                   : 'Community-wide posts will appear here as members publish them.'
               }
+              action={
+                scope === 'following' ? (
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => changeScope('discover')}
+                    >
+                      Discover members
+                    </Button>
+                    <Link
+                      href="/settings/connections"
+                      className="text-sm font-semibold text-accent hover:underline"
+                    >
+                      Manage follows
+                    </Link>
+                  </div>
+                ) : undefined
+              }
             />
           ) : (
             <section aria-label={`${scope} feed`} className="border-t border-border">
@@ -550,6 +580,35 @@ export default function FeedPage() {
         </div>
 
         <aside className="space-y-8 lg:border-l lg:border-border lg:pl-6">
+          {followingPeople.length > 0 && (
+            <section className="space-y-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <h2 className="font-display text-xl font-semibold">
+                  People you follow
+                </h2>
+                <Link
+                  href="/settings/connections"
+                  className="text-xs font-semibold text-accent hover:underline"
+                >
+                  See all
+                </Link>
+              </div>
+              <ul className="divide-y divide-border border-y border-border">
+                {followingPeople.slice(0, 8).map((person) => (
+                  <li key={person.userId} className="py-3">
+                    <Link
+                      href={`/members/${person.slug}`}
+                      className="font-semibold hover:text-accent"
+                    >
+                      {person.displayName ?? person.slug}
+                    </Link>
+                    <p className="text-xs text-muted">@{person.slug}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <section className="space-y-4">
             <div>
               <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-accent">

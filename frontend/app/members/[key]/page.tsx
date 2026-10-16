@@ -260,9 +260,17 @@ export default function MemberProfilePage() {
             ))}
           </ul>
         )}
-        <p className="text-xs text-muted">
-          {profile.followerCount} followers · {profile.followingCount} following
-        </p>
+        {isSelf ? (
+          <p className="text-xs text-muted">
+            <Link href="/settings/connections" className="font-semibold text-accent hover:underline">
+              {profile.followerCount} followers · {profile.followingCount} following
+            </Link>
+          </p>
+        ) : (
+          <p className="text-xs text-muted">
+            {profile.followerCount} followers · {profile.followingCount} following
+          </p>
+        )}
         {!user && (
           <Alert tone="info">
             <Link href={`/auth/login?next=${encodeURIComponent(`/members/${key}`)}`}>

@@ -50,7 +50,7 @@ Review of `main` as of the merged MVP event loop. **Extend** where noted; **new 
 | Admin moderation + audit log | Shipped | `admin/` |
 | Persona IDV (optional per event) | Shipped, optional | `identity/` — fails safe when unconfigured |
 | Email (Resend-ready, outbox) | Partial | `email/` — templates exist; production optional |
-| Member profile (bio, interests, avatar, visibility) | Shipped | `members/` — `MemberProfileEntity`, `/settings/profile` |
+| Member profile (bio, interests, avatar upload + URL, visibility) | Shipped | `members/` — presigned S3 or local file; `GET /media/avatars/:userId` |
 | Follows, blocks, message permissions | Shipped | `members/` — feed + discovery respect block graph |
 | Groups, group posts, comments | Shipped | `social/` — `/community`, `/community/groups/[slug]` |
 | Community feed (following + discover) | Shipped | `social/` — `/feed`, cursor pagination, group merge |

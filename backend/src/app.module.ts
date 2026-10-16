@@ -30,6 +30,7 @@ import { EducationModule } from './education/education.module';
 import { CommerceModule } from './commerce/commerce.module';
 import { KudosModule } from './kudos/kudos.module';
 import { MessagesModule } from './messages/messages.module';
+import { MediaModule } from './media/media.module';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -75,6 +76,7 @@ const isTest = process.env.NODE_ENV === 'test';
     CommerceModule,
     KudosModule,
     MessagesModule,
+    MediaModule,
   ],
   controllers: [AppController, HealthController, HostController],
   providers: [AppService, RolesGuard],

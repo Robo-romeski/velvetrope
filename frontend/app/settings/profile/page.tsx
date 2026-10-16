@@ -3,7 +3,14 @@
 import { FormEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { apiGetAuth, apiPatchAuth, isUnauthorized } from '@/lib/api';
+import {
+  API_BASE,
+  apiGetAuth,
+  apiPatchAuth,
+  apiPostAuth,
+  apiPostAuthForm,
+  isUnauthorized,
+} from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import {
   Alert,
@@ -56,6 +63,7 @@ export default function ProfileSettingsPage() {
   const [interestsText, setInterestsText] = useState('');
   const [linkLabel, setLinkLabel] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -112,6 +120,61 @@ export default function ProfileSettingsPage() {
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  const uploadAvatar = async (file: File) => {
+    setAvatarUploading(true);
+    setError(null);
+    setSaved(false);
+    try {
+      const request = (await apiPostAuth('/members/me/avatar/upload-request', {
+        contentType: file.type,
+        sizeBytes: file.size,
+      })) as
+        | { mode: 'direct' }
+        | {
+            mode: 's3';
+            uploadUrl: string;
+            headers: Record<string, string>;
+            contentType: string;
+            sizeBytes: number;
+          };
+
+      let avatarUrl: string;
+      if (request.mode === 'direct') {
+        const form = new FormData();
+        form.append('file', file);
+        const result = (await apiPostAuthForm(
+          '/members/me/avatar/file',
+          form,
+        )) as { avatarUrl: string };
+        avatarUrl = result.avatarUrl;
+      } else {
+        const put = await fetch(request.uploadUrl, {
+          method: 'PUT',
+          headers: request.headers,
+          body: file,
+        });
+        if (!put.ok) {
+          throw new Error('Upload to storage failed. Try again.');
+        }
+        const result = (await apiPostAuth('/members/me/avatar/complete', {
+          contentType: request.contentType,
+          sizeBytes: request.sizeBytes,
+        })) as { avatarUrl: string };
+        avatarUrl = result.avatarUrl;
+      }
+      setProfile((prev) => (prev ? { ...prev, avatarUrl } : prev));
+      setSaved(true);
+    } catch (e) {
+      if (isUnauthorized(e)) {
+        router.replace('/auth/login?next=%2Fsettings%2Fprofile');
+      } else {
+        setError(e instanceof Error ? e.message : 'Avatar upload failed');
+      }
+    } finally {
+      setAvatarUploading(false);
     }
   };
 
@@ -178,8 +241,47 @@ export default function ProfileSettingsPage() {
               onChange={(e) => setInterestsText(e.target.value)}
             />
           </FormField>
-          <FormField label="Avatar URL" hint="https:// image link">
+          <FormField
+            label="Avatar"
+            hint="Upload JPEG, PNG, or WebP (5 MB max), or paste an image URL"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              {profile.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={
+                    profile.avatarUrl.startsWith('/')
+                      ? `${API_BASE}${profile.avatarUrl}`
+                      : profile.avatarUrl
+                  }
+                  alt=""
+                  className="h-16 w-16 rounded-full object-cover bg-muted/20"
+                />
+              ) : (
+                <div
+                  className="h-16 w-16 rounded-full bg-muted/20"
+                  aria-hidden
+                />
+              )}
+              <div className="flex flex-col gap-2">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  disabled={avatarUploading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void uploadAvatar(file);
+                    e.target.value = '';
+                  }}
+                />
+                {avatarUploading && (
+                  <p className="text-sm text-muted">Uploading…</p>
+                )}
+              </div>
+            </div>
             <Input
+              className="mt-3"
+              placeholder="https:// optional image URL"
               value={profile.avatarUrl ?? ''}
               onChange={(e) =>
                 setProfile({ ...profile, avatarUrl: e.target.value })

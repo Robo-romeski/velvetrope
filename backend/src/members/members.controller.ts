@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -7,25 +8,77 @@ import {
   Patch,
   Post,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { getAuthUser, getOptionalAuthUser } from '../auth/request-user';
+import { MemberAvatarService } from './member-avatar.service';
 import { MembersService } from './members.service';
 import type { ProfileVisibility } from './profile-visibility';
 import type { MessagePermission, ProfileLink } from './member-profile.entity';
 
 @Controller('members')
 export class MembersController {
-  constructor(private readonly members: MembersService) {}
+  constructor(
+    private readonly members: MembersService,
+    private readonly avatars: MemberAvatarService,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Get('me/profile')
   async ownProfile(@Req() req: Request) {
     const { sub } = getAuthUser(req);
     return await this.members.getOwnProfile(sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/avatar/upload-request')
+  async avatarUploadRequest(
+    @Req() req: Request,
+    @Body() body: { contentType?: string; sizeBytes?: number },
+  ) {
+    const { sub } = getAuthUser(req);
+    return await this.avatars.createUploadRequest(
+      sub,
+      body.contentType ?? '',
+      Number(body.sizeBytes),
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/avatar/complete')
+  async avatarUploadComplete(
+    @Req() req: Request,
+    @Body() body: { contentType?: string; sizeBytes?: number },
+  ) {
+    const { sub } = getAuthUser(req);
+    const contentType = body.contentType ?? '';
+    const sizeBytes = Number(body.sizeBytes);
+    if (!contentType || !Number.isFinite(sizeBytes)) {
+      throw new BadRequestException('contentType and sizeBytes required');
+    }
+    return await this.avatars.completeS3Upload(sub, contentType, sizeBytes);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/avatar/file')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async avatarDirectUpload(
+    @Req() req: Request,
+    @UploadedFile()
+    file: { buffer: Buffer; mimetype: string; size: number } | undefined,
+  ) {
+    const { sub } = getAuthUser(req);
+    return await this.avatars.saveDirectUpload(sub, file);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -120,4 +120,25 @@ export async function apiDeleteAuth(path: string) {
   });
 }
 
+export async function apiPostAuthForm(path: string, formData: FormData) {
+  const token = await getAccessTokenClient();
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+  } catch {
+    throw new ApiError(
+      'Unable to reach the service. Check your connection and try again.',
+      0,
+    );
+  }
+  if (!response.ok) {
+    throw new ApiError(await responseMessage(response), response.status);
+  }
+  return response.json();
+}
+
 

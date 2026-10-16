@@ -32,6 +32,7 @@ services:
     restart: unless-stopped
     environment:
       - APP_BASE_URL=https://${DOMAIN}
+      - PUBLIC_API_BASE_URL=https://api.${DOMAIN}
       - CORS_ORIGINS=https://${DOMAIN},https://www.${DOMAIN}
       - DATABASE_URL=postgres://velvet:${POSTGRES_PASSWORD}@postgres:5432/velvetkey
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}

@@ -116,6 +116,29 @@ export class PhotoStorageService {
     }
   }
 
+  async getObjectStream(
+    objectKey: string,
+  ): Promise<{ stream: NodeJS.ReadableStream; contentType: string } | null> {
+    if (process.env.NODE_ENV === 'test' || !this.client || !this.bucket) {
+      return null;
+    }
+    try {
+      const result = await this.client.send(
+        new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: objectKey,
+        }),
+      );
+      if (!result.Body) return null;
+      return {
+        stream: result.Body as NodeJS.ReadableStream,
+        contentType: result.ContentType ?? 'application/octet-stream',
+      };
+    } catch {
+      return null;
+    }
+  }
+
   async createReadUrl(objectKey: string): Promise<string> {
     this.assertConfigured();
     if (process.env.NODE_ENV === 'test') {

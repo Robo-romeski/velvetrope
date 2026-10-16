@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CourseReviewEntity } from './course-review.entity';
@@ -58,6 +59,7 @@ export class CourseReviewService {
     const now = new Date();
     return await this.reviews.save(
       this.reviews.create({
+        id: randomUUID(),
         contentId: content.id,
         userSub: input.userSub,
         rating: input.rating,

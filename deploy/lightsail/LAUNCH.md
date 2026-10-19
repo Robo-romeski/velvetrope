@@ -8,14 +8,15 @@ Copy `deploy/lightsail/.env.production.example` to `.env` on the host and fill s
 ./deploy/lightsail/verify-prod-env.sh .env
 ```
 
-## 2. Stripe (live)
+## 2. Payments (launch default: free only)
 
-1. Create **live** restricted API key → `STRIPE_SECRET_KEY` in `.env`.
-2. Add webhook endpoint: `https://api.<DOMAIN>/stripe/webhook` (events: `checkout.session.completed`, `charge.refunded`, Connect account updates as used by the app).
-3. Set `STRIPE_WEBHOOK_SECRET` from the Stripe dashboard.
-4. Hosts complete Connect at `/host/stripe` (or `/settings/payouts`).
+Keep **`PAYMENTS_ENABLED=false`** and **`NEXT_PUBLIC_PAYMENTS_ENABLED=false`** on the host `.env` (see `.env.production.example`). All gatherings stay free; payment nav and routes are hidden (direct URLs 404). Stripe API code remains for a later re-launch.
 
-Until keys are set, paid checkout uses simulation when `stripeConfigured` is false.
+When you are ready for paid tickets:
+
+1. Finish Stripe Connect platform setup and host onboarding.
+2. Set both payment flags to `true` and **rebuild the frontend** (Next.js bakes `NEXT_PUBLIC_*` at build time).
+3. Configure live **`STRIPE_SECRET_KEY`** and **`STRIPE_WEBHOOK_SECRET`** (`https://api.<DOMAIN>/stripe/webhook`).
 
 ## 3. Email (Resend)
 

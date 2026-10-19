@@ -11,6 +11,7 @@ import {
   PageHeader,
   PageShell,
 } from '@/app/components/ui';
+import { hidePaymentsSurface } from '@/lib/payments-enabled';
 
 export default function SimulatedStripeConnectPage() {
   const router = useRouter();
@@ -28,6 +29,8 @@ export default function SimulatedStripeConnectPage() {
       setLoading(false);
     }
   };
+
+  hidePaymentsSurface();
 
   return (
     <PageShell size="narrow" className="space-y-7">

@@ -10,6 +10,7 @@ import { buttonStyles, cn } from '@/app/components/ui';
 import { apiGetAuth } from '@/lib/api';
 import type { ConversationSummary } from '@/lib/messages';
 import type { SocialNotifications } from '@/lib/social';
+import { paymentsEnabled } from '@/lib/payments-enabled';
 
 export function AppNav() {
   const { user, loading, logout } = useAuth();
@@ -159,15 +160,17 @@ export function AppNav() {
           >
             Host dashboard
           </Link>
-          <Link
-            href="/host/stripe"
-            onClick={closeMenu}
-            className={navLinkClass(
-              pathname?.startsWith('/host/stripe') === true,
-            )}
-          >
-            Payments
-          </Link>
+          {paymentsEnabled() && (
+            <Link
+              href="/host/stripe"
+              onClick={closeMenu}
+              className={navLinkClass(
+                pathname?.startsWith('/host/stripe') === true,
+              )}
+            >
+              Payments
+            </Link>
+          )}
         </>
       )}
       {isAdmin && (
@@ -329,9 +332,11 @@ export function AppNav() {
                 <Link href="/settings/privacy" className={navLinkClass(false)}>
                   Privacy
                 </Link>
-                <Link href="/settings/payouts" className={navLinkClass(false)}>
-                  Payouts
-                </Link>
+                {paymentsEnabled() && (
+                  <Link href="/settings/payouts" className={navLinkClass(false)}>
+                    Payouts
+                  </Link>
+                )}
                 <Link href="/messages" className={navLinkClass(false)}>
                   Messages
                 </Link>

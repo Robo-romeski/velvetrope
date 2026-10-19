@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { apiGet, apiGetAuth, apiPostAuth, getAccessTokenClient } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { paymentsEnabled } from '@/lib/payments-enabled';
 import {
   Alert,
   Button,
@@ -77,6 +78,7 @@ export default function LearnDetailPage() {
   }, [slug]);
 
   useEffect(() => {
+    if (!paymentsEnabled()) return;
     const sessionId = searchParams?.get('session_id');
     if (!sessionId || !user) return;
     (async () => {
@@ -174,11 +176,14 @@ export default function LearnDetailPage() {
           Leave a review
         </ButtonLink>
       )}
-      {content.access?.required && content.access.status === 'pending' && user && (
-        <Button type="button" onClick={() => void purchase()}>
-          Purchase · ${((content.access.priceCents ?? 0) / 100).toFixed(2)}
-        </Button>
-      )}
+      {paymentsEnabled() &&
+        content.access?.required &&
+        content.access.status === 'pending' &&
+        user && (
+          <Button type="button" onClick={() => void purchase()}>
+            Purchase · ${((content.access.priceCents ?? 0) / 100).toFixed(2)}
+          </Button>
+        )}
       {content.externalUrl && (
         <ButtonLink href={content.externalUrl} variant="secondary">
           Open workshop link

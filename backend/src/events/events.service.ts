@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EventEntity } from './event.entity';
+import { rejectPaidPricingWhenDisabled } from '../config/payments-enabled';
 import { ApplicationEntity } from '../applications/application.entity';
 
 export interface EventItem {
@@ -212,6 +213,7 @@ export class EventsService {
       0,
       Math.floor(data.ticketPriceCents ?? 0),
     );
+    rejectPaidPricingWhenDisabled(ticketPriceCents);
     const entity = this.repo.create({
       ...data,
       ticketPriceCents,
@@ -244,6 +246,7 @@ export class EventsService {
         0,
         Math.floor(Number(patch.ticketPriceCents)),
       );
+      rejectPaidPricingWhenDisabled(patch.ticketPriceCents);
     }
     const merged = this.repo.merge(existing, patch);
     const saved = await this.repo.save(merged);

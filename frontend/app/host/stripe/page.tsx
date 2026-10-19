@@ -11,6 +11,7 @@ import {
   PageHeader,
   PageShell,
 } from '@/app/components/ui';
+import { hidePaymentsSurface, paymentsEnabled } from '@/lib/payments-enabled';
 
 type StripeStatus = {
   connected: boolean;
@@ -22,11 +23,13 @@ type StripeStatus = {
 };
 
 export default function HostStripeOnboardingPage() {
+  const payEnabled = paymentsEnabled();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<StripeStatus | null>(null);
 
   useEffect(() => {
+    if (!payEnabled) return;
     let mounted = true;
     (async () => {
       try {
@@ -41,7 +44,11 @@ export default function HostStripeOnboardingPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [payEnabled]);
+
+  if (!payEnabled) {
+    hidePaymentsSurface();
+  }
 
   const startOnboarding = async () => {
     setLoading(true);

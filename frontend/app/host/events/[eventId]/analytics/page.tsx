@@ -15,6 +15,7 @@ import {
   PageShell,
   Section,
 } from '@/app/components/ui';
+import { paymentsEnabled } from '@/lib/payments-enabled';
 
 type EventAnalytics = {
   event: {
@@ -187,8 +188,12 @@ export default function EventAnalyticsPage() {
             </div>
           </Section>
 
-          <Section title="Attendance and revenue">
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <Section
+            title={paymentsEnabled() ? 'Attendance and revenue' : 'Attendance'}
+          >
+            <div
+              className={`grid grid-cols-2 gap-3 ${paymentsEnabled() ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}
+            >
               <MetricTile
                 label="Tickets issued"
                 value={analytics.checkin.ticketsIssued}
@@ -197,15 +202,17 @@ export default function EventAnalyticsPage() {
                 label="Checked in"
                 value={analytics.checkin.checkedIn}
               />
-              <MetricTile
-                label="Gross revenue"
-                value={money(analytics.payments.grossRevenueCents)}
-                detail={
-                  analytics.payments.required
-                    ? `${analytics.payments.paid} paid`
-                    : 'Free event'
-                }
-              />
+              {paymentsEnabled() && (
+                <MetricTile
+                  label="Gross revenue"
+                  value={money(analytics.payments.grossRevenueCents)}
+                  detail={
+                    analytics.payments.required
+                      ? `${analytics.payments.paid} paid`
+                      : 'Free event'
+                  }
+                />
+              )}
               <MetricTile
                 label="Capacity"
                 value={`${analytics.applications.approved}/${analytics.event.capacity}`}

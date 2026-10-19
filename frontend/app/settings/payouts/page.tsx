@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { apiGetAuth, isUnauthorized } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { hidePaymentsSurface, paymentsEnabled } from '@/lib/payments-enabled';
 import {
   Alert,
   Badge,
@@ -79,6 +80,10 @@ export default function PayoutSettingsPage() {
       setOnboarding(false);
     }
   };
+
+  if (!paymentsEnabled()) {
+    hidePaymentsSurface();
+  }
 
   if (authLoading || loading) {
     return (

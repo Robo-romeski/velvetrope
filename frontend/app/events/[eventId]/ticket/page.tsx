@@ -18,7 +18,6 @@ import {
 } from '@/lib/offline-ticket';
 import {
   Alert,
-  Button,
   ButtonLink,
   Card,
   LoadingState,
@@ -26,6 +25,7 @@ import {
   PageShell,
   TextLink,
 } from '@/app/components/ui';
+import { paymentsEnabled } from '@/lib/payments-enabled';
 
 type PhotoStatus = {
   required: boolean;
@@ -42,7 +42,6 @@ export default function EventTicketPage() {
   const [eventDate, setEventDate] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [unauthorized, setUnauthorized] = useState(false);
   const [paymentRequired, setPaymentRequired] = useState(false);
@@ -98,28 +97,30 @@ export default function EventTicketPage() {
       }
       setIdentityRequired(false);
 
-      if (typeof window !== 'undefined') {
-        const returnUrl = new URL(window.location.href);
-        const sessionId = returnUrl.searchParams.get('session_id');
-        if (returnUrl.searchParams.get('paid') === '1' && sessionId) {
-          await apiPostAuth(
-            `/stripe/checkout/${encodeURIComponent(eventId)}/confirm`,
-            { sessionId },
-          );
-          returnUrl.searchParams.delete('paid');
-          returnUrl.searchParams.delete('session_id');
-          window.history.replaceState(null, '', returnUrl);
+      if (paymentsEnabled()) {
+        if (typeof window !== 'undefined') {
+          const returnUrl = new URL(window.location.href);
+          const sessionId = returnUrl.searchParams.get('session_id');
+          if (returnUrl.searchParams.get('paid') === '1' && sessionId) {
+            await apiPostAuth(
+              `/stripe/checkout/${encodeURIComponent(eventId)}/confirm`,
+              { sessionId },
+            );
+            returnUrl.searchParams.delete('paid');
+            returnUrl.searchParams.delete('session_id');
+            window.history.replaceState(null, '', returnUrl);
+          }
         }
-      }
 
-      const payment = await apiGetAuth(
-        `/stripe/payment/${encodeURIComponent(eventId)}`,
-      ).catch(() => null);
-      if (payment?.required && payment.status !== 'paid') {
-        setPaymentRequired(true);
-        setPaymentAmountCents(Number(payment.amountCents) || 0);
-        setToken(null);
-        return;
+        const payment = await apiGetAuth(
+          `/stripe/payment/${encodeURIComponent(eventId)}`,
+        ).catch(() => null);
+        if (payment?.required && payment.status !== 'paid') {
+          setPaymentRequired(true);
+          setPaymentAmountCents(Number(payment.amountCents) || 0);
+          setToken(null);
+          return;
+        }
       }
       setPaymentRequired(false);
 
@@ -154,7 +155,7 @@ export default function EventTicketPage() {
         setUnauthorized(true);
       } else {
         const message = e instanceof Error ? e.message : 'Failed to load ticket';
-        if (getApiStatus(e) === 403) {
+        if (getApiStatus(e) === 403 && paymentsEnabled()) {
           setPaymentRequired(true);
           setError('Complete ticket payment before your QR is issued.');
         } else {
@@ -189,26 +190,6 @@ export default function EventTicketPage() {
       window.removeEventListener('offline', update);
     };
   }, []);
-
-  const startCheckout = async () => {
-    setPaying(true);
-    setError(null);
-    try {
-      const checkout = await apiPostAuth(
-        `/stripe/checkout/${encodeURIComponent(eventId)}`,
-        {},
-      );
-      if (checkout?.url) {
-        window.location.href = checkout.url as string;
-        return;
-      }
-      setError('Checkout could not be started. Please try again.');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not start checkout');
-    } finally {
-      setPaying(false);
-    }
-  };
 
   const uploadPhoto = async (file: File) => {
     setPhotoUploading(true);
@@ -302,7 +283,7 @@ export default function EventTicketPage() {
         </Alert>
       )}
       {loading && <LoadingState label="Preparing your ticket…" />}
-      {paymentRequired && !token && (
+      {paymentsEnabled() && paymentRequired && !token && (
         <Card className="space-y-4">
           <div className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
             Payment required
@@ -315,13 +296,6 @@ export default function EventTicketPage() {
             })}
             ) before your check-in QR is issued.
           </p>
-          <Button
-            type="button"
-            onClick={startCheckout}
-            disabled={paying}
-          >
-            {paying ? 'Redirecting…' : 'Pay with Stripe'}
-          </Button>
         </Card>
       )}
       {identityRequired && !token && (

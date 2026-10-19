@@ -37,6 +37,7 @@ services:
       - PUBLIC_API_BASE_URL=https://api.${DOMAIN}
       - CORS_ORIGINS=https://${DOMAIN},https://www.${DOMAIN}
       - DATABASE_URL=postgres://velvet:${POSTGRES_PASSWORD}@postgres:5432/velvetkey
+      - PAYMENTS_ENABLED=${PAYMENTS_ENABLED:-false}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
       - RESEND_API_KEY=${RESEND_API_KEY:-}
@@ -54,6 +55,7 @@ services:
     build:
       args:
         NEXT_PUBLIC_API_BASE_URL: https://api.${DOMAIN}
+        NEXT_PUBLIC_PAYMENTS_ENABLED: ${NEXT_PUBLIC_PAYMENTS_ENABLED:-false}
     environment:
       - APP_BASE_URL=https://${DOMAIN}
       - API_SERVER_BASE_URL=http://backend:3010

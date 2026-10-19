@@ -6,6 +6,7 @@ import { apiGet, apiPatchAuth, isUnauthorized } from '@/lib/api';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { HostEventNav } from '@/app/components/HostEventNav';
 import { useAuth } from '@/lib/auth';
+import { paymentsEnabled } from '@/lib/payments-enabled';
 import {
   Alert,
   Button,
@@ -95,10 +96,12 @@ export default function EditHostEventPage() {
         date: new Date(date).toISOString(),
         capacity: Number(capacity),
         isDiscoveryVisible,
-        ticketPriceCents: Math.max(
-          0,
-          Math.round(Number.parseFloat(ticketPriceUsd || '0') * 100),
-        ),
+        ticketPriceCents: paymentsEnabled()
+          ? Math.max(
+              0,
+              Math.round(Number.parseFloat(ticketPriceUsd || '0') * 100),
+            )
+          : 0,
         requirePhotoCheckin,
         requireIdentityVerification,
       });
@@ -191,18 +194,22 @@ export default function EditHostEventPage() {
               </span>
             </span>
           </label>
-          <label className="block text-sm space-y-1">
-            <span>Ticket price (USD)</span>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={ticketPriceUsd}
-              onChange={(e) => setTicketPriceUsd(e.target.value)}
-              className="vk-field"
-            />
-            <span className="text-xs text-muted">0 = free. Requires Stripe Connect for paid tickets.</span>
-          </label>
+          {paymentsEnabled() && (
+            <label className="block text-sm space-y-1">
+              <span>Ticket price (USD)</span>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={ticketPriceUsd}
+                onChange={(e) => setTicketPriceUsd(e.target.value)}
+                className="vk-field"
+              />
+              <span className="text-xs text-muted">
+                0 = free. Requires Stripe Connect for paid tickets.
+              </span>
+            </label>
+          )}
           <label className="flex items-start gap-3 rounded-xl border border-border bg-surface-subtle p-4 text-sm">
             <input
               type="checkbox"

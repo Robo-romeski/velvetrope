@@ -13,6 +13,10 @@ import { StripeAccountEntity } from './stripe-account.entity';
 import { EventEntity } from '../events/event.entity';
 import { randomBytes } from 'crypto';
 import { CommerceService } from '../commerce/commerce.service';
+import {
+  isPaymentsEnabled,
+  rejectStripeMoneyFlowsWhenDisabled,
+} from '../config/payments-enabled';
 import { EducationalContentEntity } from '../education/educational-content.entity';
 
 @Injectable()
@@ -57,7 +61,7 @@ export class StripePaymentsService {
     const event = await this.events.findOne({ where: { id: eventId } });
     if (!event) throw new NotFoundException('Event not found');
     const amountCents = Math.max(0, event.ticketPriceCents ?? 0);
-    if (amountCents === 0) {
+    if (!isPaymentsEnabled() || amountCents === 0) {
       return { required: false, status: 'not_required', amountCents: 0 };
     }
 
@@ -92,6 +96,7 @@ export class StripePaymentsService {
     eventId: string,
     userSub: string,
   ): Promise<{ url: string | null; sessionId: string }> {
+    rejectStripeMoneyFlowsWhenDisabled();
     const event = await this.events.findOne({ where: { id: eventId } });
     if (!event) throw new NotFoundException('Event not found');
     if (event.status !== 'published') {
@@ -358,6 +363,7 @@ export class StripePaymentsService {
     contentSlug: string,
     userSub: string,
   ): Promise<{ url: string | null; sessionId: string }> {
+    rejectStripeMoneyFlowsWhenDisabled();
     const content = await this.courses.findOne({
       where: { slug: contentSlug },
     });

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { hidePaymentsSurface } from '@/lib/payments-enabled';
 import { apiGetAuth } from '@/lib/api';
 import {
   Alert,
@@ -30,6 +31,8 @@ export default function StripeReturnPage() {
       mounted = false;
     };
   }, []);
+
+  hidePaymentsSurface();
 
   return (
     <PageShell size="narrow" className="space-y-7">

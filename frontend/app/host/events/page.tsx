@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiDeleteAuth, apiGetAuth, apiPostAuth, isUnauthorized } from '@/lib/api';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { useAuth } from '@/lib/auth';
+import { paymentsEnabled } from '@/lib/payments-enabled';
 import {
   Alert,
   Badge,
@@ -135,20 +136,24 @@ export default function HostEventsPage() {
           }
         />
         {summary && (
-          <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div
+            className={`mt-8 grid grid-cols-2 gap-3 ${paymentsEnabled() ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}
+          >
             <MetricTile label="Events" value={summary.events} />
             <MetricTile label="Applications" value={summary.applications} />
             <MetricTile label="Waitlisted" value={summary.waitlisted} />
-            <MetricTile
-              label="Gross revenue"
-              value={(summary.grossRevenueCents / 100).toLocaleString(
-                undefined,
-                {
-                  style: 'currency',
-                  currency: 'USD',
-                },
-              )}
-            />
+            {paymentsEnabled() && (
+              <MetricTile
+                label="Gross revenue"
+                value={(summary.grossRevenueCents / 100).toLocaleString(
+                  undefined,
+                  {
+                    style: 'currency',
+                    currency: 'USD',
+                  },
+                )}
+              />
+            )}
           </div>
         )}
       </section>

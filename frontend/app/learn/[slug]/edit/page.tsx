@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { apiGetAuth, apiPatchAuth, apiPostAuth } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { paymentsEnabled } from '@/lib/payments-enabled';
 import {
   Alert,
   Button,
@@ -111,23 +112,22 @@ export default function EditLearnContentPage() {
         description={`Status: ${content.status ?? 'draft'}`}
       />
       {error && <Alert tone="danger">{error}</Alert>}
-      <Card className="p-5 space-y-3">
-        <h2 className="font-semibold">Pricing (USD cents)</h2>
-        <div className="flex gap-2 items-center">
-          <Input
-            type="number"
-            min={0}
-            value={priceCents}
-            onChange={(e) => setPriceCents(Number(e.target.value))}
-          />
-          <Button type="button" variant="secondary" onClick={() => void savePrice()}>
-            Save price
-          </Button>
-        </div>
-        <p className="text-xs text-muted">
-          Educators need Stripe connected (Host → Payments) before learners can buy paid content.
-        </p>
-      </Card>
+      {paymentsEnabled() && (
+        <Card className="p-5 space-y-3">
+          <h2 className="font-semibold">Pricing (USD cents)</h2>
+          <div className="flex gap-2 items-center">
+            <Input
+              type="number"
+              min={0}
+              value={priceCents}
+              onChange={(e) => setPriceCents(Number(e.target.value))}
+            />
+            <Button type="button" variant="secondary" onClick={() => void savePrice()}>
+              Save price
+            </Button>
+          </div>
+        </Card>
+      )}
       <Card className="p-5 space-y-3">
         <h2 className="font-semibold">Lessons</h2>
         <ul className="text-sm space-y-1">

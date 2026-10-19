@@ -12,6 +12,7 @@ import {
   PageHeader,
   PageShell,
 } from '@/app/components/ui';
+import { hidePaymentsSurface } from '@/lib/payments-enabled';
 
 type SimulatedSession = {
   simulated: true;
@@ -78,6 +79,8 @@ function SimulatedCheckoutContent() {
       mounted = false;
     };
   }, [sessionId, router]);
+
+  hidePaymentsSurface();
 
   const pay = async () => {
     if (!sessionId) return;

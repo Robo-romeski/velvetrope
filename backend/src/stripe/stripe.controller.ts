@@ -17,6 +17,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { getAuthUser } from '../auth/request-user';
 import { ApplicationsService } from '../applications/applications.service';
+import { rejectStripeMoneyFlowsWhenDisabled } from '../config/payments-enabled';
 
 @Controller('stripe')
 export class StripeController {
@@ -30,6 +31,7 @@ export class StripeController {
   @Roles('host')
   @Get('onboarding')
   async onboarding(@Req() req: Request) {
+    rejectStripeMoneyFlowsWhenDisabled();
     const { sub, email } = getAuthUser(req);
     return await this.stripe.getOnboardingLink(sub, email);
   }

@@ -12,6 +12,7 @@ import {
   isUnauthorized,
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { paymentsEnabled } from '@/lib/payments-enabled';
 import {
   Alert,
   Button,
@@ -392,9 +393,11 @@ export default function ProfileSettingsPage() {
           <Link href="/settings/privacy" className="text-accent">
             Privacy
           </Link>
-          <Link href="/settings/payouts" className="text-accent">
-            Payouts
-          </Link>
+          {paymentsEnabled() && (
+            <Link href="/settings/payouts" className="text-accent">
+              Payouts
+            </Link>
+          )}
         </div>
       </Card>
     </PageShell>

@@ -1,6 +1,9 @@
+import { notFound } from 'next/navigation';
 import { ButtonLink, Card, PageHeader, PageShell } from '@/app/components/ui';
+import { paymentsEnabled } from '@/lib/payments-enabled';
 
 export default function StripeRefreshPage() {
+  if (!paymentsEnabled()) notFound();
   return (
     <PageShell size="narrow" className="space-y-7">
       <PageHeader

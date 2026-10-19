@@ -17,6 +17,7 @@ import { EducationLessonEntity } from './education-lesson.entity';
 import { LessonProgressEntity } from './lesson-progress.entity';
 import { MemberProfileEntity } from '../members/member-profile.entity';
 import { CommerceService } from '../commerce/commerce.service';
+import { rejectPaidPricingWhenDisabled } from '../config/payments-enabled';
 
 @Injectable()
 export class EducationService {
@@ -164,7 +165,9 @@ export class EducationService {
       content.externalUrl = this.optionalUrl(input.externalUrl);
     }
     if (input.priceCents !== undefined) {
-      content.priceCents = Math.max(0, Math.floor(input.priceCents));
+      const priceCents = Math.max(0, Math.floor(input.priceCents));
+      rejectPaidPricingWhenDisabled(priceCents);
+      content.priceCents = priceCents;
     }
     await this.contents.save(content);
     return this.getDetail(content.slug, userId);

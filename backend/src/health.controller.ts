@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import { isPaymentsEnabled } from './config/payments-enabled';
 
 @Controller('healthz')
 export class HealthController {
@@ -14,10 +15,14 @@ export class HealthController {
     const webhook = process.env.STRIPE_WEBHOOK_SECRET?.trim();
     return {
       database: !!process.env.DATABASE_URL?.trim(),
+      paymentsEnabled: isPaymentsEnabled(),
       stripe: {
         secretKey: !!stripeKey,
         webhookSecret: !!webhook,
-        liveMode: stripeKey?.startsWith('sk_live_') ?? false,
+        liveMode:
+          stripeKey?.startsWith('sk_live_') ||
+          stripeKey?.startsWith('rk_live_') ||
+          false,
       },
       email: {
         resend: !!process.env.RESEND_API_KEY?.trim(),

@@ -45,5 +45,9 @@ sudo docker compose -f docker-compose.yml -f docker-compose.postgres.yml \
 
 ```bash
 curl -sS "https://api.<DOMAIN>/healthz/integrations"
-ATTENDEE_EMAIL=... ATTENDEE_PASSWORD=... ./scripts/tier2-prod-smoke.sh
+ATTENDEE_EMAIL=... ATTENDEE_PASSWORD=... \
+HOST_EMAIL=... HOST_PASSWORD=... \
+./scripts/tier2-prod-smoke.sh
 ```
+
+With `HOST_*` set, the script also runs a free-event path: create → publish → invite → apply → approve → ticket → check-in verify.

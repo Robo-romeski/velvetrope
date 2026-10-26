@@ -98,6 +98,7 @@ export function AppNav() {
     pathname?.startsWith('/feed') === true ||
     pathname?.startsWith('/notifications') === true;
   const learnActive = pathname?.startsWith('/learn') === true;
+  const assets3dActive = pathname?.startsWith('/assets-3d') === true;
   const searchActive = pathname?.startsWith('/search') === true;
 
   const navLinkClass = (active: boolean) =>
@@ -230,6 +231,15 @@ export function AppNav() {
             className={cn(navLinkClass(learnActive), 'hidden md:inline-flex')}
           >
             Learn
+          </Link>
+          <Link
+            href="/assets-3d"
+            className={cn(
+              navLinkClass(assets3dActive),
+              'hidden lg:inline-flex',
+            )}
+          >
+            3D Library
           </Link>
           {user && (
             <Link
@@ -414,6 +424,13 @@ export function AppNav() {
                 className={navLinkClass(learnActive)}
               >
                 Learn
+              </Link>
+              <Link
+                href="/assets-3d"
+                onClick={closeMenu}
+                className={navLinkClass(assets3dActive)}
+              >
+                3D Library
               </Link>
               {user && (
                 <Link

@@ -32,6 +32,7 @@ import { DirectMessageEntity } from '../messages/direct-message.entity';
 import { SocialActivityReadEntity } from '../social/social-activity-read.entity';
 import { PostAppreciationEntity } from '../social/post-appreciation.entity';
 import { CourseReviewEntity } from '../education/course-review.entity';
+import { Asset3dEntity } from '../assets-3d/asset-3d.entity';
 
 export const entities = [
   EventEntity,
@@ -68,4 +69,5 @@ export const entities = [
   SocialActivityReadEntity,
   PostAppreciationEntity,
   CourseReviewEntity,
+  Asset3dEntity,
 ];

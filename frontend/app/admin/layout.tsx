@@ -14,6 +14,7 @@ const links = [
   { href: '/admin', label: 'Overview' },
   { href: '/admin/users', label: 'Users' },
   { href: '/admin/events', label: 'Events' },
+  { href: '/admin/assets-3d', label: '3D assets' },
   { href: '/admin/reports', label: 'Reports' },
   { href: '/admin/audit', label: 'Audit log' },
 ];

@@ -2,8 +2,9 @@
 
 A knowledge-centered community platform for adults (ENM, poly, swinging, kink)—profiles, groups, member-created education, and curated events. Community-led, not a dating product.
 
-**Platform plan (modules, phases, acceptance criteria):** [docs/PRODUCT_PLAN.md](docs/PRODUCT_PLAN.md)  
-**Local event demo runbook:** [docs/DEMO.md](docs/DEMO.md)
+**Platform plan (modules, phases, acceptance criteria):** [docs/PRODUCT_PLAN.md](docs/PRODUCT_PLAN.md)<br>
+**Local event demo runbook:** [docs/DEMO.md](docs/DEMO.md)<br>
+**3D asset library setup and workflow:** [docs/ASSETS_3D.md](docs/ASSETS_3D.md)
 
 Today the repo ships a strong **events module** (applications, invites, payments in test mode, QR check-in, analytics) on local email/password auth, with community and education modules planned as extensions—not replacements.
 

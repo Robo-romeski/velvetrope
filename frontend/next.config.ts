@@ -3,6 +3,7 @@ import withSerwistInit from '@serwist/next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  transpilePackages: ['three'],
 };
 
 const withSerwist = withSerwistInit({

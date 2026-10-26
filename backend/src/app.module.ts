@@ -32,6 +32,7 @@ import { KudosModule } from './kudos/kudos.module';
 import { MessagesModule } from './messages/messages.module';
 import { MediaModule } from './media/media.module';
 import { SearchModule } from './search/search.module';
+import { Assets3dModule } from './assets-3d/assets-3d.module';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -79,6 +80,7 @@ const isTest = process.env.NODE_ENV === 'test';
     MessagesModule,
     MediaModule,
     SearchModule,
+    Assets3dModule,
   ],
   controllers: [AppController, HealthController, HostController],
   providers: [AppService, RolesGuard],

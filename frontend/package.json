@@ -3,19 +3,22 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "next build --webpack",
-    "start": "next start",
+    "dev": "node init && next dev --webpack",
+    "build": "node init && next build --webpack",
+    "start": "node init && next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
     "motion": "^14.0.0",
     "next": "^16.3.6",
     "persona": "^5.9.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-qr-code": "^2.0.18",
-    "socket.io-client": "^4.8.4"
+    "socket.io-client": "^4.8.4",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@serwist/next": "^9.5.12",

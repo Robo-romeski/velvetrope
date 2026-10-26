@@ -60,6 +60,21 @@ openssl rand -base64 32   # AUTH_SECRET
 openssl rand -base64 24   # POSTGRES_PASSWORD
 ```
 
+### Private object storage
+
+Use one private S3 bucket for avatars, check-in photos, and GLB/glTF assets:
+
+```bash
+chmod +x deploy/lightsail/provision-s3-bucket.sh
+./deploy/lightsail/provision-s3-bucket.sh
+```
+
+Copy the printed `S3_PHOTO_BUCKET`, `S3_ASSET_BUCKET`, `S3_REGION`,
+`S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY` values into the server `.env`.
+An existing photo bucket can be reused for `S3_ASSET_BUCKET`; the bucket CORS
+policy must allow browser `GET`, `PUT`, and `HEAD` requests from the production
+frontend origins.
+
 ## 3. Start the stack
 
 ```bash

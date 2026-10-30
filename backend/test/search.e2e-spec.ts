@@ -1,3 +1,4 @@
+import { registerPayload } from './register-payload';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -18,11 +19,11 @@ describe('Global search (e2e)', () => {
 
     const reg = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({
+      .send(registerPayload({
         email: `search-${Date.now()}@example.com`,
         password: 'password1',
         name: 'Search User',
-      })
+      }))
       .expect(201);
     token = reg.body.token;
   });

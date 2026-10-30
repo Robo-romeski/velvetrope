@@ -1,3 +1,4 @@
+import { registerPayload } from './register-payload';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -20,21 +21,21 @@ describe('Course reviews (e2e)', () => {
 
     const educator = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({
+      .send(registerPayload({
         email: `review-educator-${Date.now()}@example.com`,
         password: 'password1',
         name: 'Review Educator',
-      })
+      }))
       .expect(201);
     educatorToken = educator.body.token;
 
     const learner = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({
+      .send(registerPayload({
         email: `review-learner-${Date.now()}@example.com`,
         password: 'password1',
         name: 'Review Learner',
-      })
+      }))
       .expect(201);
     learnerToken = learner.body.token;
 

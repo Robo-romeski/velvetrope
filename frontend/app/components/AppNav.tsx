@@ -232,15 +232,6 @@ export function AppNav() {
           >
             Learn
           </Link>
-          <Link
-            href="/assets-3d"
-            className={cn(
-              navLinkClass(assets3dActive),
-              'hidden lg:inline-flex',
-            )}
-          >
-            3D Library
-          </Link>
           {user && (
             <Link
               href="/search"
@@ -424,13 +415,6 @@ export function AppNav() {
                 className={navLinkClass(learnActive)}
               >
                 Learn
-              </Link>
-              <Link
-                href="/assets-3d"
-                onClick={closeMenu}
-                className={navLinkClass(assets3dActive)}
-              >
-                3D Library
               </Link>
               {user && (
                 <Link

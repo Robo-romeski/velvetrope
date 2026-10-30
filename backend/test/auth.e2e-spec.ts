@@ -7,6 +7,7 @@ import {
   clearCapturedEmails,
   getCapturedEmails,
 } from '../src/email/email-outbox';
+import { registerPayload } from './register-payload';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication<App>;
@@ -43,12 +44,12 @@ describe('Auth (e2e)', () => {
     const email = `host-${Date.now()}@example.com`;
     const registered = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({
+      .send(registerPayload({
         email,
         password: 'password1',
         name: 'Ada',
         host: true,
-      })
+      }))
       .expect(201);
 
     expect(registered.body.user.email).toBe(email);
@@ -85,12 +86,12 @@ describe('Auth (e2e)', () => {
     const email = `dup-${Date.now()}@example.com`;
     await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email, password: 'password1' })
+      .send(registerPayload({ email, password: 'password1' }))
       .expect(201);
 
     await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email, password: 'password1' })
+      .send(registerPayload({ email, password: 'password1' }))
       .expect(409);
 
     await request(app.getHttpServer())
@@ -104,7 +105,7 @@ describe('Auth (e2e)', () => {
     const email = `reset-${Date.now()}@example.com`;
     await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email, password: 'password1' })
+      .send(registerPayload({ email, password: 'password1' }))
       .expect(201);
 
     const forgot = await request(app.getHttpServer())
@@ -137,7 +138,7 @@ describe('Auth (e2e)', () => {
     const email = `guest-${Date.now()}@example.com`;
     const registered = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email, password: 'password1', host: false })
+      .send(registerPayload({ email, password: 'password1', host: false }))
       .expect(201);
 
     expect(registered.body.user.roles).toEqual(['attendee']);

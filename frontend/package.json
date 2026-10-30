@@ -14,6 +14,7 @@
     "motion": "^14.0.0",
     "next": "^16.3.6",
     "persona": "^5.9.0",
+    "posthog-js": "^1.441.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-qr-code": "^2.0.18",

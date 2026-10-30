@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { EventEntity } from './event.entity';
 import { rejectPaidPricingWhenDisabled } from '../config/payments-enabled';
 import { ApplicationEntity } from '../applications/application.entity';
+import { isAutomatedTestEventTitle } from '../maintenance/automated-test-content';
 
 export interface EventItem {
   id: string;
@@ -21,6 +22,8 @@ export interface EventItem {
   ticketPriceCents: number;
   requirePhotoCheckin: boolean;
   requireIdentityVerification: boolean;
+  locationPublicLabel?: string | null;
+  locationExactAddress?: string | null;
 }
 
 export type HostEventItem = EventItem & {
@@ -38,10 +41,17 @@ export class EventsService {
   ) {}
 
   async listPublished(): Promise<EventItem[]> {
-    return await this.repo.find({
+    const nowIso = new Date().toISOString();
+    const rows = await this.repo.find({
       where: { status: 'published', isDiscoveryVisible: true },
       order: { date: 'ASC' },
     });
+    const eligible = rows
+      .filter((event) => !isAutomatedTestEventTitle(event.title))
+      .filter((event) => String(event.date) >= nowIso);
+    return Promise.all(
+      eligible.map((event) => this.toViewerEvent(event, null)),
+    );
   }
 
   async searchPublished(query = ''): Promise<EventItem[]> {
@@ -108,10 +118,67 @@ export class EventsService {
     }));
   }
 
-  async get(id: string): Promise<EventItem> {
+  async get(id: string): Promise<EventEntity> {
     const item = await this.repo.findOne({ where: { id } });
     if (!item) throw new NotFoundException('Event not found');
     return item;
+  }
+
+  async getForViewer(id: string, viewerId: string | null): Promise<EventItem> {
+    const entity = await this.get(id);
+    if (entity.status === 'draft' && entity.hostId !== viewerId) {
+      throw new NotFoundException('Event not found');
+    }
+    return this.toViewerEvent(entity, viewerId);
+  }
+
+  private async canViewExactLocation(
+    event: EventEntity,
+    viewerId: string | null,
+  ): Promise<boolean> {
+    if (!event.locationExactAddress?.trim()) return false;
+    if (!viewerId) return false;
+    if (viewerId === event.hostId) return true;
+    const approved = await this.applications.findOne({
+      where: {
+        eventId: event.id,
+        applicantSub: viewerId,
+        status: 'approved',
+      },
+    });
+    return Boolean(approved);
+  }
+
+  private toViewerEventSync(
+    event: EventEntity,
+    viewerId: string | null,
+    exactAllowed: boolean,
+  ): EventItem {
+    return {
+      id: event.id,
+      hostId: event.hostId,
+      title: event.title,
+      description: event.description ?? null,
+      date: String(event.date),
+      capacity: event.capacity,
+      status: event.status,
+      isDiscoveryVisible: event.isDiscoveryVisible,
+      ticketPriceCents: event.ticketPriceCents,
+      requirePhotoCheckin: event.requirePhotoCheckin,
+      requireIdentityVerification: event.requireIdentityVerification,
+      locationPublicLabel: event.locationPublicLabel?.trim() || null,
+      locationExactAddress: exactAllowed
+        ? event.locationExactAddress?.trim() || null
+        : null,
+    };
+  }
+
+  private async toViewerEvent(
+    event: EventEntity,
+    viewerId: string | null,
+  ): Promise<EventItem> {
+    const exactAllowed = await this.canViewExactLocation(event, viewerId);
+    return this.toViewerEventSync(event, viewerId, exactAllowed);
   }
 
   async listLinkableForMember(
@@ -215,7 +282,7 @@ export class EventsService {
     );
     rejectPaidPricingWhenDisabled(ticketPriceCents);
     const entity = this.repo.create({
-      ...data,
+      ...this.normalizeLocationFields(data as Partial<EventEntity>),
       ticketPriceCents,
       isDiscoveryVisible: data.isDiscoveryVisible ?? true,
       requirePhotoCheckin: data.requirePhotoCheckin ?? false,
@@ -248,9 +315,32 @@ export class EventsService {
       );
       rejectPaidPricingWhenDisabled(patch.ticketPriceCents);
     }
+    if (patch.locationPublicLabel !== undefined) {
+      patch.locationPublicLabel =
+        patch.locationPublicLabel?.trim().slice(0, 200) || null;
+    }
+    if (patch.locationExactAddress !== undefined) {
+      patch.locationExactAddress =
+        patch.locationExactAddress?.trim().slice(0, 500) || null;
+    }
     const merged = this.repo.merge(existing, patch);
     const saved = await this.repo.save(merged);
     return saved;
+  }
+
+  private normalizeLocationFields(
+    data: Partial<EventEntity>,
+  ): Partial<EventEntity> {
+    const next = { ...data };
+    if (next.locationPublicLabel !== undefined) {
+      next.locationPublicLabel =
+        next.locationPublicLabel?.trim().slice(0, 200) || null;
+    }
+    if (next.locationExactAddress !== undefined) {
+      next.locationExactAddress =
+        next.locationExactAddress?.trim().slice(0, 500) || null;
+    }
+    return next;
   }
 
   async remove(id: string, hostSub: string): Promise<void> {

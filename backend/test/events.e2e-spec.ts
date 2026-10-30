@@ -40,7 +40,7 @@ describe('Events (e2e)', () => {
       .send({
         title: 'Party',
         description: 'Fun',
-        date: new Date().toISOString(),
+        date: new Date(Date.now() + 86400000 * 7).toISOString(),
         capacity: 10,
       })
       .expect(201);
@@ -61,7 +61,10 @@ describe('Events (e2e)', () => {
       .expect(200);
     expect(mine.body.find((e: { id: string }) => e.id === id)).toBeTruthy();
 
-    await request(app.getHttpServer()).get(`/events/${id}`).expect(200);
+    await request(app.getHttpServer())
+      .get(`/events/${id}`)
+      .set(hostAuth())
+      .expect(200);
 
     await request(app.getHttpServer())
       .patch(`/events/${id}`)

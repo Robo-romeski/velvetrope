@@ -20,6 +20,33 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## PostHog analytics
+
+Set these variables in `frontend/.env.local` for local development or in the
+repo-root `.env` used by Docker Compose:
+
+```bash
+NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN=phc_your_project_token
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+NEXT_PUBLIC_POSTHOG_APP_LABEL=epicsexual
+```
+
+Every event includes super property **`app`** (default `epicsexual`) so you can
+filter a shared PostHog project in **Activity → Filter by property → `app`**.
+
+Bookmark the production Activity view:
+[docs/POSTHOG_EPICSEXUAL.md](../docs/POSTHOG_EPICSEXUAL.md).
+
+Use the host shown in your PostHog project settings. Rebuild the frontend after
+changing any of these values because Next.js embeds public environment variables at
+build time. Analytics remains inactive when the project token is empty.
+
+The integration captures route-level pageviews and page-leave events. Query
+strings and fragments are removed before transmission, authenticated users are
+identified only by their internal ID, and autocapture and session replay are
+disabled. Anonymous identity is kept in memory rather than persisted in cookies
+or local storage.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -26,6 +26,8 @@ export default function NewHostEventPage() {
   const [date, setDate] = useState('');
   const [capacity, setCapacity] = useState(20);
   const [isDiscoveryVisible, setIsDiscoveryVisible] = useState(true);
+  const [locationPublicLabel, setLocationPublicLabel] = useState('');
+  const [locationExactAddress, setLocationExactAddress] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +42,8 @@ export default function NewHostEventPage() {
         date: new Date(date).toISOString(),
         capacity: Number(capacity),
         isDiscoveryVisible,
+        locationPublicLabel: locationPublicLabel.trim() || undefined,
+        locationExactAddress: locationExactAddress.trim() || undefined,
       });
       router.push('/host/events');
       return created;
@@ -90,6 +94,29 @@ export default function NewHostEventPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
+            />
+          </FormField>
+          <FormField
+            label="Public area label"
+            htmlFor="new-event-area"
+            hint="Shown on the invitation before approval (e.g. Brooklyn or North Jersey)."
+          >
+            <Input
+              id="new-event-area"
+              value={locationPublicLabel}
+              onChange={(e) => setLocationPublicLabel(e.target.value)}
+            />
+          </FormField>
+          <FormField
+            label="Exact address"
+            htmlFor="new-event-address"
+            hint="Only visible to you and approved guests—not on the public homepage listing."
+          >
+            <Textarea
+              id="new-event-address"
+              rows={2}
+              value={locationExactAddress}
+              onChange={(e) => setLocationExactAddress(e.target.value)}
             />
           </FormField>
           <div className="grid gap-5 sm:grid-cols-2">

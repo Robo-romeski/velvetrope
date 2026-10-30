@@ -1,3 +1,4 @@
+import { registerPayload } from './register-payload';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -23,14 +24,14 @@ describe('Community (e2e)', () => {
     const emailB = `community-b-${Date.now()}@example.com`;
     const regA = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email: emailA, password: 'password1', name: 'Alex' })
+      .send(registerPayload({ email: emailA, password: 'password1', name: 'Alex' }))
       .expect(201);
     tokenA = regA.body.token;
     userAId = regA.body.user.id;
 
     const regB = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email: emailB, password: 'password1', name: 'Blake' })
+      .send(registerPayload({ email: emailB, password: 'password1', name: 'Blake' }))
       .expect(201);
     tokenB = regB.body.token;
     userBId = regB.body.user.id;

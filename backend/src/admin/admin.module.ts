@@ -7,6 +7,7 @@ import { UserEntity } from '../auth/user.entity';
 import { EventEntity } from '../events/event.entity';
 import { TrustReportEntity } from '../trust/report.entity';
 import { IdentityVerificationEntity } from '../identity/identity-verification.entity';
+import { EducationalContentEntity } from '../education/educational-content.entity';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { IdentityVerificationEntity } from '../identity/identity-verification.en
       TrustReportEntity,
       AdminAuditEntity,
       IdentityVerificationEntity,
+      EducationalContentEntity,
     ]),
   ],
   controllers: [AdminController],

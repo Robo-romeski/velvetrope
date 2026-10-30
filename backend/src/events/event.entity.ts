@@ -35,4 +35,12 @@ export class EventEntity {
 
   @Column({ type: 'boolean', default: false })
   requireIdentityVerification!: boolean;
+
+  /** Shown on public invitation (e.g. neighborhood or borough). */
+  @Column({ type: 'text', nullable: true })
+  locationPublicLabel?: string | null;
+
+  /** Full address — only exposed to host and approved attendees via API. */
+  @Column({ type: 'text', nullable: true })
+  locationExactAddress?: string | null;
 }

@@ -13,6 +13,12 @@ import {
   IdentityVerificationEntity,
   IdentityVerificationStatus,
 } from '../identity/identity-verification.entity';
+import { EducationalContentEntity } from '../education/educational-content.entity';
+import {
+  isAutomatedTestEventTitle,
+  isAutomatedTestLearnSlug,
+  isAutomatedTestLearnTitle,
+} from '../maintenance/automated-test-content';
 
 const ALLOWED_ROLES = new Set(['attendee', 'host', 'admin']);
 
@@ -29,6 +35,8 @@ export class AdminService {
     private readonly audit: Repository<AdminAuditEntity>,
     @InjectRepository(IdentityVerificationEntity)
     private readonly identity: Repository<IdentityVerificationEntity>,
+    @InjectRepository(EducationalContentEntity)
+    private readonly learn: Repository<EducationalContentEntity>,
   ) {}
 
   async summary(): Promise<{
@@ -268,6 +276,45 @@ export class AdminService {
       order: { createdAt: 'DESC' },
       take: Math.min(200, Math.max(1, Math.floor(limit))),
     });
+  }
+
+  async unpublishAutomatedTestContent(actorSub: string): Promise<{
+    events: number;
+    learn: number;
+  }> {
+    let eventsChanged = 0;
+    let learnChanged = 0;
+    const events = await this.events.find();
+    for (const event of events) {
+      if (!isAutomatedTestEventTitle(event.title)) continue;
+      if (event.status === 'cancelled' && !event.isDiscoveryVisible) continue;
+      event.status = 'cancelled';
+      event.isDiscoveryVisible = false;
+      event.ticketPriceCents = 0;
+      await this.events.save(event);
+      eventsChanged += 1;
+    }
+    const courses = await this.learn.find();
+    for (const course of courses) {
+      if (
+        !isAutomatedTestLearnTitle(course.title) &&
+        !isAutomatedTestLearnSlug(course.slug)
+      ) {
+        continue;
+      }
+      if (course.status === 'draft') continue;
+      course.status = 'draft';
+      await this.learn.save(course);
+      learnChanged += 1;
+    }
+    await this.recordAudit({
+      actorSub,
+      action: 'maintenance.unpublish-automated-test-content',
+      targetType: 'platform',
+      targetId: 'automated-test-content',
+      metadata: { eventsChanged, learnChanged },
+    });
+    return { events: eventsChanged, learn: learnChanged };
   }
 
   async recordAudit(input: {

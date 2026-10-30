@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { apiGet } from '@/lib/api';
+import { apiGet, apiGetAuth } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { EventCtaLinks } from '@/app/components/EventCtaLinks';
 import { EventPageNav } from '@/app/components/EventPageNav';
 import { useMyApplicationByEvent } from '@/lib/my-applications';
@@ -23,6 +24,8 @@ type EventDetail = {
   date: string;
   capacity: number;
   status: string;
+  locationPublicLabel?: string | null;
+  locationExactAddress?: string | null;
 };
 
 export default function EventDetailPage() {
@@ -32,6 +35,7 @@ export default function EventDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [eventStarted, setEventStarted] = useState(false);
+  const { user } = useAuth();
   const { getStatus, loading: appsLoading, loggedIn } = useMyApplicationByEvent();
 
   useEffect(() => {
@@ -41,7 +45,9 @@ export default function EventDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await apiGet(`/events/${encodeURIComponent(eventId)}`);
+        const data = user
+          ? await apiGetAuth(`/events/${encodeURIComponent(eventId)}`)
+          : await apiGet(`/events/${encodeURIComponent(eventId)}`);
         if (!mounted) return;
         setEvent(data as EventDetail);
         setEventStarted(
@@ -57,7 +63,7 @@ export default function EventDetailPage() {
     return () => {
       mounted = false;
     };
-  }, [eventId]);
+  }, [eventId, user]);
 
   const applicationStatus = getStatus(eventId);
 
@@ -92,6 +98,39 @@ export default function EventDetailPage() {
               </div>
               <div className="mt-1 font-medium">{event.capacity} guests</div>
             </div>
+            {event.locationPublicLabel && (
+              <div className="sm:col-span-2">
+                <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+                  Area
+                </div>
+                <div className="mt-1 font-medium">
+                  {event.locationPublicLabel}
+                </div>
+              </div>
+            )}
+            {event.locationExactAddress && (
+              <div className="sm:col-span-2">
+                <div className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+                  Address (approved guests)
+                </div>
+                <div className="mt-1 font-medium whitespace-pre-wrap">
+                  {event.locationExactAddress}
+                </div>
+              </div>
+            )}
+            {!event.locationExactAddress &&
+              loggedIn &&
+              applicationStatus === 'approved' &&
+              event.locationPublicLabel && (
+                <p className="sm:col-span-2 text-sm text-muted">
+                  The host will share the exact address before the gathering.
+                </p>
+              )}
+            {!loggedIn && event.locationPublicLabel && (
+              <p className="sm:col-span-2 text-sm text-muted">
+                Exact location is shared after your application is approved.
+              </p>
+            )}
           </div>
           {event.status !== 'published' && (
             <Alert tone="warning">

@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { adminAuth } from './auth-headers';
+import { registerPayload } from './register-payload';
 
 describe('Member kudos (e2e)', () => {
   let app: INestApplication<App>;
@@ -23,22 +24,22 @@ describe('Member kudos (e2e)', () => {
 
     const regA = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({
+      .send(registerPayload({
         email: `kudos-a-${Date.now()}@example.com`,
         password: 'password1',
         name: 'Kudo Giver',
-      })
+      }))
       .expect(201);
     tokenA = regA.body.token;
     userAId = regA.body.user.id;
 
     const regB = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({
+      .send(registerPayload({
         email: `kudos-b-${Date.now()}@example.com`,
         password: 'password1',
         name: 'Kudo Recipient',
-      })
+      }))
       .expect(201);
     tokenB = regB.body.token;
     userBId = regB.body.user.id;

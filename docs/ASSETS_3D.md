@@ -109,6 +109,20 @@ node scripts/generate-embrace-3d-sample.mjs
 This writes `samples/3d/stylized-embrace.glb`. Pass that path through the admin
 upload workflow to preview it from every angle and tune playback speed.
 
+## Gettin' Jiggy With It sample
+
+The second two-figure sample depicts a forward-leaning straddle over a supine
+partner. The lower figure's knees are raised and spread while the upper
+figure's hands, knees, lower legs, and feet stay planted. Two four-second clips
+are included: **Controlled bounce** and **Pelvic rock**.
+
+```bash
+node scripts/generate-jiggy-3d-sample.mjs
+```
+
+This writes `samples/3d/gettin-jiggy-with-it.glb`. Upload it as a separate
+asset so the original stylized-embrace sample remains available.
+
 ## Validation and privacy
 
 - Every write endpoint is protected by the backend JWT and `admin` role guard.

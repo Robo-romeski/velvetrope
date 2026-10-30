@@ -34,6 +34,10 @@ check_key STRIPE_WEBHOOK_SECRET
 echo "Email:"
 check_key RESEND_API_KEY
 check_key EMAIL_FROM
+echo "Analytics (optional — pageviews only when set; rebuild frontend after change):"
+check_key NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN
+check_key NEXT_PUBLIC_POSTHOG_HOST
+check_key NEXT_PUBLIC_POSTHOG_APP_LABEL
 echo "Media (avatars / check-in photos; optional — uses local disk if empty):"
 check_key S3_PHOTO_BUCKET
 check_key S3_REGION

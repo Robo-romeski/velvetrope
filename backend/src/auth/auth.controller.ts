@@ -19,6 +19,8 @@ export class AuthController {
       password?: string;
       name?: string;
       host?: boolean;
+      confirmedAdult?: boolean;
+      acceptedTermsVersion?: string;
     },
   ) {
     return await this.auth.register({
@@ -26,6 +28,8 @@ export class AuthController {
       password: body.password ?? '',
       name: body.name,
       host: body.host,
+      confirmedAdult: body.confirmedAdult,
+      acceptedTermsVersion: body.acceptedTermsVersion,
     });
   }
 

@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { adminAuth, hostAuth, userAuth } from './auth-headers';
+import { registerPayload } from './register-payload';
 import { createEvent } from './create-event';
 
 describe('Admin (e2e)', () => {
@@ -31,7 +32,7 @@ describe('Admin (e2e)', () => {
     const email = `moderated-${Date.now()}@example.com`;
     const registered = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email, password: 'password1', host: false })
+      .send(registerPayload({ email, password: 'password1', host: false }))
       .expect(201);
     const userId = registered.body.user.id as string;
     const token = registered.body.token as string;

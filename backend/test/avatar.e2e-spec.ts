@@ -1,3 +1,4 @@
+import { registerPayload } from './register-payload';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -20,7 +21,7 @@ describe('Member avatar upload (e2e)', () => {
     const email = `avatar-${Date.now()}@example.com`;
     const reg = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email, password: 'password1', name: 'Avatar User' })
+      .send(registerPayload({ email, password: 'password1', name: 'Avatar User' }))
       .expect(201);
     token = reg.body.token;
     userId = reg.body.user.id;

@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { hostAuth, userAuth } from './auth-headers';
+import { registerPayload } from './register-payload';
 import { createEvent } from './create-event';
 import {
   clearCapturedEmails,
@@ -423,7 +424,7 @@ describe('Applications (e2e)', () => {
     const email = `applicant-${Date.now()}@example.com`;
     const registered = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email, password: 'password1', host: false })
+      .send(registerPayload({ email, password: 'password1', host: false }))
       .expect(201);
     const token = registered.body.token as string;
     const applicantId = registered.body.user.id as string;

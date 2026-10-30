@@ -70,7 +70,8 @@ fi
 
 host_auth() { curl -fsS "$@" -H "Authorization: Bearer $HOST_TOKEN"; }
 
-EVENT_DATE="$(python3 -c 'from datetime import datetime, timedelta, timezone; print((datetime.now(timezone.utc)+timedelta(days=14)).strftime("%Y-%m-%dT18:00:00.000Z"))')"
+# Past start time so post-event feedback can be exercised in the same run.
+EVENT_DATE="$(python3 -c 'from datetime import datetime, timedelta, timezone; print((datetime.now(timezone.utc)-timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%S.000Z"))')"
 SMOKE_TS="$(date +%s)"
 
 echo "== gathering E2E: create event =="
@@ -118,5 +119,11 @@ if host_auth -X POST "$API/checkin/verify/$CHECKIN_TOKEN" \
   exit 1
 fi
 echo "second verify rejected (OK)"
+
+echo "== gathering E2E: feedback =="
+att_auth -X POST "$API/feedback/event/$EVENT_ID" \
+  -H 'Content-Type: application/json' \
+  -d '{"rating":5,"comment":"tier2-prod-smoke.sh pilot feedback","anonymous":false}' \
+  | python3 -c 'import json,sys; d=json.load(sys.stdin); print("feedback_id", d.get("id",""))'
 
 echo "Tier 2 API smoke + gathering E2E OK ($SITE) event_id=$EVENT_ID"

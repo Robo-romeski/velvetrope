@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { adminAuth, userAuth } from './auth-headers';
+import { registerPayload } from './register-payload';
 import {
   clearCapturedEmails,
   getCapturedEmails,
@@ -86,7 +87,7 @@ describe('Trust (e2e)', () => {
     const email = `export-${Date.now()}@example.com`;
     const registered = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email, password: 'password1', host: false })
+      .send(registerPayload({ email, password: 'password1', host: false }))
       .expect(201);
 
     const exported = await request(app.getHttpServer())
@@ -103,7 +104,7 @@ describe('Trust (e2e)', () => {
     const email = `delete-${Date.now()}@example.com`;
     const registered = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email, password: 'password1', host: false })
+      .send(registerPayload({ email, password: 'password1', host: false }))
       .expect(201);
 
     await request(app.getHttpServer())

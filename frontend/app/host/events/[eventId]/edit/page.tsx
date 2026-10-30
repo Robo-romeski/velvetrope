@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { apiGet, apiPatchAuth, isUnauthorized } from '@/lib/api';
+import { apiGetAuth, apiPatchAuth, isUnauthorized } from '@/lib/api';
 import HostLoginPrompt from '@/app/components/HostLoginPrompt';
 import { HostEventNav } from '@/app/components/HostEventNav';
 import { useAuth } from '@/lib/auth';
@@ -16,6 +16,7 @@ import {
   PageHeader,
   PageShell,
   TextLink,
+  Textarea,
 } from '@/app/components/ui';
 
 function toLocalInput(iso: string) {
@@ -39,6 +40,8 @@ export default function EditHostEventPage() {
   const [requirePhotoCheckin, setRequirePhotoCheckin] = useState(false);
   const [requireIdentityVerification, setRequireIdentityVerification] =
     useState(false);
+  const [locationPublicLabel, setLocationPublicLabel] = useState('');
+  const [locationExactAddress, setLocationExactAddress] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +51,9 @@ export default function EditHostEventPage() {
     let mounted = true;
     (async () => {
       try {
-        const event = await apiGet(`/events/${encodeURIComponent(eventId)}`);
+        const event = await apiGetAuth(
+          `/events/${encodeURIComponent(eventId)}`,
+        );
         if (!mounted) return;
         setTitle(event.title ?? '');
         setDescription(event.description ?? '');
@@ -61,6 +66,8 @@ export default function EditHostEventPage() {
         setRequireIdentityVerification(
           event.requireIdentityVerification === true,
         );
+        setLocationPublicLabel(event.locationPublicLabel ?? '');
+        setLocationExactAddress(event.locationExactAddress ?? '');
       } catch (e) {
         if (!mounted) return;
         setError(e instanceof Error ? e.message : 'Could not load event');
@@ -104,6 +111,8 @@ export default function EditHostEventPage() {
           : 0,
         requirePhotoCheckin,
         requireIdentityVerification,
+        locationPublicLabel: locationPublicLabel.trim() || undefined,
+        locationExactAddress: locationExactAddress.trim() || undefined,
       });
       router.push('/host/events');
     } catch (e) {
@@ -154,6 +163,27 @@ export default function EditHostEventPage() {
               onChange={(e) => setDescription(e.target.value)}
               className="vk-field"
               rows={3}
+            />
+          </label>
+          <label className="block text-sm space-y-1">
+            <span>Public area label</span>
+            <input
+              value={locationPublicLabel}
+              onChange={(e) => setLocationPublicLabel(e.target.value)}
+              className="vk-field"
+              placeholder="Brooklyn, North Jersey, etc."
+            />
+            <span className="text-xs text-muted">
+              Shown on the invitation before approval.
+            </span>
+          </label>
+          <label className="block text-sm space-y-1">
+            <span>Exact address</span>
+            <Textarea
+              value={locationExactAddress}
+              onChange={(e) => setLocationExactAddress(e.target.value)}
+              rows={2}
+              placeholder="Full address for approved guests only"
             />
           </label>
           <label className="block text-sm space-y-1">

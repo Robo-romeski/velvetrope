@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { hostAuth } from './auth-headers';
+import { registerPayload } from './register-payload';
 
 describe('Social home (e2e)', () => {
   let app: INestApplication<App>;
@@ -25,11 +26,11 @@ describe('Social home (e2e)', () => {
     const register = async (label: string) => {
       const response = await request(app.getHttpServer())
         .post('/auth/register')
-        .send({
+        .send(registerPayload({
           email: `social-home-${label}-${Date.now()}@example.com`,
           password: 'password1',
           name: label,
-        })
+        }))
         .expect(201);
       const token = response.body.token as string;
       const userId = response.body.user.id as string;

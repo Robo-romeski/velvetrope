@@ -1,3 +1,4 @@
+import { registerPayload } from './register-payload';
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
@@ -24,11 +25,11 @@ describe('Direct messages (e2e)', () => {
     const register = async (label: string) => {
       const response = await request(app.getHttpServer())
         .post('/auth/register')
-        .send({
+        .send(registerPayload({
           email: `messages-${label}-${Date.now()}@example.com`,
           password: 'password1',
           name: label,
-        })
+        }))
         .expect(201);
       return {
         token: response.body.token as string,

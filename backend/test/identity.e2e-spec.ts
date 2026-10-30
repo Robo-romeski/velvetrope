@@ -1,3 +1,4 @@
+import { registerPayload } from './register-payload';
 import { createHmac } from 'crypto';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
@@ -29,19 +30,19 @@ describe('Persona identity verification (e2e)', () => {
     const password = 'password1';
     const host = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({
+      .send(registerPayload({
         email: `identity-host-${nonce}@example.com`,
         password,
         host: true,
-      })
+      }))
       .expect(201);
     const attendee = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({
+      .send(registerPayload({
         email: `identity-attendee-${nonce}@example.com`,
         password,
         host: false,
-      })
+      }))
       .expect(201);
     const hostToken = host.body.token as string;
     const attendeeToken = attendee.body.token as string;

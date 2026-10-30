@@ -20,6 +20,10 @@ import {
   resolveAuthSecret,
 } from './auth.constants';
 import { EmailService } from '../email/email.service';
+import {
+  CURRENT_TERMS_VERSION,
+  assertSignupRequirements,
+} from './signup-requirements';
 
 export type PublicUser = {
   id: string;
@@ -57,6 +61,8 @@ export class AuthService {
     password: string;
     name?: string;
     host?: boolean;
+    confirmedAdult?: boolean;
+    acceptedTermsVersion?: string;
   }): Promise<AuthResult> {
     const email = this.normalizeEmail(input.email);
     const password = input.password ?? '';
@@ -66,17 +72,37 @@ export class AuthService {
     if (password.length < 8) {
       throw new BadRequestException('Password must be at least 8 characters');
     }
+    try {
+      assertSignupRequirements(input);
+    } catch (err) {
+      const code = err instanceof Error ? err.message : '';
+      if (code === 'ADULT_REQUIRED') {
+        throw new BadRequestException(
+          'You must confirm that you are at least 18 years old',
+        );
+      }
+      if (code === 'TERMS_VERSION') {
+        throw new BadRequestException(
+          `You must accept the current Terms of Service and Privacy Policy (version ${CURRENT_TERMS_VERSION})`,
+        );
+      }
+      throw new BadRequestException('Signup requirements not met');
+    }
     const existing = await this.users.findOne({ where: { email } });
     if (existing) {
       throw new ConflictException('Email already registered');
     }
     const roles = input.host === false ? ['attendee'] : ['attendee', 'host'];
+    const acceptedAt = new Date();
     const user = this.users.create({
       email,
       passwordHash: await hashPassword(password),
       name: input.name?.trim() || null,
       roles,
       accountStatus: 'active',
+      ageConfirmedAt: acceptedAt,
+      termsAcceptedVersion: CURRENT_TERMS_VERSION,
+      termsAcceptedAt: acceptedAt,
     });
     const saved = await this.users.save(user);
     return { token: await this.signToken(saved), user: this.toPublic(saved) };

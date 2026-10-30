@@ -1,3 +1,4 @@
+import { registerPayload } from './register-payload';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -61,19 +62,19 @@ describe('Chat WebSocket (e2e)', () => {
     const password = 'password1';
     const host = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({
+      .send(registerPayload({
         email: `ws-host-${nonce}@example.com`,
         password,
         host: true,
-      })
+      }))
       .expect(201);
     const attendee = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({
+      .send(registerPayload({
         email: `ws-attendee-${nonce}@example.com`,
         password,
         host: false,
-      })
+      }))
       .expect(201);
     const event = await request(app.getHttpServer())
       .post('/events')

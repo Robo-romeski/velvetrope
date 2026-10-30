@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { hostAuth } from './auth-headers';
+import { registerPayload } from './register-payload';
 import { createEvent } from './create-event';
 
 describe('Stripe (e2e)', () => {
@@ -79,7 +80,7 @@ describe('Stripe (e2e)', () => {
     const email = `paid-${Date.now()}@example.com`;
     const registered = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email, password: 'password1', host: false })
+      .send(registerPayload({ email, password: 'password1', host: false }))
       .expect(201);
     const token = registered.body.token as string;
 

@@ -220,7 +220,10 @@ export default function ProfileSettingsPage() {
               epicsexual.com/members/{profile.slug}
             </p>
           </FormField>
-          <FormField label="Display name">
+          <FormField
+            label="Display name"
+            hint="What other members see on your profile and posts. Your account name is for sign-in and receipts only."
+          >
             <Input
               value={profile.displayName ?? ''}
               onChange={(e) =>

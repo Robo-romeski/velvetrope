@@ -14,6 +14,8 @@ import {
   TextLink,
 } from '@/app/components/ui';
 import { safePostAuthPath } from '@/lib/post-auth-redirect';
+import { CURRENT_TERMS_VERSION } from '@/lib/signup-requirements';
+import Link from 'next/link';
 
 function apiError(data: unknown, fallback: string) {
   if (data && typeof data === 'object' && 'message' in data) {
@@ -36,6 +38,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [host, setHost] = useState(searchParams?.get('host') === '1');
+  const [confirmedAdult, setConfirmedAdult] = useState(false);
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -47,7 +51,16 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, host }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          host,
+          confirmedAdult,
+          acceptedTermsVersion: acceptedLegal
+            ? CURRENT_TERMS_VERSION
+            : undefined,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -77,7 +90,11 @@ export default function RegisterPage() {
       />
       <Card className="p-6 sm:p-8">
         <form onSubmit={onSubmit} className="space-y-5">
-          <FormField label="Name" htmlFor="register-name">
+          <FormField
+            label="Account name"
+            htmlFor="register-name"
+            hint="Used for receipts and host correspondence. Set your community display name in profile settings after sign-up."
+          >
             <Input
               id="register-name"
               autoComplete="name"
@@ -124,12 +141,56 @@ export default function RegisterPage() {
               </span>
             </span>
           </label>
+          <label className="flex items-start gap-3 rounded-xl border border-border bg-surface-subtle p-4 text-sm">
+            <input
+              type="checkbox"
+              required
+              checked={confirmedAdult}
+              onChange={(e) => setConfirmedAdult(e.target.checked)}
+              className="mt-0.5 size-4 accent-accent"
+            />
+            <span>
+              <span className="block font-medium">I am 18 years or older</span>
+              <span className="mt-0.5 block text-xs leading-5 text-muted">
+                epicsexual is an adults-only community.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-3 rounded-xl border border-border bg-surface-subtle p-4 text-sm">
+            <input
+              type="checkbox"
+              required
+              checked={acceptedLegal}
+              onChange={(e) => setAcceptedLegal(e.target.checked)}
+              className="mt-0.5 size-4 accent-accent"
+            />
+            <span>
+              <span className="block font-medium">
+                I accept the Terms of Service and Privacy Policy
+              </span>
+              <span className="mt-0.5 block text-xs leading-5 text-muted">
+                Read the{' '}
+                <Link href="/trust/terms" className="text-accent underline">
+                  Terms
+                </Link>{' '}
+                and{' '}
+                <Link href="/trust/privacy" className="text-accent underline">
+                  Privacy Policy
+                </Link>{' '}
+                (version {CURRENT_TERMS_VERSION}).
+              </span>
+            </span>
+          </label>
           {error && (
             <Alert tone="danger" role="alert">
               {error}
             </Alert>
           )}
-          <Button type="submit" disabled={saving} className="w-full">
+          <Button
+            type="submit"
+            disabled={saving || !confirmedAdult || !acceptedLegal}
+            className="w-full"
+          >
             {saving ? 'Creating…' : 'Create account'}
           </Button>
         </form>

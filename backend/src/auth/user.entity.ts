@@ -35,4 +35,13 @@ export class UserEntity {
 
   @Column({ type: dateTimeColumnType(), nullable: true })
   passwordResetExpiresAt?: Date | null;
+
+  @Column({ type: dateTimeColumnType(), nullable: true })
+  ageConfirmedAt?: Date | null;
+
+  @Column({ type: 'text', nullable: true })
+  termsAcceptedVersion?: string | null;
+
+  @Column({ type: dateTimeColumnType(), nullable: true })
+  termsAcceptedAt?: Date | null;
 }

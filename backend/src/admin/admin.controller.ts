@@ -90,4 +90,10 @@ export class AdminController {
       limit ? Number.parseInt(limit, 10) : undefined,
     );
   }
+
+  @Post('maintenance/unpublish-automated-test-content')
+  async unpublishAutomatedTestContent(@Req() req: Request) {
+    const { sub } = getAuthUser(req);
+    return await this.admin.unpublishAutomatedTestContent(sub);
+  }
 }

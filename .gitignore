@@ -26,12 +26,9 @@ htmlcov/
 .DS_Store
 ._*
 Thumbs.db
-.vscode/
 .idea/
 
 # Env / Secrets
-.env
-.env.*
 !.env.example
 !**/.env.example
 !deploy/lightsail/.env.production.example
@@ -51,3 +48,4 @@ dist/
 out/
 logs/
 *.log
+config.bat

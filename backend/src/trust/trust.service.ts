@@ -345,21 +345,14 @@ export class TrustService {
   }
 
   private async notifyAdmins(report: TrustReportEntity): Promise<void> {
-    const notifyEmail = process.env.TRUST_REPORT_NOTIFY_EMAIL?.trim();
-    if (!notifyEmail) return;
-
     try {
-      await this.email.send({
-        to: notifyEmail,
-        subject: `[epicsexual] New trust report (${report.category})`,
-        text: [
-          `Report id: ${report.id}`,
-          `Category: ${report.category}`,
-          `Subject: ${report.subjectType} ${report.subjectId}`,
-          `Reporter sub: ${report.reporterSub}`,
-          '',
-          report.details,
-        ].join('\n'),
+      await this.email.sendTrustReportAdminNotification({
+        reportId: report.id,
+        category: report.category,
+        subjectType: report.subjectType,
+        subjectId: report.subjectId,
+        reporterSub: report.reporterSub,
+        details: report.details ?? '',
       });
     } catch {
       // Report is stored; delivery failure should not block submission.

@@ -388,12 +388,15 @@ export class ApplicationsService {
     }
 
     try {
+      const hostId = (await this.events.get(app.eventId)).hostId;
       await this.email.sendApplicationDecision({
         to: user.email,
         eventTitle,
         eventId: app.eventId,
         status: decision.status,
         reason: decision.reason,
+        hostId,
+        applicationId: app.id,
       });
     } catch {
       // Decision is already persisted; do not fail the host action.

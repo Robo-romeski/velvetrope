@@ -33,6 +33,14 @@ check_key STRIPE_SECRET_KEY
 check_key STRIPE_WEBHOOK_SECRET
 echo "Email:"
 check_key RESEND_API_KEY
+
+if [[ -n "${EMAIL_FROM:-}" ]] && echo "$EMAIL_FROM" | grep -q '@resend.dev'; then
+  echo "ERROR: EMAIL_FROM must use your verified domain, not @resend.dev"
+  exit 1
+fi
+if [[ -z "${EMAIL_FROM:-}" ]]; then
+  echo "WARN: EMAIL_FROM unset — production sends will fail once RESEND is enabled"
+fi
 check_key EMAIL_FROM
 echo "Analytics (optional — pageviews only when set; rebuild frontend after change):"
 check_key NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN

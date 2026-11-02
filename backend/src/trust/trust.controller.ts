@@ -8,6 +8,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { TrustService } from './trust.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -24,7 +25,8 @@ export class TrustController {
     return this.trust.getCodeOfConduct();
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, ThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 3_600_000 } })
   @Post('reports')
   async createReport(
     @Req() req: Request,

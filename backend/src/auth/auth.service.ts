@@ -20,6 +20,7 @@ import {
   resolveAuthSecret,
 } from './auth.constants';
 import { EmailService } from '../email/email.service';
+import { normalizeAndValidateRecipient } from '../email/email-recipient';
 import {
   CURRENT_TERMS_VERSION,
   assertSignupRequirements,
@@ -129,7 +130,10 @@ export class AuthService {
     return this.toPublic(user);
   }
 
-  async requestPasswordReset(email: string): Promise<{
+  async requestPasswordReset(
+    email: string,
+    opts?: { clientIp?: string },
+  ): Promise<{
     message: string;
     resetToken?: string;
   }> {
@@ -139,6 +143,12 @@ export class AuthService {
 
     if (!normalized) {
       return { message };
+    }
+
+    try {
+      normalizeAndValidateRecipient(normalized);
+    } catch {
+      throw new BadRequestException('Valid email required');
     }
 
     const user = await this.users.findOne({ where: { email: normalized } });
@@ -155,6 +165,7 @@ export class AuthService {
       await this.email.sendPasswordReset({
         to: user.email,
         resetToken: token,
+        clientIp: opts?.clientIp,
       });
     } catch {
       // Do not reveal delivery failures; user can retry forgot-password.

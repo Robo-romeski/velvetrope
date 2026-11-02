@@ -9,6 +9,17 @@ export function resolveEmailFrom(): string {
   return 'epicsexual <onboarding@resend.dev>';
 }
 
+/** Production must not send from Resend's shared onboarding domain. */
+export function assertProductionEmailFromConfigured(): void {
+  if (process.env.NODE_ENV !== 'production') return;
+  const from = process.env.EMAIL_FROM?.trim() ?? '';
+  if (!from || from.includes('@resend.dev')) {
+    throw new Error(
+      'EMAIL_FROM must be set to a verified epicsexual domain in production',
+    );
+  }
+}
+
 export function resolveAppBaseUrl(): string {
   const base = process.env.APP_BASE_URL?.trim() || 'http://localhost:3000';
   return base.replace(/\/$/, '');

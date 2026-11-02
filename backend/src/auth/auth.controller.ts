@@ -4,6 +4,7 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { getAuthUser } from './request-user';
+import { getClientIp } from '../common/client-ip';
 
 @UseGuards(ThrottlerGuard)
 @Controller('auth')
@@ -42,10 +43,12 @@ export class AuthController {
     });
   }
 
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Throttle({ default: { limit: 5, ttl: 900_000 } })
   @Post('forgot-password')
-  async forgotPassword(@Body() body: { email?: string }) {
-    return await this.auth.requestPasswordReset(body.email ?? '');
+  async forgotPassword(@Req() req: Request, @Body() body: { email?: string }) {
+    return await this.auth.requestPasswordReset(body.email ?? '', {
+      clientIp: getClientIp(req),
+    });
   }
 
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
